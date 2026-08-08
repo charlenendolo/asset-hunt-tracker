@@ -103,6 +103,12 @@ function QrMachinePage() {
                 <Row label="Standort" value={textOrDash(machine.data.site?.name)} />
                 <Row label="Verantwortlich" value={textOrDash(machine.data.responsible?.full_name)} />
                 <Row label="Kategorie" value={textOrDash(machine.data.category?.name)} />
+                {formatExpectedReturn(machine.data.expected_return_at) ? (
+                  <Row
+                    label="Voraussichtlich bis"
+                    value={formatExpectedReturn(machine.data.expected_return_at)!}
+                  />
+                ) : null}
               </div>
             </div>
           </section>
