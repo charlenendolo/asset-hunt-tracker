@@ -115,7 +115,7 @@ export const returnMachine = createServerFn({ method: "POST" })
     const [{ data: machine, error: readError }, { data: profile }] = await Promise.all([
       supabaseAdmin
         .from("machines")
-        .select("id, status, current_site_id, responsible_user_id")
+        .select("id, status, current_site_id, responsible_user_id, expected_return_at")
         .eq("id", data.machineId)
         .maybeSingle(),
       supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle(),
