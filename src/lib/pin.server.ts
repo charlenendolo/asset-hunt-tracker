@@ -8,7 +8,8 @@
  * Plus a progressive server-side lockout (see lockDurationMinutes).
  */
 
-const ITERATIONS = 210_000;
+// Workers-Runtime unterstützt maximal 100.000 PBKDF2-Iterationen.
+const ITERATIONS = 100_000;
 const KEY_LENGTH = 32;
 
 function toHex(buffer: ArrayBuffer): string {
