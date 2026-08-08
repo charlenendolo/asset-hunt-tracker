@@ -158,7 +158,7 @@ function CalendarPage() {
             <EmptyState
               className="border-0 py-8"
               icon={<CalendarDays className="h-6 w-6" strokeWidth={1.5} />}
-              title="Wählen Sie einen Tag aus."
+              title="Wähle einen Tag aus."
             />
           ) : selectedRows.length === 0 ? (
             <EmptyState className="border-0 py-8" title="Keine Reservierungen an diesem Tag." />

@@ -159,8 +159,8 @@ function MachinesPage() {
           }
           description={
             hasFilters
-              ? "Passen Sie Suche oder Filter an."
-              : "Fügen Sie das erste Gerät hinzu oder importieren Sie eine bestehende Geräteliste."
+              ? "Passe Suche oder Filter an."
+              : "Füge das erste Gerät hinzu oder importiere eine bestehende Geräteliste."
           }
         />
       ) : (
