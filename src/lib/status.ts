@@ -91,11 +91,29 @@ export const RESERVATION_STATUS_LABELS: Record<string, string> = {
 };
 
 export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
-  checkout: "Ausgabe",
+  checkout: "Ausleihe",
   checkin: "Rückgabe",
-  transfer: "Umsetzung",
   return: "Rückgabe",
+  transfer: "Umlagerung",
+  assignment: "Zuordnung",
+  maintenance_out: "Zur Wartung",
+  maintenance_return: "Aus Wartung zurück",
 };
+
+/** Free-text condition values we write from the return flow. */
+export const CONDITION_LABELS: Record<string, string> = {
+  ok: "In Ordnung",
+  minor_issue: "Kleiner Mangel",
+  damaged: "Beschädigt",
+};
+
+/** All raw DB values that map to one normalised status key. */
+export function machineStatusDbValues(key: string): string[] {
+  return Object.entries(MACHINE_STATUS_ALIASES)
+    .filter(([, v]) => v === key)
+    .map(([raw]) => raw);
+}
+
 
 export function labelFor(map: Record<string, string>, raw?: string | null): string {
   if (!raw) return "–";

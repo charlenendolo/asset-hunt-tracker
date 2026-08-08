@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { machineStatusDbValues, machineStatusKey } from "@/lib/status";
 
 const FIVE_MIN = 5 * 60 * 1000;
 
@@ -74,7 +75,7 @@ export function machinesQuery(filters: MachineFilters) {
       }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
       if (filters.siteId) q = q.eq("current_site_id", filters.siteId);
-      if (filters.status) q = q.eq("status", filters.status);
+      if (filters.status) q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
 
       const [column, direction] = filters.sort.split(":");
       q = q.order(column ?? "name", { ascending: direction !== "desc" });
@@ -149,7 +150,7 @@ export function machineRelationsQuery(id: string) {
           supabase
             .from("movements")
             .select(
-              "id, movement_type, condition, comment, created_at, from_site:sites!movements_from_site_id_fkey(id, name), to_site:sites!movements_to_site_id_fkey(id, name), performer:profiles!movements_performed_by_fkey(id, full_name)",
+              "id, movement_type, condition, comment, equipment_complete, created_at, responsible:profiles!movements_responsible_user_id_fkey(id, full_name), from_site:sites!movements_from_site_id_fkey(id, name), to_site:sites!movements_to_site_id_fkey(id, name), performer:profiles!movements_performed_by_fkey(id, full_name)",
             )
             .eq("machine_id", id)
             .order("created_at", { ascending: false })
