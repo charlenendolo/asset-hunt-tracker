@@ -173,7 +173,9 @@ export const returnMachine = createServerFn({ method: "POST" })
           current_site_id: machine.current_site_id,
         })
         .eq("id", machine.id);
-      throw new Error("Bewegung konnte nicht protokolliert werden. Rückgabe abgebrochen.");
+      throw new Error(
+        "Bewegung konnte nicht protokolliert werden. Rückgabe abgebrochen. " + movementError.message,
+      );
     }
 
     return { ok: true as const };
