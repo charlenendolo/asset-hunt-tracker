@@ -31,17 +31,14 @@ export const sitesQuery = queryOptions({
   },
 });
 
+/**
+ * Role/active are privileged columns and are only returned to admins by the
+ * server function; regular users receive the name directory.
+ */
 export const profilesQuery = queryOptions({
   queryKey: ["profiles"],
   staleTime: FIVE_MIN,
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, role, active, created_at")
-      .order("full_name");
-    if (error) throw error;
-    return data ?? [];
-  },
+  queryFn: async () => listProfiles(),
 });
 
 export type MachineFilters = {
