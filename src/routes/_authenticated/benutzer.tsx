@@ -89,7 +89,11 @@ function UsersPage() {
                       {textOrDash(p.full_name)}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                      {p.role ? (
+                        <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                      ) : (
+                        <span className="text-muted-foreground">–</span>
+                      )}
                     </td>
                     {isAdmin ? (
                       <td className="px-4 py-3 text-muted-foreground">
@@ -109,7 +113,9 @@ function UsersPage() {
                     {isAdmin ? (
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-end gap-2">
-                          <UserRowActions user={{ id: p.id, role: p.role, active: p.active }} />
+                          <UserRowActions
+                            user={{ id: p.id, role: p.role ?? "user", active: p.active ?? true }}
+                          />
                           <PinAccessActions userId={p.id} />
                         </div>
                       </td>
@@ -132,7 +138,9 @@ function UsersPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{formatDate(p.created_at)}</p>
                 </div>
-                <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                {p.role ? (
+                  <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                ) : null}
               </li>
             ))}
           </ul>
