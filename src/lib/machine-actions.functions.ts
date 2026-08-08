@@ -16,6 +16,7 @@ const checkoutSchema = z.object({
   equipmentComplete: z.boolean(),
   condition: z.string().max(120).nullable().optional(),
   comment: z.string().max(2000).nullable().optional(),
+  expectedReturnAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 const returnSchema = z.object({
