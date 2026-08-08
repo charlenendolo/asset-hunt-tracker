@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
@@ -16,6 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEmployeeAccount, updateEmployeeAccount } from "@/lib/users.functions";
+import {
+  disablePinAccess,
+  enablePinAccess,
+  listPinAccess,
+  resetPin,
+  unlockPin,
+} from "@/lib/pin-auth.functions";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
@@ -183,5 +190,110 @@ export function UserRowActions({
         {user.active ? "Deaktivieren" : "Aktivieren"}
       </Button>
     </div>
+  );
+}
+
+/** Admin controls for the additional PIN login of one employee. */
+export function PinAccessActions({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const list = useServerFn(listPinAccess);
+  const enable = useServerFn(enablePinAccess);
+  const reset = useServerFn(resetPin);
+  const disable = useServerFn(disablePinAccess);
+  const unlock = useServerFn(unlockPin);
+
+  const [shownPin, setShownPin] = useState<string | null>(null);
+
+  const access = useQuery({
+    queryKey: ["pin-access"],
+    staleTime: 30_000,
+    queryFn: async () => list(),
+  });
+  const row = (access.data ?? []).find((r) => r.user_id === userId);
+  const locked = !!row?.locked_until && new Date(row.locked_until).getTime() > Date.now();
+
+  const run = useMutation({
+    mutationFn: async (action: "enable" | "reset" | "disable" | "unlock") => {
+      const payload = { data: { userId } };
+      if (action === "enable") return enable(payload);
+      if (action === "reset") return reset(payload);
+      if (action === "disable") return disable(payload);
+      return unlock(payload);
+    },
+    onSuccess: async (result) => {
+      await qc.invalidateQueries({ queryKey: ["pin-access"] });
+      const pin = (result as { pin?: string }).pin;
+      if (pin) setShownPin(pin);
+      else toast.success("Änderung gespeichert.");
+    },
+    onError: (e: Error) => toast.error(e.message || "Änderung fehlgeschlagen."),
+  });
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        {row?.enabled ? (
+          <>
+            <span className="text-xs text-muted-foreground">
+              PIN aktiv{locked ? " · gesperrt" : row.pin_must_change ? " · Wechsel offen" : ""}
+            </span>
+            {locked ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={run.isPending}
+                onClick={() => run.mutate("unlock")}
+              >
+                Entsperren
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={run.isPending}
+              onClick={() => run.mutate("reset")}
+            >
+              PIN zurücksetzen
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={run.isPending}
+              onClick={() => run.mutate("disable")}
+            >
+              PIN deaktivieren
+            </Button>
+          </>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={run.isPending}
+            onClick={() => run.mutate("enable")}
+          >
+            {run.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            PIN-Zugang aktivieren
+          </Button>
+        )}
+      </div>
+
+      <Dialog open={!!shownPin} onOpenChange={(o) => (!o ? setShownPin(null) : undefined)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start-PIN</DialogTitle>
+            <DialogDescription>
+              Dieser PIN wird genau einmal angezeigt. Gib ihn persönlich weiter — beim ersten Login
+              muss die Person einen eigenen PIN setzen.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="rounded-lg border border-border bg-muted/40 py-4 text-center font-mono text-2xl tracking-[0.4em]">
+            {shownPin}
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setShownPin(null)}>Verstanden</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

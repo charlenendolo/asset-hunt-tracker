@@ -117,6 +117,62 @@ export type Database = {
           },
         ]
       }
+      employee_logins: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          failed_attempts: number
+          last_success_at: string | null
+          lock_count: number
+          locked_until: string | null
+          pin_hash: string
+          pin_must_change: boolean
+          pin_salt: string
+          pin_set_at: string
+          select_ref: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          failed_attempts?: number
+          last_success_at?: string | null
+          lock_count?: number
+          locked_until?: string | null
+          pin_hash: string
+          pin_must_change?: boolean
+          pin_salt: string
+          pin_set_at?: string
+          select_ref?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          failed_attempts?: number
+          last_success_at?: string | null
+          lock_count?: number
+          locked_until?: string | null
+          pin_hash?: string
+          pin_must_change?: boolean
+          pin_salt?: string
+          pin_set_at?: string
+          select_ref?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_logins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machine_categories: {
         Row: {
           created_at: string
