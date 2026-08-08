@@ -27,13 +27,11 @@ export function useCurrentProfile() {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user!.id)
-        .maybeSingle();
+      // role/active are privileged columns; current_profile() returns them
+      // for the signed-in user only.
+      const { data, error } = await supabase.rpc("current_profile");
       if (error) throw error;
-      return data;
+      return (data?.[0] ?? null) as Profile | null;
     },
   });
 
