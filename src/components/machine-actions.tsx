@@ -128,6 +128,8 @@ function ActionDialog({
   const [complete, setComplete] = useState(true);
   const [condition, setCondition] = useState("good");
   const [comment, setComment] = useState("");
+  const [expectedDate, setExpectedDate] = useState("");
+  const [expectedTime, setExpectedTime] = useState("");
 
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
@@ -141,7 +143,12 @@ function ActionDialog({
         condition: mode === "return" ? condition : null,
         comment: comment.trim() || null,
       };
-      if (mode === "checkout") return doCheckout({ data: payload });
+      if (mode === "checkout") {
+        const expected = expectedDate
+          ? new Date(`${expectedDate}T${expectedTime || "00:00"}`).toISOString()
+          : null;
+        return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
+      }
       return doReturn({ data: payload });
     },
     onSuccess: async () => {
