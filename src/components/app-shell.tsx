@@ -51,11 +51,13 @@ function useIsActive() {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
-  const { isAdmin } = useCurrentProfile();
+  const { isAdmin, role } = useCurrentProfile();
+  const personal = role !== "admin" && role !== "site_manager" && role !== "bauleiter";
 
   return (
     <nav className="flex flex-col gap-0.5">
       {NAV.filter((item) => !item.adminOnly || isAdmin).map((item) => (
+
         <Link
           key={item.to}
           to={item.to}
