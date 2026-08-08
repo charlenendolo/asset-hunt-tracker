@@ -13,8 +13,10 @@ Eine neue Tabelle: `public.employee_logins`. Eine Zeile = dieser bestehende Benu
 | `pin_salt` | text | zufälliger Salt pro Nutzer |
 | `pin_set_at` | timestamptz | wann zuletzt gesetzt |
 | `pin_must_change` | boolean | nach Start-PIN/Reset `true` |
-| `failed_attempts` | int | Zähler für Sperre |
+| `failed_attempts` | int | Zähler seit letzter Sperre/letztem Erfolg |
+| `lock_count` | int | Anzahl aufeinanderfolgender Sperren → Sperrdauer |
 | `locked_until` | timestamptz null | temporäre Sperre |
+| `last_success_at` | timestamptz null | Basis für das Abklingen von `lock_count` |
 | `enabled` | boolean | PIN-Zugang aktiv/deaktiviert |
 | `select_ref` | uuid unique | opake Auswahl-ID für den Client |
 | `created_at` / `updated_at` | timestamptz | Standard |
@@ -47,9 +49,24 @@ Der Client sieht nur `select_ref` + Anzeigename — nie `user_id`, nie E-Mail, n
 2. `enabled` und `profiles.active` prüfen.
 3. `locked_until > now()` → generischer Fehler.
 4. PIN gegen `pin_hash` prüfen (konstantzeitiger Vergleich).
-5. Fehlschlag: `failed_attempts + 1`; ab 5 → `locked_until = now() + 15 min`, Zähler zurück auf 0.
-6. Erfolg: Zähler/Sperre zurücksetzen, Session erzeugen (Abschnitt 5).
+5. Fehlschlag: `failed_attempts + 1`. Bei 5 → `lock_count + 1` und `locked_until = now() + dauer(lock_count)`, `failed_attempts` zurück auf 0. `lock_count` bleibt erhalten und ist die Sperrhistorie.
+6. Erfolg: `failed_attempts = 0`, `locked_until = null`, `last_success_at = now()`, `lock_count` wird um 1 reduziert (nicht unter 0). Session erzeugen (Abschnitt 5).
 7. Rückgabe bei Erfolg: `{ ok: true, session, mustChangePin }`. Jeder Fehlerfall liefert exakt „Anmeldung nicht möglich." — keine Unterscheidung zwischen unbekannt, gesperrt, deaktiviert oder falscher PIN.
+
+### Progressive Sperre
+
+| `lock_count` nach Erhöhung | Sperrdauer |
+|---|---|
+| 1 | 15 Minuten |
+| 2 | 30 Minuten |
+| 3 und mehr | 60 Minuten (Obergrenze) |
+
+Abklingen, damit ein legitimer Mitarbeiter nicht dauerhaft bestraft wird:
+- Jeder erfolgreiche Login senkt `lock_count` um 1.
+- Zusätzlich verfällt `lock_count` vollständig, wenn seit dem Ende der letzten Sperre 24 Stunden ohne neue Sperre vergangen sind (serverseitig beim nächsten Login-Versuch ausgewertet, kein Cron nötig).
+- Ein Admin-`resetPin` oder `unlockPin` setzt `failed_attempts`, `locked_until` und `lock_count` zurück.
+
+Die Meldung bleibt in jedem Fall „Anmeldung nicht möglich." — die Sperrdauer wird dem Client nicht mitgeteilt.
 
 Zusätzlich eine IP-basierte Kurzzeit-Drossel serverseitig, damit ein Angreifer nicht parallel über viele `ref`s streut.
 
@@ -74,7 +91,7 @@ Im bestehenden Benutzerbereich, alle Aktionen als Server-Funktionen mit `require
 - `enablePinAccess(userId)` → Zeile anlegen, Start-PIN (6 Ziffern, kryptografisch zufällig, keine Trivialfolgen) erzeugen, `pin_must_change = true`. Der Klartext wird **genau einmal** in der Antwort zurückgegeben und nur im Dialog angezeigt.
 - `resetPin(userId)` → neue Start-PIN, `pin_must_change = true`, Sperre und Zähler zurückgesetzt.
 - `disablePinAccess(userId)` → `enabled = false`.
-- `unlockPin(userId)` → `locked_until = null`, `failed_attempts = 0`.
+- `unlockPin(userId)` → `locked_until = null`, `failed_attempts = 0`, `lock_count = 0`.
 - `changeOwnPin({ oldPin, newPin })` unter `requireSupabaseAuth` für den Mitarbeiter selbst; setzt `pin_must_change = false`.
 
 Es gibt keinen Endpunkt, der einen bestehenden PIN oder `pin_hash` ausliefert.
@@ -95,7 +112,7 @@ Es gibt keinen Endpunkt, der einen bestehenden PIN oder `pin_hash` ausliefert.
 
 | Risiko | Maßnahme |
 |---|---|
-| 6-stellige PIN = nur 1 Mio. Kombinationen | Sperre nach 5 Fehlversuchen (15 Min), serverseitige Drossel, Trivial-PINs ausgeschlossen |
+| 6-stellige PIN = nur 1 Mio. Kombinationen | Sperre nach 5 Fehlversuchen, progressiv 15/30/60 Min über `lock_count`, serverseitige Drossel, Trivial-PINs ausgeschlossen |
 | Offline-Angriff bei DB-Leak | PBKDF2-SHA256 mit hoher Iterationszahl, Salt pro Nutzer **und** serverseitigem Pepper, der nicht in der DB liegt |
 | Mitarbeiterliste ist öffentlich | Bewusst akzeptiert; nur Anzeigename + opake `select_ref`, kein Rückschluss auf `user_id`, E-Mail oder Rolle |
 | Missbrauch des Magic-Link-Tokens | Token verlässt den Server nie; es wird im selben Handler erzeugt und sofort eingelöst |
@@ -116,7 +133,9 @@ create table public.employee_logins (
   pin_set_at timestamptz not null default now(),
   pin_must_change boolean not null default true,
   failed_attempts integer not null default 0,
+  lock_count integer not null default 0,
   locked_until timestamptz,
+  last_success_at timestamptz,
   enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
