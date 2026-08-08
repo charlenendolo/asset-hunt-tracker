@@ -287,7 +287,38 @@ function ManagerDashboard() {
 
   return (
     <AppShell title="Dashboard" description="Was braucht heute Aufmerksamkeit?">
-      <p className="mb-5 text-sm text-muted-foreground">{greeting}</p>
+      <Hero
+        greeting="AssetHunt"
+        headline={greeting}
+        subline={
+          isAdmin
+            ? "Unternehmensweiter Überblick über Geräte, Reservierungen und Störungen."
+            : "Überblick über deinen Standort und die zugewiesenen Geräte."
+        }
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Offene Defekte
+            </p>
+            <p className="mt-0.5 text-xl font-light">{formatNumber(openDefects.length)}</p>
+          </div>
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Fällige Wartungen
+            </p>
+            <p className="mt-0.5 text-xl font-light">{formatNumber(dueMaintenance.length)}</p>
+          </div>
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Anstehende Reservierungen
+            </p>
+            <p className="mt-0.5 text-xl font-light">
+              {formatNumber((reservations.data ?? []).length)}
+            </p>
+          </div>
+        </div>
+      </Hero>
 
       {!isAdmin ? (
         <div className="mb-6">
@@ -295,12 +326,15 @@ function ManagerDashboard() {
         </div>
       ) : null}
 
-
+      <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Gerätebestand
+      </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           label="Geräte gesamt"
           value={counts.data?.total ?? 0}
           loading={counts.isLoading}
+          accent
         />
         {MACHINE_STATUS_ORDER.map((key) => (
           <KpiCard
@@ -313,7 +347,11 @@ function ManagerDashboard() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Was braucht heute Aufmerksamkeit?
+      </h2>
+      <div className="grid gap-4 lg:grid-cols-2">
+
         <Card
           title="Anstehende Reservierungen"
           action={
