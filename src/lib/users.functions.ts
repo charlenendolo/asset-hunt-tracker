@@ -138,3 +138,41 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
     if (error) throw new Error("Änderung konnte nicht gespeichert werden.");
     return { ok: true };
   });
+
+/**
+ * Profile directory. Role and active status are privileged columns
+ * (revoked from `authenticated` at the grant level), so only verified
+ * admins receive them; everyone else gets the name directory only.
+ */
+export const listProfiles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+
+    if (isAdmin !== true) {
+      const { data, error } = await context.supabase
+        .from("profiles")
+        .select("id, full_name, created_at")
+        .order("full_name");
+      if (error) throw new Error("Benutzer konnten nicht geladen werden.");
+      return (data ?? []).map((p) => ({
+        ...p,
+        role: null as string | null,
+        active: null as boolean | null,
+      }));
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, role, active, created_at")
+      .order("full_name");
+    if (error) throw new Error("Benutzer konnten nicht geladen werden.");
+    return (data ?? []).map((p) => ({
+      id: p.id,
+      full_name: p.full_name,
+      created_at: p.created_at,
+      role: p.role as string | null,
+      active: p.active as boolean | null,
+    }));
+  });
