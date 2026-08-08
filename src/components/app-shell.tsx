@@ -80,8 +80,15 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrator",
+  office: "Büro",
+  manager: "Bauleiter",
+  user: "Mitarbeiter",
+};
+
 function UserBlock() {
-  const { profile, user, role } = useCurrentProfile();
+  const { profile, user, role, isLoading } = useCurrentProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
