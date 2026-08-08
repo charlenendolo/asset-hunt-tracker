@@ -138,7 +138,9 @@ function UsersPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">{formatDate(p.created_at)}</p>
                 </div>
-                <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                {p.role ? (
+                  <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                ) : null}
               </li>
             ))}
           </ul>
