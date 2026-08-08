@@ -10,6 +10,8 @@ import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
 import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
 import { useIdentity } from "@/hooks/use-identity";
+import { listAccountEmails } from "@/lib/users.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
   head: () => ({
@@ -41,6 +43,14 @@ function UsersPage() {
   const isAdmin = identity.role === "admin";
   const profiles = useQuery(profilesQuery);
   const rows = profiles.data ?? [];
+  const fetchEmails = useServerFn(listAccountEmails);
+  const emails = useQuery({
+    queryKey: ["account-emails"],
+    enabled: isAdmin,
+    staleTime: 60_000,
+    queryFn: async () => fetchEmails(),
+  });
+  const emailById = new Map((emails.data ?? []).map((e) => [e.id, e.email]));
 
   return (
     <AppShell
@@ -66,6 +76,7 @@ function UsersPage() {
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Rolle</th>
+                  {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Angelegt</th>
                   {isAdmin ? <th className="px-4 py-3 text-right">Verwaltung</th> : null}
@@ -80,6 +91,15 @@ function UsersPage() {
                     <td className="px-4 py-3">
                       <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
                     </td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {emailById.get(p.id) ? (
+                          emailById.get(p.id)
+                        ) : (
+                          <Pill tone="neutral">PIN-Login</Pill>
+                        )}
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3">
                       <Pill tone={p.active ? "success" : "neutral"}>
                         {p.active ? "Aktiv" : "Deaktiviert"}
