@@ -5,7 +5,7 @@
  * encode a localhost or temporary preview host. Set VITE_APP_BASE_URL to the
  * production domain; the browser origin is only a development fallback.
  */
-const CONFIGURED = (import.meta.env.VITE_APP_BASE_URL as string | undefined)?.trim();
+const CONFIGURED = (import.meta.env['VITE_APP_BASE_URL'] as string | undefined)?.trim();
 
 export function appBaseUrl(): string {
   if (CONFIGURED) return CONFIGURED.replace(/\/+$/, "");
