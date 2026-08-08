@@ -144,6 +144,7 @@ export const returnMachine = createServerFn({ method: "POST" })
         status: "available",
         responsible_user_id: null,
         current_site_id: toSiteId,
+        expected_return_at: null,
       })
       .eq("id", machine.id)
       .eq("status", machine.status)
