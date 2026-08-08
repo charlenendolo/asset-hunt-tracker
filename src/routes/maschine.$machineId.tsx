@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { ImageOff, ArrowRight } from "lucide-react";
 
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { MachineActions } from "@/components/machine-actions";
+import { ReserveMachineButton } from "@/components/reserve-machine";
 import { Logo } from "@/components/logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
@@ -12,7 +14,16 @@ import { formatDateTime, textOrDash } from "@/lib/format";
 import { MOVEMENT_TYPE_LABELS, labelFor } from "@/lib/status";
 import { useIdentity } from "@/hooks/use-identity";
 
-export const Route = createFileRoute("/_authenticated/maschine/$machineId")({
+export const Route = createFileRoute("/maschine/$machineId")({
+  // Client-only gate: QR scans often arrive logged out. We keep the scanned
+  // machine in ?redirect= so the login lands back on this exact page.
+  ssr: false,
+  beforeLoad: async ({ params }) => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      throw redirect({ to: "/auth", search: { redirect: `/maschine/${params.machineId}` } });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Gerät scannen – AssetHunt" },
