@@ -8,7 +8,7 @@ import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
-import { CreateUserDialog, UserRowActions } from "@/components/user-admin";
+import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
 import { useIdentity } from "@/hooks/use-identity";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
@@ -88,8 +88,9 @@ function UsersPage() {
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(p.created_at)}</td>
                     {isAdmin ? (
                       <td className="px-4 py-3">
-                        <div className="flex justify-end">
+                        <div className="flex flex-col items-end gap-2">
                           <UserRowActions user={{ id: p.id, role: p.role, active: p.active }} />
+                          <PinAccessActions userId={p.id} />
                         </div>
                       </td>
                     ) : null}
