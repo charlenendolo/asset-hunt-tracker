@@ -7,7 +7,8 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { allReservationsQuery } from "@/lib/queries";
+import { scopedReservationsQuery } from "@/lib/queries";
+import { useIdentity } from "@/hooks/use-identity";
 import { formatDateTime, textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/kalender")({
@@ -35,7 +36,8 @@ function CalendarPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selected, setSelected] = useState<string | null>(null);
-  const reservations = useQuery(allReservationsQuery);
+  const identity = useIdentity();
+  const reservations = useQuery(scopedReservationsQuery(identity.userId, identity.canManage));
 
   const days = useMemo(() => {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
