@@ -81,49 +81,64 @@ function AuthPage() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <h1 className="text-xl font-light tracking-tight text-foreground">Anmelden</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Melde dich mit deinem Firmenkonto an.
+            Wähle deinen Anmeldeweg.
           </p>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium">
-                E-Mail
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Passwort
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11"
-              />
-            </div>
+          <Tabs defaultValue="pin" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pin">Mitarbeiter</TabsTrigger>
+              <TabsTrigger value="email">Büro / Admin</TabsTrigger>
+            </TabsList>
 
-            {error ? (
-              <p className="rounded-md border border-status-defect/25 bg-status-defect/5 px-3 py-2 text-sm text-status-defect">
-                {error}
-              </p>
-            ) : null}
+            <TabsContent value="pin" className="mt-6">
+              <PinLoginForm
+                onSignedIn={() => navigate({ href: returnTo ?? "/dashboard", replace: true })}
+              />
+            </TabsContent>
 
-            <Button type="submit" disabled={loading} className="h-11 w-full font-medium">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
-            </Button>
-          </form>
+            <TabsContent value="email" className="mt-6">
+              <form onSubmit={onSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    E-Mail
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Passwort
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+
+                {error ? (
+                  <p className="rounded-md border border-status-defect/25 bg-status-defect/5 px-3 py-2 text-sm text-status-defect">
+                    {error}
+                  </p>
+                ) : null}
+
+                <Button type="submit" disabled={loading} className="h-11 w-full font-medium">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           AssetHunt · Interne Geräte- und Maschinenverwaltung
