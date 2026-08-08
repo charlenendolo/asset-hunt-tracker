@@ -53,17 +53,19 @@ Der Client sieht nur `select_ref` + Anzeigename — nie `user_id`, nie E-Mail, n
 
 Zusätzlich eine IP-basierte Kurzzeit-Drossel serverseitig, damit ein Angreifer nicht parallel über viele `ref`s streut.
 
-## 5. Wie die Supabase-Session entsteht
+## 5. Wie die Supabase-Session entsteht — vollständig serverseitig
 
-Kein eigenes JWT-Signieren. Mit supabase-js v2 (hier 2.112):
+Kein eigenes JWT-Signieren. Der komplette Token-Austausch läuft im Server-Handler; der Browser sieht weder `hashed_token` noch Magic-Link-Daten.
 
-1. Server: E-Mail des Nutzers via `supabaseAdmin.auth.admin.getUserById(user_id)`.
-2. Server: `supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email })` → liefert `properties.hashed_token`. Es wird **keine** E-Mail versendet, das Token wird nicht ausgeliefert an Dritte, sondern direkt an den Client zurückgegeben, der die PIN gerade korrekt bewiesen hat.
-3. Client: `supabase.auth.verifyOtp({ type: 'magiclink', token_hash })` → echte, reguläre Supabase-Session inkl. Refresh-Token, in `localStorage` wie beim E-Mail-Login.
+1. Server: E-Mail des Nutzers via `supabaseAdmin.auth.admin.getUserById(user_id)` — die E-Mail bleibt serverseitig.
+2. Server: `supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email })` → `properties.hashed_token`. Es wird keine E-Mail versendet.
+3. Server: frischer Publishable-Client (kein persistSession) ruft `verifyOtp({ type: 'magiclink', token_hash })` auf. Das Token ist damit sofort im selben Request verbraucht.
+4. Server gibt an den Client ausschließlich zurück: `{ access_token, refresh_token, expires_at, mustChangePin }`.
+5. Client: `supabase.auth.setSession({ access_token, refresh_token })` → reguläre Session in `localStorage`, identisch zum E-Mail-Login.
 
-Damit gilt danach exakt dieselbe Identität: `auth.uid() = profiles.id`, RLS greift unverändert, `requireSupabaseAuth` und der Bearer-Attacher funktionieren ohne Änderung. Logout = `supabase.auth.signOut()` wie bisher; Session-Refresh übernimmt der Supabase-Client automatisch.
+**Technisch verifiziert** gegen das verbundene Projekt mit supabase-js 2.112: `generateLink` liefert `hashed_token`, das serverseitige `verifyOtp` gibt eine vollständige Session mit Access- und Refresh-Token zurück, und `user.id` entspricht exakt der bestehenden Identität. Der Flow funktioniert — keine Improvisation nötig.
 
-Vor der Umsetzung wird `generateLink` einmal gegen das verbundene Projekt geprüft (Rückgabeform `hashed_token` und Ablaufzeit), bevor der Flow verdrahtet wird.
+Danach gilt: `auth.uid() = profiles.id`, RLS unverändert, `requireSupabaseAuth` und der Bearer-Attacher funktionieren ohne Änderung. Logout = `supabase.auth.signOut()`; Refresh übernimmt der Client automatisch.
 
 ## 6. PIN-Verwaltung durch Admin
 
@@ -86,7 +88,7 @@ Es gibt keinen Endpunkt, der einen bestehenden PIN oder `pin_hash` ausliefert.
 ## 8. RLS & Grants für `employee_logins`
 
 - `ENABLE ROW LEVEL SECURITY`, **keine** Policy für `anon` oder `authenticated`.
-- `GRANT ALL ON public.employee_logins TO service_role;` — sonst keine Grants.
+- `REVOKE ALL ... FROM anon, authenticated;` explizit, zusätzlich `GRANT ALL ... TO service_role;` — sonst keine Grants.
 - Zugriff ausschließlich über Server-Funktionen. Damit ist `pin_hash` über die Data API grundsätzlich nicht erreichbar.
 
 ## 9. Sicherheitsrisiken und Gegenmaßnahmen
@@ -96,7 +98,8 @@ Es gibt keinen Endpunkt, der einen bestehenden PIN oder `pin_hash` ausliefert.
 | 6-stellige PIN = nur 1 Mio. Kombinationen | Sperre nach 5 Fehlversuchen (15 Min), serverseitige Drossel, Trivial-PINs ausgeschlossen |
 | Offline-Angriff bei DB-Leak | PBKDF2-SHA256 mit hoher Iterationszahl, Salt pro Nutzer **und** serverseitigem Pepper, der nicht in der DB liegt |
 | Mitarbeiterliste ist öffentlich | Bewusst akzeptiert; nur Anzeigename + opake `select_ref`, kein Rückschluss auf `user_id`, E-Mail oder Rolle |
-| Missbrauch des Magic-Link-Tokens | Token wird nur nach erfolgreicher PIN-Prüfung ausgegeben, ist einmalig und kurzlebig, wird sofort im selben Request-Zyklus eingelöst |
+| Missbrauch des Magic-Link-Tokens | Token verlässt den Server nie; es wird im selben Handler erzeugt und sofort eingelöst |
+| Start-PIN bleibt dauerhaft in Benutzung | `pin_must_change = true` erzwingt den Wechsel vor der ersten Nutzung |
 | Enumeration von Konten | Einheitliche Fehlermeldung „Anmeldung nicht möglich." und konstante Antwortzeit |
 | Service-Role-Leak | `client.server` wird nur innerhalb der Handler geladen, nie im Modul-Scope einer `.functions.ts` |
 
@@ -120,6 +123,7 @@ create table public.employee_logins (
 );
 
 -- Nur der Server darf diese Tabelle sehen. Kein anon, kein authenticated.
+revoke all on public.employee_logins from anon, authenticated;
 grant all on public.employee_logins to service_role;
 
 alter table public.employee_logins enable row level security;
@@ -130,7 +134,21 @@ create trigger employee_logins_set_updated_at
   for each row execute function public.set_updated_at();
 ```
 
-## 11. UI
+## 11. Erzwungener PIN-Wechsel
+
+Bei `enablePinAccess` und `resetPin` erzeugt der Server einen zufälligen 6-stelligen Start-PIN (einmalige Anzeige) und setzt `pin_must_change = true`.
+
+Beim ersten erfolgreichen PIN-Login liefert `pinLogin` `mustChangePin: true`. Die App zeigt dann einen nicht abbrechbaren Schritt „Neuen PIN festlegen"; erst nach erfolgreichem `changeOwnPin` ist die Anwendung nutzbar (Navigation und Aktionen bleiben bis dahin gesperrt).
+
+Abgelehnte PINs (einfache Regel, keine Passwortkomplexität):
+- alle Ziffern gleich (`000000`, `111111`, …)
+- aufsteigende Folge (`123456`, `234567`, …)
+- absteigende Folge (`654321`, `987654`, …)
+- der aktuelle bzw. der Start-PIN selbst
+
+Fehlermeldung: „Bitte wähle einen weniger vorhersehbaren PIN." Die Prüfung läuft serverseitig in `changeOwnPin` und zusätzlich bei der Generierung des Start-PINs.
+
+## 11a. UI
 
 Login-Seite bekommt zwei Tabs: „Büro / Admin" (E-Mail + Passwort, unverändert) und „Mitarbeiter" (suchbare Combobox mit `Vorname Nachname` + 6-stelliges PIN-Feld, CTA „Anmelden"). Nach Login mit `pin_must_change = true` erscheint einmalig der Dialog „PIN ändern".
 
