@@ -18,7 +18,13 @@ import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
-import { formatCurrency, formatDate, formatDateTime, textOrDash } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatExpectedReturn,
+  textOrDash,
+} from "@/lib/format";
 import {
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
