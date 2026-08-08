@@ -108,6 +108,90 @@ const STATUS_DOT: Record<string, string> = {
 };
 
 function DashboardPage() {
+  const identity = useIdentity();
+  if (identity.isLoading) {
+    return (
+      <AppShell title="Dashboard">
+        <Skeleton className="h-40 w-full" />
+      </AppShell>
+    );
+  }
+  return identity.canManage ? <ManagerDashboard /> : <UserDashboard />;
+}
+
+/** Field worker view: only personal equipment, no company-wide data. */
+function UserDashboard() {
+  const identity = useIdentity();
+  const reservations = useQuery(myReservationsQuery(identity.userId));
+
+  return (
+    <AppShell title="Meine Übersicht" description="Deine Geräte auf einen Blick">
+      <p className="mb-5 text-sm text-muted-foreground">
+        {identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
+      </p>
+
+      <MyMachines />
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-base font-medium text-foreground">Meine Reservierungen</h2>
+        {reservations.isLoading ? (
+          <ListSkeleton />
+        ) : (reservations.data ?? []).length === 0 ? (
+          <EmptyState
+            icon={<CalendarClock className="h-6 w-6" strokeWidth={1.5} />}
+            title="Du hast aktuell keine Reservierungen."
+          />
+        ) : (
+          <ul className="divide-y divide-border rounded-xl border border-border bg-card px-4">
+            {(reservations.data ?? []).map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {r.machine?.name ?? "Unbekanntes Gerät"}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {formatDateTime(r.start_at)} – {formatDateTime(r.end_at)}
+                  </p>
+                </div>
+                <Pill>{r.site?.name ?? "Ohne Standort"}</Pill>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-base font-medium text-foreground">Schnellaktionen</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="flex min-h-16 items-center gap-3 rounded-xl border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+            <QrCode className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+            <span>Gerät per QR öffnen – Scanner folgt, nutze bis dahin die Kamera-App.</span>
+          </div>
+          <Link
+            to="/maschinen"
+            className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            <span className="flex items-center gap-3">
+              <Container className="h-5 w-5" strokeWidth={1.75} /> Meine Geräte
+            </span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+          <Link
+            to="/reservierungen"
+            className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            <span className="flex items-center gap-3">
+              <CalendarClock className="h-5 w-5" strokeWidth={1.75} /> Meine Reservierungen
+            </span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        </div>
+      </section>
+    </AppShell>
+  );
+}
+
+function ManagerDashboard() {
   const { profile, isAdmin, isLoading: profileLoading } = useCurrentProfile();
 
   const counts = useQuery(machineStatusCountsQuery());
@@ -136,6 +220,13 @@ function DashboardPage() {
   return (
     <AppShell title="Dashboard" description="Was braucht heute Aufmerksamkeit?">
       <p className="mb-5 text-sm text-muted-foreground">{greeting}</p>
+
+      {!isAdmin ? (
+        <div className="mb-6">
+          <MyMachines />
+        </div>
+      ) : null}
+
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <KpiCard
