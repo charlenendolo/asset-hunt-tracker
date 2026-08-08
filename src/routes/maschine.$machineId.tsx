@@ -10,7 +10,7 @@ import { ReserveMachineButton } from "@/components/reserve-machine";
 import { Logo } from "@/components/logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
-import { formatDateTime, textOrDash } from "@/lib/format";
+import { formatDateTime, formatExpectedReturn, textOrDash } from "@/lib/format";
 import { MOVEMENT_TYPE_LABELS, labelFor } from "@/lib/status";
 import { useIdentity } from "@/hooks/use-identity";
 
