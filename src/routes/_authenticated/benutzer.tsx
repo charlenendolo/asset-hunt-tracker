@@ -89,7 +89,11 @@ function UsersPage() {
                       {textOrDash(p.full_name)}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                      {p.role ? (
+                        <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                      ) : (
+                        <span className="text-muted-foreground">–</span>
+                      )}
                     </td>
                     {isAdmin ? (
                       <td className="px-4 py-3 text-muted-foreground">
