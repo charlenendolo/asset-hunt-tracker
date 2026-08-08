@@ -55,19 +55,62 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+/** Branded green welcome band — dashboard only. */
+function Hero({
+  greeting,
+  headline,
+  subline,
+  children,
+}: {
+  greeting: string;
+  headline: string;
+  subline: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section className="relative mb-6 overflow-hidden rounded-2xl bg-primary px-5 py-6 text-primary-foreground sm:px-7 sm:py-8">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-foreground/8"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-primary-foreground/5"
+      />
+      <div className="relative">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary-foreground/70">
+          {greeting}
+        </p>
+        <h2 className="mt-2 text-xl font-light tracking-tight sm:text-2xl">{headline}</h2>
+        <p className="mt-1.5 max-w-xl text-sm text-primary-foreground/75">{subline}</p>
+        {children ? <div className="mt-5">{children}</div> : null}
+      </div>
+    </section>
+  );
+}
+
 function Card({
   title,
+  icon: Icon,
   action,
   children,
 }: {
   title: string;
+  icon?: typeof Container | undefined;
   action?: React.ReactNode | undefined;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-xl border border-border bg-card">
       <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
-        <h2 className="text-sm font-medium text-foreground">{title}</h2>
+        <h2 className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+          {Icon ? (
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Icon className="h-4 w-4" strokeWidth={1.75} />
+            </span>
+          ) : null}
+          {title}
+        </h2>
         {action}
       </header>
       <div className="px-5 py-4">{children}</div>
@@ -80,22 +123,39 @@ function KpiCard({
   value,
   tone,
   loading,
+  accent,
 }: {
   label: string;
   value: number;
   tone?: string | undefined;
   loading?: boolean | undefined;
+  accent?: boolean | undefined;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-4">
-      <div className="flex items-center gap-2">
-        {tone ? <span className={`h-1.5 w-1.5 rounded-full ${tone}`} /> : null}
+    <div
+      className={
+        accent
+          ? "relative overflow-hidden rounded-xl border border-primary/20 bg-primary/6 px-4 py-4"
+          : "relative overflow-hidden rounded-xl border border-border bg-card px-4 py-4"
+      }
+    >
+      <span
+        aria-hidden
+        className={`absolute inset-y-3 left-0 w-0.5 rounded-full ${
+          accent ? "bg-primary" : (tone ?? "bg-border")
+        }`}
+      />
+      <div className="flex items-center gap-2 pl-2">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
       </div>
       {loading ? (
-        <Skeleton className="mt-2 h-8 w-16" />
+        <Skeleton className="ml-2 mt-2 h-8 w-16" />
       ) : (
-        <p className="mt-1.5 text-2xl font-light tracking-tight text-foreground">
+        <p
+          className={`mt-1.5 pl-2 text-2xl font-light tracking-tight ${
+            accent ? "text-primary" : "text-foreground"
+          }`}
+        >
           {formatNumber(value)}
         </p>
       )}
@@ -131,11 +191,14 @@ function UserDashboard() {
 
   return (
     <AppShell title="Meine Übersicht" description="Deine Geräte auf einen Blick">
-      <p className="mb-5 text-sm text-muted-foreground">
-        {identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
-      </p>
+      <Hero
+        greeting="AssetHunt"
+        headline={identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
+        subline="Hier findest du alles, was dir aktuell zugewiesen ist."
+      />
 
       <MyMachines />
+
 
       <section className="mt-8">
         <h2 className="mb-3 text-base font-medium text-foreground">Meine Reservierungen</h2>
@@ -224,7 +287,38 @@ function ManagerDashboard() {
 
   return (
     <AppShell title="Dashboard" description="Was braucht heute Aufmerksamkeit?">
-      <p className="mb-5 text-sm text-muted-foreground">{greeting}</p>
+      <Hero
+        greeting="AssetHunt"
+        headline={greeting}
+        subline={
+          isAdmin
+            ? "Unternehmensweiter Überblick über Geräte, Reservierungen und Störungen."
+            : "Überblick über deinen Standort und die zugewiesenen Geräte."
+        }
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Offene Defekte
+            </p>
+            <p className="mt-0.5 text-xl font-light">{formatNumber(openDefects.length)}</p>
+          </div>
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Fällige Wartungen
+            </p>
+            <p className="mt-0.5 text-xl font-light">{formatNumber(dueMaintenance.length)}</p>
+          </div>
+          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
+              Anstehende Reservierungen
+            </p>
+            <p className="mt-0.5 text-xl font-light">
+              {formatNumber((reservations.data ?? []).length)}
+            </p>
+          </div>
+        </div>
+      </Hero>
 
       {!isAdmin ? (
         <div className="mb-6">
@@ -232,12 +326,15 @@ function ManagerDashboard() {
         </div>
       ) : null}
 
-
+      <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Gerätebestand
+      </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           label="Geräte gesamt"
           value={counts.data?.total ?? 0}
           loading={counts.isLoading}
+          accent
         />
         {MACHINE_STATUS_ORDER.map((key) => (
           <KpiCard
@@ -250,9 +347,14 @@ function ManagerDashboard() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Was braucht heute Aufmerksamkeit?
+      </h2>
+      <div className="grid gap-4 lg:grid-cols-2">
+
         <Card
           title="Anstehende Reservierungen"
+          icon={CalendarClock}
           action={
             <Link
               to="/reservierungen"
@@ -291,6 +393,7 @@ function ManagerDashboard() {
 
         <Card
           title="Fällige Wartungen"
+          icon={Wrench}
           action={
             <Link
               to="/wartung"
@@ -329,6 +432,7 @@ function ManagerDashboard() {
 
         <Card
           title="Neueste Defekte"
+          icon={TriangleAlert}
           action={
             <Link
               to="/defekte"
@@ -364,7 +468,7 @@ function ManagerDashboard() {
         </Card>
 
         {isAdmin || profileLoading ? (
-          <Card title="Letzte Aktivitäten">
+          <Card title="Letzte Aktivitäten" icon={History}>
             {movements.isLoading ? (
               <ListSkeleton />
             ) : (movements.data ?? []).length === 0 ? (
@@ -393,7 +497,7 @@ function ManagerDashboard() {
             )}
           </Card>
         ) : (
-          <Card title="Schnellzugriff">
+          <Card title="Schnellzugriff" icon={Container}>
             <Link
               to="/maschinen"
               className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"

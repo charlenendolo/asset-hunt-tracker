@@ -218,7 +218,11 @@ function ActionDialog({
                 onCheckedChange={(v) => setComplete(v === true)}
                 className="h-5 w-5"
               />
-              <span className="text-sm font-medium">Zubehör vollständig übernommen</span>
+              <span className="text-sm font-medium">
+                {mode === "return"
+                  ? "Zubehör vollständig zurückgegeben"
+                  : "Zubehör vollständig übernommen"}
+              </span>
             </label>
           </div>
 
