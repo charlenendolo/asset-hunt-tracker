@@ -119,6 +119,16 @@ function QrMachinePage() {
             }}
           />
 
+          <ReserveMachineButton
+            className="w-full"
+            machine={{
+              id: machine.data.id,
+              name: machine.data.name,
+              asset_code: machine.data.asset_code,
+              current_site_id: machine.data.current_site_id,
+            }}
+          />
+
           <section className="rounded-xl border border-border bg-card px-5 py-4">
             <h2 className="mb-2 text-sm font-medium text-foreground">Letzte Bewegungen</h2>
             {relations.isLoading ? (

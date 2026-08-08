@@ -20,7 +20,7 @@ import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReservierungenRouteImport } from './routes/_authenticated/reservierungen'
 import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
 import { Route as AuthenticatedWartungRouteImport } from './routes/_authenticated/wartung'
-import { Route as AuthenticatedMaschineMachineIdRouteImport } from './routes/_authenticated/maschine.$machineId'
+import { Route as MaschineMachineIdRouteImport } from './routes/maschine.$machineId'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
 
@@ -80,12 +80,11 @@ const AuthenticatedWartungRoute = AuthenticatedWartungRouteImport.update({
   path: '/wartung',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMaschineMachineIdRoute =
-  AuthenticatedMaschineMachineIdRouteImport.update({
-    id: '/maschine/$machineId',
-    path: '/maschine/$machineId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const MaschineMachineIdRoute = MaschineMachineIdRouteImport.update({
+  id: '/maschine/$machineId',
+  path: '/maschine/$machineId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedMaschinenIndexRoute =
   AuthenticatedMaschinenIndexRouteImport.update({
     id: '/maschinen/',
@@ -110,7 +109,7 @@ export interface FileRoutesByFullPath {
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
-  '/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
+  '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -125,7 +124,7 @@ export interface FileRoutesByTo {
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
-  '/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
+  '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -142,7 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/reservierungen': typeof AuthenticatedReservierungenRoute
   '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
   '/_authenticated/wartung': typeof AuthenticatedWartungRoute
-  '/_authenticated/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
+  '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -190,7 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reservierungen'
     | '/_authenticated/standorte'
     | '/_authenticated/wartung'
-    | '/_authenticated/maschine/$machineId'
+    | '/maschine/$machineId'
     | '/_authenticated/maschinen/$machineId'
     | '/_authenticated/maschinen/'
   fileRoutesById: FileRoutesById
@@ -199,6 +198,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  MaschineMachineIdRoute: typeof MaschineMachineIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -280,12 +280,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWartungRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/maschine/$machineId': {
-      id: '/_authenticated/maschine/$machineId'
+    '/maschine/$machineId': {
+      id: '/maschine/$machineId'
       path: '/maschine/$machineId'
       fullPath: '/maschine/$machineId'
-      preLoaderRoute: typeof AuthenticatedMaschineMachineIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof MaschineMachineIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/maschinen/': {
       id: '/_authenticated/maschinen/'
@@ -313,7 +313,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReservierungenRoute: typeof AuthenticatedReservierungenRoute
   AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
   AuthenticatedWartungRoute: typeof AuthenticatedWartungRoute
-  AuthenticatedMaschineMachineIdRoute: typeof AuthenticatedMaschineMachineIdRoute
   AuthenticatedMaschinenMachineIdRoute: typeof AuthenticatedMaschinenMachineIdRoute
   AuthenticatedMaschinenIndexRoute: typeof AuthenticatedMaschinenIndexRoute
 }
@@ -327,7 +326,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReservierungenRoute: AuthenticatedReservierungenRoute,
   AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
   AuthenticatedWartungRoute: AuthenticatedWartungRoute,
-  AuthenticatedMaschineMachineIdRoute: AuthenticatedMaschineMachineIdRoute,
   AuthenticatedMaschinenMachineIdRoute: AuthenticatedMaschinenMachineIdRoute,
   AuthenticatedMaschinenIndexRoute: AuthenticatedMaschinenIndexRoute,
 }
@@ -339,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  MaschineMachineIdRoute: MaschineMachineIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
