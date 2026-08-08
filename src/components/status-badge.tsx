@@ -14,8 +14,8 @@ export function StatusBadge({
   status,
   className,
 }: {
-  status?: string | null;
-  className?: string;
+  status?: string | null | undefined;
+  className?: string | undefined;
 }) {
   const key = machineStatusKey(status);
   return (
@@ -38,8 +38,8 @@ export function Pill({
   className,
 }: {
   children: React.ReactNode;
-  tone?: "neutral" | "primary" | "danger" | "warning" | "success";
-  className?: string;
+  tone?: ("neutral" | "primary" | "danger" | "warning" | "success") | undefined;
+  className?: string | undefined;
 }) {
   const tones: Record<string, string> = {
     neutral: "text-muted-foreground border-border bg-muted",

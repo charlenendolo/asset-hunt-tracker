@@ -8,11 +8,11 @@ export function EmptyState({
   action,
   className,
 }: {
-  icon?: ReactNode;
+  icon?: ReactNode | undefined;
   title: string;
-  description?: string;
-  action?: ReactNode;
-  className?: string;
+  description?: string | undefined;
+  action?: ReactNode | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div
@@ -31,7 +31,7 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ message }: { message?: string }) {
+export function ErrorState({ message }: { message?: string | undefined }) {
   return (
     <div className="rounded-lg border border-status-defect/25 bg-status-defect/5 px-4 py-6 text-center">
       <p className="text-sm font-medium text-status-defect">Daten konnten nicht geladen werden.</p>

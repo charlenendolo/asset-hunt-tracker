@@ -56,7 +56,7 @@ function Card({
   children,
 }: {
   title: string;
-  action?: React.ReactNode;
+  action?: React.ReactNode | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -78,8 +78,8 @@ function KpiCard({
 }: {
   label: string;
   value: number;
-  tone?: string;
-  loading?: boolean;
+  tone?: string | undefined;
+  loading?: boolean | undefined;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-4">
