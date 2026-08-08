@@ -47,6 +47,18 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Client-only: eine bestehende Session leitet weiter (kein SSR-Zweig -> keine Hydration-Mismatch).
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active && data.session) navigate({ href: returnTo ?? "/dashboard", replace: true });
+    });
+    return () => {
+      active = false;
+    };
+  }, [navigate, returnTo]);
+
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
