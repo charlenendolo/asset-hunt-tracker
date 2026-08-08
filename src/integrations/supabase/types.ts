@@ -242,6 +242,7 @@ export type Database = {
           created_at: string
           current_site_id: string | null
           description: string | null
+          expected_return_at: string | null
           id: string
           inspection_required: boolean
           last_inspection_date: string | null
@@ -264,6 +265,7 @@ export type Database = {
           created_at?: string
           current_site_id?: string | null
           description?: string | null
+          expected_return_at?: string | null
           id?: string
           inspection_required?: boolean
           last_inspection_date?: string | null
@@ -286,6 +288,7 @@ export type Database = {
           created_at?: string
           current_site_id?: string | null
           description?: string | null
+          expected_return_at?: string | null
           id?: string
           inspection_required?: boolean
           last_inspection_date?: string | null
@@ -377,6 +380,7 @@ export type Database = {
           condition: string | null
           created_at: string
           equipment_complete: boolean | null
+          expected_return_at: string | null
           from_site_id: string | null
           id: string
           machine_id: string
@@ -390,6 +394,7 @@ export type Database = {
           condition?: string | null
           created_at?: string
           equipment_complete?: boolean | null
+          expected_return_at?: string | null
           from_site_id?: string | null
           id?: string
           machine_id: string
@@ -403,6 +408,7 @@ export type Database = {
           condition?: string | null
           created_at?: string
           equipment_complete?: boolean | null
+          expected_return_at?: string | null
           from_site_id?: string | null
           id?: string
           machine_id?: string
