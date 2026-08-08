@@ -86,6 +86,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
       equipment_complete: data.equipmentComplete,
       condition: data.condition ?? null,
       comment: data.comment ?? null,
+      expected_return_at: data.expectedReturnAt ?? null,
     });
     if (movementError) {
       // Roll back so the UI never shows a partially applied success.
@@ -95,6 +96,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
           status: machine.status,
           responsible_user_id: null,
           current_site_id: machine.current_site_id,
+          expected_return_at: null,
         })
         .eq("id", machine.id);
       throw new Error("Bewegung konnte nicht protokolliert werden. Ausleihe abgebrochen.");
