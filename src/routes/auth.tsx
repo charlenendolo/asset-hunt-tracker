@@ -1,5 +1,5 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -20,10 +20,6 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
     const value = safeRedirect(search['redirect']);
     return value ? { redirect: value } : {};
-  },
-  beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ href: search.redirect ?? "/dashboard" });
   },
   head: () => ({
     meta: [
