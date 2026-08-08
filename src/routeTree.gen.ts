@@ -15,8 +15,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBenutzerRouteImport } from './routes/_authenticated/benutzer'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDefekteRouteImport } from './routes/_authenticated/defekte'
+import { Route as AuthenticatedEinstellungenRouteImport } from './routes/_authenticated/einstellungen'
+import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
 import { Route as AuthenticatedReservierungenRouteImport } from './routes/_authenticated/reservierungen'
 import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
+import { Route as AuthenticatedWartungRouteImport } from './routes/_authenticated/wartung'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
 
@@ -49,6 +52,17 @@ const AuthenticatedDefekteRoute = AuthenticatedDefekteRouteImport.update({
   path: '/defekte',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEinstellungenRoute =
+  AuthenticatedEinstellungenRouteImport.update({
+    id: '/einstellungen',
+    path: '/einstellungen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKalenderRoute = AuthenticatedKalenderRouteImport.update({
+  id: '/kalender',
+  path: '/kalender',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReservierungenRoute =
   AuthenticatedReservierungenRouteImport.update({
     id: '/reservierungen',
@@ -58,6 +72,11 @@ const AuthenticatedReservierungenRoute =
 const AuthenticatedStandorteRoute = AuthenticatedStandorteRouteImport.update({
   id: '/standorte',
   path: '/standorte',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWartungRoute = AuthenticatedWartungRouteImport.update({
+  id: '/wartung',
+  path: '/wartung',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMaschinenIndexRoute =
@@ -79,8 +98,11 @@ export interface FileRoutesByFullPath {
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/defekte': typeof AuthenticatedDefekteRoute
+  '/einstellungen': typeof AuthenticatedEinstellungenRoute
+  '/kalender': typeof AuthenticatedKalenderRoute
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
+  '/wartung': typeof AuthenticatedWartungRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -90,8 +112,11 @@ export interface FileRoutesByTo {
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/defekte': typeof AuthenticatedDefekteRoute
+  '/einstellungen': typeof AuthenticatedEinstellungenRoute
+  '/kalender': typeof AuthenticatedKalenderRoute
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
+  '/wartung': typeof AuthenticatedWartungRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -103,8 +128,11 @@ export interface FileRoutesById {
   '/_authenticated/benutzer': typeof AuthenticatedBenutzerRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/defekte': typeof AuthenticatedDefekteRoute
+  '/_authenticated/einstellungen': typeof AuthenticatedEinstellungenRoute
+  '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
   '/_authenticated/reservierungen': typeof AuthenticatedReservierungenRoute
   '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
+  '/_authenticated/wartung': typeof AuthenticatedWartungRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -116,8 +144,11 @@ export interface FileRouteTypes {
     | '/benutzer'
     | '/dashboard'
     | '/defekte'
+    | '/einstellungen'
+    | '/kalender'
     | '/reservierungen'
     | '/standorte'
+    | '/wartung'
     | '/maschinen/$machineId'
     | '/maschinen/'
   fileRoutesByTo: FileRoutesByTo
@@ -127,8 +158,11 @@ export interface FileRouteTypes {
     | '/benutzer'
     | '/dashboard'
     | '/defekte'
+    | '/einstellungen'
+    | '/kalender'
     | '/reservierungen'
     | '/standorte'
+    | '/wartung'
     | '/maschinen/$machineId'
     | '/maschinen'
   id:
@@ -139,8 +173,11 @@ export interface FileRouteTypes {
     | '/_authenticated/benutzer'
     | '/_authenticated/dashboard'
     | '/_authenticated/defekte'
+    | '/_authenticated/einstellungen'
+    | '/_authenticated/kalender'
     | '/_authenticated/reservierungen'
     | '/_authenticated/standorte'
+    | '/_authenticated/wartung'
     | '/_authenticated/maschinen/$machineId'
     | '/_authenticated/maschinen/'
   fileRoutesById: FileRoutesById
@@ -195,6 +232,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDefekteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/einstellungen': {
+      id: '/_authenticated/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/einstellungen'
+      preLoaderRoute: typeof AuthenticatedEinstellungenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kalender': {
+      id: '/_authenticated/kalender'
+      path: '/kalender'
+      fullPath: '/kalender'
+      preLoaderRoute: typeof AuthenticatedKalenderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reservierungen': {
       id: '/_authenticated/reservierungen'
       path: '/reservierungen'
@@ -207,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/standorte'
       fullPath: '/standorte'
       preLoaderRoute: typeof AuthenticatedStandorteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/wartung': {
+      id: '/_authenticated/wartung'
+      path: '/wartung'
+      fullPath: '/wartung'
+      preLoaderRoute: typeof AuthenticatedWartungRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/maschinen/': {
@@ -230,8 +288,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBenutzerRoute: typeof AuthenticatedBenutzerRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDefekteRoute: typeof AuthenticatedDefekteRoute
+  AuthenticatedEinstellungenRoute: typeof AuthenticatedEinstellungenRoute
+  AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
   AuthenticatedReservierungenRoute: typeof AuthenticatedReservierungenRoute
   AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
+  AuthenticatedWartungRoute: typeof AuthenticatedWartungRoute
   AuthenticatedMaschinenMachineIdRoute: typeof AuthenticatedMaschinenMachineIdRoute
   AuthenticatedMaschinenIndexRoute: typeof AuthenticatedMaschinenIndexRoute
 }
@@ -240,8 +301,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBenutzerRoute: AuthenticatedBenutzerRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDefekteRoute: AuthenticatedDefekteRoute,
+  AuthenticatedEinstellungenRoute: AuthenticatedEinstellungenRoute,
+  AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
   AuthenticatedReservierungenRoute: AuthenticatedReservierungenRoute,
   AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
+  AuthenticatedWartungRoute: AuthenticatedWartungRoute,
   AuthenticatedMaschinenMachineIdRoute: AuthenticatedMaschinenMachineIdRoute,
   AuthenticatedMaschinenIndexRoute: AuthenticatedMaschinenIndexRoute,
 }

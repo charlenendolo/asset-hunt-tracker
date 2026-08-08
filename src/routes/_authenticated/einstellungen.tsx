@@ -30,7 +30,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function SettingsPage() {
-  const { profile, email, isLoading, isAdmin } = useCurrentProfile();
+  const { profile, user, isLoading, isAdmin } = useCurrentProfile();
   const categories = useQuery(categoriesQuery);
 
   return (
@@ -43,7 +43,7 @@ function SettingsPage() {
           ) : (
             <div>
               <Row label="Name" value={textOrDash(profile?.full_name)} />
-              <Row label="E-Mail" value={textOrDash(email)} />
+              <Row label="E-Mail" value={textOrDash(user?.email ?? null)} />
               <Row
                 label="Rolle"
                 value={<Pill tone={isAdmin ? "primary" : "neutral"}>{textOrDash(profile?.role)}</Pill>}
