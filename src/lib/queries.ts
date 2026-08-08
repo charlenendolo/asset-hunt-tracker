@@ -314,6 +314,9 @@ export function myMachinesQuery(userId: string | null) {
 }
 
 /** Reservations owned by the signed-in user (reservations.reserved_by). */
+export const MY_RESERVATION_SELECT =
+  "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code, status, category:machine_categories(id, name)), site:sites(id, name)";
+
 export function myReservationsQuery(userId: string | null) {
   return queryOptions({
     queryKey: ["reservations", "mine", userId],
@@ -322,13 +325,37 @@ export function myReservationsQuery(userId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reservations")
-        .select(
-          "id, start_at, end_at, status, machine:machines(id, name, asset_code), site:sites(id, name)",
-        )
+        .select(MY_RESERVATION_SELECT)
         .eq("reserved_by", userId!)
-        .gte("end_at", new Date().toISOString())
-        .order("start_at")
-        .limit(20);
+        .order("start_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/**
+ * Reservations visible to the current role.
+ * admin / site_manager: all reservations. user: only their own.
+ * (The schema has no site scope on profiles, so managers keep full read access
+ * as granted by the existing "Authenticated users can view reservations" RLS.)
+ */
+export function scopedReservationsQuery(userId: string | null, canSeeAll: boolean) {
+  return queryOptions({
+    queryKey: ["reservations", "scoped", canSeeAll ? "all" : userId],
+    enabled: canSeeAll || !!userId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      let q = supabase
+        .from("reservations")
+        .select(
+          "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+        )
+        .order("start_at", { ascending: false })
+        .limit(300);
+      if (!canSeeAll) q = q.eq("reserved_by", userId!);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },

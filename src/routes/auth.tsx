@@ -8,10 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const SAFE_PATH = /^\/[A-Za-z0-9\-_/]*$/;
+
+function safeRedirect(value: unknown): string | undefined {
+  return typeof value === "string" && SAFE_PATH.test(value) && !value.startsWith("//")
+    ? value
+    : undefined;
+}
+
 export const Route = createFileRoute("/auth")({
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const value = safeRedirect(search['redirect']);
+    return value ? { redirect: value } : {};
+  },
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/dashboard" });
+    if (data.session) throw redirect({ href: search.redirect ?? "/dashboard" });
   },
   head: () => ({
     meta: [
@@ -33,6 +45,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect: returnTo } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +61,7 @@ function AuthPage() {
       setError("Anmeldung fehlgeschlagen. Bitte prüfe E-Mail und Passwort.");
       return;
     }
-    navigate({ to: "/dashboard", replace: true });
+    navigate({ href: returnTo ?? "/dashboard", replace: true });
   }
 
   return (
