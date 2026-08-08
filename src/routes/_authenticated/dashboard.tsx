@@ -354,6 +354,7 @@ function ManagerDashboard() {
 
         <Card
           title="Anstehende Reservierungen"
+          icon={CalendarClock}
           action={
             <Link
               to="/reservierungen"
@@ -392,6 +393,7 @@ function ManagerDashboard() {
 
         <Card
           title="Fällige Wartungen"
+          icon={Wrench}
           action={
             <Link
               to="/wartung"
@@ -430,6 +432,7 @@ function ManagerDashboard() {
 
         <Card
           title="Neueste Defekte"
+          icon={TriangleAlert}
           action={
             <Link
               to="/defekte"
@@ -465,7 +468,7 @@ function ManagerDashboard() {
         </Card>
 
         {isAdmin || profileLoading ? (
-          <Card title="Letzte Aktivitäten">
+          <Card title="Letzte Aktivitäten" icon={History}>
             {movements.isLoading ? (
               <ListSkeleton />
             ) : (movements.data ?? []).length === 0 ? (
@@ -494,7 +497,7 @@ function ManagerDashboard() {
             )}
           </Card>
         ) : (
-          <Card title="Schnellzugriff">
+          <Card title="Schnellzugriff" icon={Container}>
             <Link
               to="/maschinen"
               className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
