@@ -80,8 +80,15 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrator",
+  office: "Büro",
+  manager: "Bauleiter",
+  user: "Mitarbeiter",
+};
+
 function UserBlock() {
-  const { profile, user, role } = useCurrentProfile();
+  const { profile, user, role, isLoading } = useCurrentProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -92,7 +99,7 @@ function UserBlock() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const name = profile?.full_name || user?.email || "Benutzer";
+  const name = profile?.full_name || user?.email || (isLoading ? "" : "Benutzer");
   const initials = name
     .split(" ")
     .map((p) => p[0])
@@ -109,7 +116,7 @@ function UserBlock() {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{name}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {role === "admin" ? "Administrator" : "Benutzer"}
+          {isLoading ? "" : (ROLE_LABEL[role] ?? "Mitarbeiter")}
         </p>
       </div>
       <button
