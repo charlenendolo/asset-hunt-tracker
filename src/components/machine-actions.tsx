@@ -31,8 +31,8 @@ type MachineLike = {
 };
 
 const CONDITIONS = [
-  { value: "ok", label: "In Ordnung" },
-  { value: "minor_issue", label: "Kleiner Mangel" },
+  { value: "good", label: "In Ordnung" },
+  { value: "incomplete", label: "Unvollständig / kleiner Mangel" },
   { value: "damaged", label: "Beschädigt" },
 ];
 
@@ -126,7 +126,7 @@ function ActionDialog({
 
   const [siteId, setSiteId] = useState<string>(machine.current_site_id ?? "");
   const [complete, setComplete] = useState(true);
-  const [condition, setCondition] = useState("ok");
+  const [condition, setCondition] = useState("good");
   const [comment, setComment] = useState("");
 
   const doCheckout = useServerFn(checkoutMachine);
@@ -158,7 +158,7 @@ function ActionDialog({
   });
 
   const accessories = relations.data?.accessories ?? [];
-  const commentRequired = mode === "return" && (!complete || condition !== "ok");
+  const commentRequired = mode === "return" && (!complete || condition !== "good");
   const blocked = commentRequired && !comment.trim();
 
   return (
