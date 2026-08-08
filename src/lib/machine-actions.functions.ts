@@ -176,6 +176,7 @@ export const returnMachine = createServerFn({ method: "POST" })
           status: machine.status,
           responsible_user_id: machine.responsible_user_id,
           current_site_id: machine.current_site_id,
+          expected_return_at: machine.expected_return_at,
         })
         .eq("id", machine.id);
       throw new Error(
