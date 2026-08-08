@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { MachineActions } from "@/components/machine-actions";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
 import { formatCurrency, formatDate, formatDateTime, textOrDash } from "@/lib/format";
 import {
+  CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
   DEFECT_STATUS_LABELS,
   MAINTENANCE_STATUS_LABELS,
@@ -194,8 +196,19 @@ function MachineDetailPage() {
                         {textOrDash(mv.from_site?.name)} → {textOrDash(mv.to_site?.name)} ·{" "}
                         {formatDateTime(mv.created_at)}
                       </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {mv.equipment_complete === null
+                          ? null
+                          : mv.equipment_complete
+                            ? "Zubehör vollständig"
+                            : "Zubehör unvollständig"}
+                        {mv.condition ? ` · ${labelFor(CONDITION_LABELS, mv.condition)}` : ""}
+                      </p>
+                      {mv.comment ? (
+                        <p className="mt-0.5 text-xs text-foreground">{mv.comment}</p>
+                      ) : null}
                     </div>
-                    <Pill>{textOrDash(mv.performer?.full_name)}</Pill>
+                    <Pill>{textOrDash(mv.responsible?.full_name ?? mv.performer?.full_name)}</Pill>
                   </li>
                 ))}
               </ul>
@@ -278,6 +291,20 @@ function MachineDetailPage() {
         </div>
 
         <div className="space-y-4">
+          <Section title="Aktionen">
+            <MachineActions
+              className="space-y-3"
+              machine={{
+                id: m.id,
+                name: m.name,
+                asset_code: m.asset_code,
+                status: m.status,
+                current_site_id: m.current_site_id,
+                responsible_user_id: m.responsible_user_id,
+              }}
+            />
+          </Section>
+
           <Section title="Zubehör">
             {relations.isLoading ? (
               <Skeleton className="h-16 w-full" />

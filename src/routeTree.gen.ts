@@ -20,6 +20,7 @@ import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReservierungenRouteImport } from './routes/_authenticated/reservierungen'
 import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
 import { Route as AuthenticatedWartungRouteImport } from './routes/_authenticated/wartung'
+import { Route as AuthenticatedMaschineMachineIdRouteImport } from './routes/_authenticated/maschine.$machineId'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
 
@@ -79,6 +80,12 @@ const AuthenticatedWartungRoute = AuthenticatedWartungRouteImport.update({
   path: '/wartung',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMaschineMachineIdRoute =
+  AuthenticatedMaschineMachineIdRouteImport.update({
+    id: '/maschine/$machineId',
+    path: '/maschine/$machineId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMaschinenIndexRoute =
   AuthenticatedMaschinenIndexRouteImport.update({
     id: '/maschinen/',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
+  '/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
+  '/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -133,6 +142,7 @@ export interface FileRoutesById {
   '/_authenticated/reservierungen': typeof AuthenticatedReservierungenRoute
   '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
   '/_authenticated/wartung': typeof AuthenticatedWartungRoute
+  '/_authenticated/maschine/$machineId': typeof AuthenticatedMaschineMachineIdRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/reservierungen'
     | '/standorte'
     | '/wartung'
+    | '/maschine/$machineId'
     | '/maschinen/$machineId'
     | '/maschinen/'
   fileRoutesByTo: FileRoutesByTo
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/reservierungen'
     | '/standorte'
     | '/wartung'
+    | '/maschine/$machineId'
     | '/maschinen/$machineId'
     | '/maschinen'
   id:
@@ -178,6 +190,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reservierungen'
     | '/_authenticated/standorte'
     | '/_authenticated/wartung'
+    | '/_authenticated/maschine/$machineId'
     | '/_authenticated/maschinen/$machineId'
     | '/_authenticated/maschinen/'
   fileRoutesById: FileRoutesById
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWartungRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/maschine/$machineId': {
+      id: '/_authenticated/maschine/$machineId'
+      path: '/maschine/$machineId'
+      fullPath: '/maschine/$machineId'
+      preLoaderRoute: typeof AuthenticatedMaschineMachineIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/maschinen/': {
       id: '/_authenticated/maschinen/'
       path: '/maschinen'
@@ -293,6 +313,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReservierungenRoute: typeof AuthenticatedReservierungenRoute
   AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
   AuthenticatedWartungRoute: typeof AuthenticatedWartungRoute
+  AuthenticatedMaschineMachineIdRoute: typeof AuthenticatedMaschineMachineIdRoute
   AuthenticatedMaschinenMachineIdRoute: typeof AuthenticatedMaschinenMachineIdRoute
   AuthenticatedMaschinenIndexRoute: typeof AuthenticatedMaschinenIndexRoute
 }
@@ -306,6 +327,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReservierungenRoute: AuthenticatedReservierungenRoute,
   AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
   AuthenticatedWartungRoute: AuthenticatedWartungRoute,
+  AuthenticatedMaschineMachineIdRoute: AuthenticatedMaschineMachineIdRoute,
   AuthenticatedMaschinenMachineIdRoute: AuthenticatedMaschinenMachineIdRoute,
   AuthenticatedMaschinenIndexRoute: AuthenticatedMaschinenIndexRoute,
 }
