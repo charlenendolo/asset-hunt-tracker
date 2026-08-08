@@ -68,7 +68,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
 
   async function submitChange(e: React.FormEvent) {
     e.preventDefault();
-    if (newPin.length !== 6 || newPin !== repeatPin) {
+    if (newPin.length !== 4 || newPin !== repeatPin) {
       setError("Die beiden PINs stimmen nicht überein.");
       return;
     }
@@ -101,7 +101,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
           <PinInput id="repeat-pin" value={repeatPin} onChange={setRepeatPin} />
         </div>
         {error ? <ErrorLine>{error}</ErrorLine> : null}
-        <Button type="submit" disabled={busy || newPin.length !== 6} className="h-11 w-full">
+        <Button type="submit" disabled={busy || newPin.length !== 4} className="h-11 w-full">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "PIN speichern"}
         </Button>
       </form>
