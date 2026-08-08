@@ -11,7 +11,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
-import { StatusBadge, Pill } from "@/components/status-badge";
+import { Pill } from "@/components/status-badge";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import {
   machineStatusCountsQuery,
@@ -98,6 +98,15 @@ function KpiCard({
   );
 }
 
+const STATUS_DOT: Record<string, string> = {
+  available: "bg-status-available",
+  reserved: "bg-status-reserved",
+  borrowed: "bg-status-borrowed",
+  maintenance: "bg-status-maintenance",
+  defect: "bg-status-defect",
+  unknown: "bg-muted-foreground",
+};
+
 function DashboardPage() {
   const { profile, isAdmin, isLoading: profileLoading } = useCurrentProfile();
 
@@ -139,7 +148,7 @@ function DashboardPage() {
             key={key}
             label={MACHINE_STATUS_LABELS[key]}
             value={byStatus(key)}
-            tone={`bg-status-${key === "borrowed" ? "borrowed" : key}`}
+            tone={STATUS_DOT[key]}
             loading={counts.isLoading}
           />
         ))}
@@ -317,5 +326,3 @@ function ListSkeleton() {
     </div>
   );
 }
-
-export { StatusBadge };
