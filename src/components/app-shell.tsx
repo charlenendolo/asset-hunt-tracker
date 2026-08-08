@@ -99,7 +99,7 @@ function UserBlock() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const name = profile?.full_name || user?.email || "Benutzer";
+  const name = profile?.full_name || user?.email || (isLoading ? "" : "Benutzer");
   const initials = name
     .split(" ")
     .map((p) => p[0])
