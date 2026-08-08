@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { machineStatusDbValues, machineStatusKey } from "@/lib/status";
+import { listProfiles } from "@/lib/users.functions";
 
 const FIVE_MIN = 5 * 60 * 1000;
 
