@@ -166,6 +166,11 @@ function MachineDetailPage() {
               <Field label="Seriennummer" value={textOrDash(m.serial_number)} />
               <Field label="Aktueller Standort" value={textOrDash(m.site?.name)} />
               <Field label="Verantwortlich" value={textOrDash(m.responsible?.full_name)} />
+              <Field
+                label="Voraussichtlich benötigt bis"
+                value={formatExpectedReturn(m.expected_return_at) ?? "–"}
+              />
+
               <Field label="Anschaffungsdatum" value={formatDate(m.purchase_date)} />
               <Field label="Anschaffungspreis" value={formatCurrency(m.purchase_price)} />
               <Field
