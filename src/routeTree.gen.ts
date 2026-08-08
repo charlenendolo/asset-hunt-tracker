@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBenutzerRouteImport } from './routes/_authenticated/benutzer'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedReservierungenRouteImport } from './routes/_authenticated/reservierungen'
 import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
@@ -42,6 +43,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReservierungenRoute =
+  AuthenticatedReservierungenRouteImport.update({
+    id: '/reservierungen',
+    path: '/reservierungen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStandorteRoute = AuthenticatedStandorteRouteImport.update({
   id: '/standorte',
   path: '/standorte',
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
@@ -85,6 +94,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/benutzer': typeof AuthenticatedBenutzerRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/reservierungen': typeof AuthenticatedReservierungenRoute
   '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/benutzer'
     | '/dashboard'
+    | '/reservierungen'
     | '/standorte'
     | '/maschinen/$machineId'
     | '/maschinen/'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/benutzer'
     | '/dashboard'
+    | '/reservierungen'
     | '/standorte'
     | '/maschinen/$machineId'
     | '/maschinen'
@@ -115,6 +127,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/benutzer'
     | '/_authenticated/dashboard'
+    | '/_authenticated/reservierungen'
     | '/_authenticated/standorte'
     | '/_authenticated/maschinen/$machineId'
     | '/_authenticated/maschinen/'
@@ -163,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reservierungen': {
+      id: '/_authenticated/reservierungen'
+      path: '/reservierungen'
+      fullPath: '/reservierungen'
+      preLoaderRoute: typeof AuthenticatedReservierungenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/standorte': {
       id: '/_authenticated/standorte'
       path: '/standorte'
@@ -190,6 +210,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBenutzerRoute: typeof AuthenticatedBenutzerRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedReservierungenRoute: typeof AuthenticatedReservierungenRoute
   AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
   AuthenticatedMaschinenMachineIdRoute: typeof AuthenticatedMaschinenMachineIdRoute
   AuthenticatedMaschinenIndexRoute: typeof AuthenticatedMaschinenIndexRoute
@@ -198,6 +219,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBenutzerRoute: AuthenticatedBenutzerRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedReservierungenRoute: AuthenticatedReservierungenRoute,
   AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
   AuthenticatedMaschinenMachineIdRoute: AuthenticatedMaschinenMachineIdRoute,
   AuthenticatedMaschinenIndexRoute: AuthenticatedMaschinenIndexRoute,
