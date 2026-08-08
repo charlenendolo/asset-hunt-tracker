@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { myMachinesQuery } from "@/lib/queries";
-import { textOrDash } from "@/lib/format";
+import { formatExpectedReturn, textOrDash } from "@/lib/format";
 
 /**
  * Personal equipment list — driven solely by machines.responsible_user_id,
