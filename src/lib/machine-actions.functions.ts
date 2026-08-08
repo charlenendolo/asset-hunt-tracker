@@ -62,6 +62,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
         status: "checked_out",
         responsible_user_id: userId,
         current_site_id: toSiteId,
+        expected_return_at: data.expectedReturnAt ?? null,
       })
       .eq("id", machine.id)
       .eq("status", machine.status)
