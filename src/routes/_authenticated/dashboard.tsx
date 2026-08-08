@@ -7,19 +7,24 @@ import {
   Wrench,
   ArrowRight,
   History,
+  QrCode,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
+import { MyMachines } from "@/components/my-machines";
 import { Pill } from "@/components/status-badge";
 import { useCurrentProfile } from "@/hooks/use-profile";
+import { useIdentity } from "@/hooks/use-identity";
 import {
   machineStatusCountsQuery,
   upcomingReservationsQuery,
   openDefectsQuery,
   maintenanceQuery,
   recentMovementsQuery,
+  myReservationsQuery,
 } from "@/lib/queries";
+
 import {
   MACHINE_STATUS_LABELS,
   MACHINE_STATUS_ORDER,
