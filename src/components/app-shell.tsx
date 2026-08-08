@@ -70,9 +70,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           )}
         >
           <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-          <span className="truncate">{item.label}</span>
+          <span className="truncate">
+            {personal && item.to === "/reservierungen" ? "Meine Reservierungen" : item.label}
+          </span>
         </Link>
       ))}
+
     </nav>
   );
 }
