@@ -128,6 +128,8 @@ function ActionDialog({
   const [complete, setComplete] = useState(true);
   const [condition, setCondition] = useState("good");
   const [comment, setComment] = useState("");
+  const [expectedDate, setExpectedDate] = useState("");
+  const [expectedTime, setExpectedTime] = useState("");
 
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
@@ -141,7 +143,12 @@ function ActionDialog({
         condition: mode === "return" ? condition : null,
         comment: comment.trim() || null,
       };
-      if (mode === "checkout") return doCheckout({ data: payload });
+      if (mode === "checkout") {
+        const expected = expectedDate
+          ? new Date(`${expectedDate}T${expectedTime || "00:00"}`).toISOString()
+          : null;
+        return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
+      }
       return doReturn({ data: payload });
     },
     onSuccess: async () => {
@@ -197,6 +204,35 @@ function ActionDialog({
               ))}
             </select>
           </div>
+
+          {mode === "checkout" ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="expected-date">Voraussichtlich benötigt bis (optional)</Label>
+              <div className="flex gap-2">
+                <input
+                  id="expected-date"
+                  type="date"
+                  value={expectedDate}
+                  onChange={(e) => setExpectedDate(e.target.value)}
+                  className="h-12 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                />
+                <input
+                  id="expected-time"
+                  type="time"
+                  value={expectedTime}
+                  onChange={(e) => setExpectedTime(e.target.value)}
+                  disabled={!expectedDate}
+                  aria-label="Uhrzeit (optional)"
+                  className="h-12 w-32 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Keine Pflichtangabe. Uhrzeit nur bei Bedarf.
+              </p>
+            </div>
+          ) : null}
+
+
 
           <div className="space-y-2">
             <Label>Zubehör</Label>

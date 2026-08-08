@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { myMachinesQuery } from "@/lib/queries";
-import { textOrDash } from "@/lib/format";
+import { formatExpectedReturn, textOrDash } from "@/lib/format";
 
 /**
  * Personal equipment list — driven solely by machines.responsible_user_id,
@@ -66,6 +66,11 @@ export function MyMachines({ heading = true }: { heading?: boolean }) {
                   <p className="truncate text-xs text-muted-foreground">
                     {textOrDash(m.category?.name)}
                   </p>
+                  {formatExpectedReturn(m.expected_return_at) ? (
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Voraussichtlich bis {formatExpectedReturn(m.expected_return_at)}
+                    </p>
+                  ) : null}
                 </div>
               </Link>
             </li>

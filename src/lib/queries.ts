@@ -55,7 +55,7 @@ export type MachineFilters = {
 };
 
 export const MACHINE_LIST_SELECT =
-  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, next_inspection_date, category:machine_categories(id, name), site:sites(id, name), responsible:profiles(id, full_name)";
+  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name), responsible:profiles(id, full_name)";
 
 export function machinesQuery(filters: MachineFilters) {
   return queryOptions({

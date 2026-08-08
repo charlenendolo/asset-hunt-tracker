@@ -16,6 +16,7 @@ const checkoutSchema = z.object({
   equipmentComplete: z.boolean(),
   condition: z.string().max(120).nullable().optional(),
   comment: z.string().max(2000).nullable().optional(),
+  expectedReturnAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 const returnSchema = z.object({
@@ -61,6 +62,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
         status: "checked_out",
         responsible_user_id: userId,
         current_site_id: toSiteId,
+        expected_return_at: data.expectedReturnAt ?? null,
       })
       .eq("id", machine.id)
       .eq("status", machine.status)
@@ -84,6 +86,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
       equipment_complete: data.equipmentComplete,
       condition: data.condition ?? null,
       comment: data.comment ?? null,
+      expected_return_at: data.expectedReturnAt ?? null,
     });
     if (movementError) {
       // Roll back so the UI never shows a partially applied success.
@@ -93,6 +96,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
           status: machine.status,
           responsible_user_id: null,
           current_site_id: machine.current_site_id,
+          expected_return_at: null,
         })
         .eq("id", machine.id);
       throw new Error("Bewegung konnte nicht protokolliert werden. Ausleihe abgebrochen.");
@@ -111,7 +115,7 @@ export const returnMachine = createServerFn({ method: "POST" })
     const [{ data: machine, error: readError }, { data: profile }] = await Promise.all([
       supabaseAdmin
         .from("machines")
-        .select("id, status, current_site_id, responsible_user_id")
+        .select("id, status, current_site_id, responsible_user_id, expected_return_at")
         .eq("id", data.machineId)
         .maybeSingle(),
       supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle(),
@@ -140,6 +144,7 @@ export const returnMachine = createServerFn({ method: "POST" })
         status: "available",
         responsible_user_id: null,
         current_site_id: toSiteId,
+        expected_return_at: null,
       })
       .eq("id", machine.id)
       .eq("status", machine.status)
@@ -171,6 +176,7 @@ export const returnMachine = createServerFn({ method: "POST" })
           status: machine.status,
           responsible_user_id: machine.responsible_user_id,
           current_site_id: machine.current_site_id,
+          expected_return_at: machine.expected_return_at,
         })
         .eq("id", machine.id);
       throw new Error(

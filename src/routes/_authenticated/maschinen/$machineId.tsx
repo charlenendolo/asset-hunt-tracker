@@ -18,7 +18,13 @@ import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
-import { formatCurrency, formatDate, formatDateTime, textOrDash } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatExpectedReturn,
+  textOrDash,
+} from "@/lib/format";
 import {
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
@@ -166,6 +172,11 @@ function MachineDetailPage() {
               <Field label="Seriennummer" value={textOrDash(m.serial_number)} />
               <Field label="Aktueller Standort" value={textOrDash(m.site?.name)} />
               <Field label="Verantwortlich" value={textOrDash(m.responsible?.full_name)} />
+              <Field
+                label="Voraussichtlich benötigt bis"
+                value={formatExpectedReturn(m.expected_return_at) ?? "–"}
+              />
+
               <Field label="Anschaffungsdatum" value={formatDate(m.purchase_date)} />
               <Field label="Anschaffungspreis" value={formatCurrency(m.purchase_price)} />
               <Field

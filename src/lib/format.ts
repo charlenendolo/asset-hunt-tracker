@@ -26,6 +26,18 @@ export function formatDateTime(value?: string | null): string {
   return dateTimeFmt.format(d);
 }
 
+/**
+ * "Voraussichtlich benötigt bis" — Uhrzeit wird nur angezeigt, wenn beim
+ * Ausleihen eine Zeit gesetzt wurde (Mitternacht = reine Datumsangabe).
+ */
+export function formatExpectedReturn(value?: string | null): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+  return hasTime ? `${dateTimeFmt.format(d)} Uhr` : dateFmt.format(d);
+}
+
 export function formatNumber(value?: number | null): string {
   if (value === null || value === undefined) return "–";
   return new Intl.NumberFormat("de-DE").format(value);
