@@ -17,12 +17,13 @@ function safeRedirect(value: unknown): string | undefined {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: safeRedirect(search['redirect']),
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const value = safeRedirect(search['redirect']);
+    return value ? { redirect: value } : {};
+  },
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: search.redirect ?? "/dashboard" });
+    if (data.session) throw redirect({ href: search.redirect ?? "/dashboard" });
   },
   head: () => ({
     meta: [
@@ -60,7 +61,7 @@ function AuthPage() {
       setError("Anmeldung fehlgeschlagen. Bitte prüfe E-Mail und Passwort.");
       return;
     }
-    navigate({ to: returnTo ?? "/dashboard", replace: true });
+    navigate({ href: returnTo ?? "/dashboard", replace: true });
   }
 
   return (
