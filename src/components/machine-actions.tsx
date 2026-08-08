@@ -31,8 +31,8 @@ type MachineLike = {
 };
 
 const CONDITIONS = [
-  { value: "ok", label: "In Ordnung" },
-  { value: "minor_issue", label: "Kleiner Mangel" },
+  { value: "good", label: "In Ordnung" },
+  { value: "incomplete", label: "Unvollständig / kleiner Mangel" },
   { value: "damaged", label: "Beschädigt" },
 ];
 

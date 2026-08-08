@@ -22,7 +22,8 @@ const returnSchema = z.object({
   machineId: z.string().uuid(),
   siteId: z.string().uuid().nullable().optional(),
   equipmentComplete: z.boolean(),
-  condition: z.string().max(120).nullable().optional(),
+  // must match DB check constraint movements_condition_check
+  condition: z.enum(["good", "damaged", "incomplete"]).nullable().optional(),
   comment: z.string().max(2000).nullable().optional(),
 });
 
