@@ -191,11 +191,14 @@ function UserDashboard() {
 
   return (
     <AppShell title="Meine Übersicht" description="Deine Geräte auf einen Blick">
-      <p className="mb-5 text-sm text-muted-foreground">
-        {identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
-      </p>
+      <Hero
+        greeting="AssetHunt"
+        headline={identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
+        subline="Hier findest du alles, was dir aktuell zugewiesen ist."
+      />
 
       <MyMachines />
+
 
       <section className="mt-8">
         <h2 className="mb-3 text-base font-medium text-foreground">Meine Reservierungen</h2>
