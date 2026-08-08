@@ -12,6 +12,8 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { MachineActions } from "@/components/machine-actions";
+import { ReserveMachineButton } from "@/components/reserve-machine";
+import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -303,7 +305,18 @@ function MachineDetailPage() {
                 responsible_user_id: m.responsible_user_id,
               }}
             />
+            <ReserveMachineButton
+              className="mt-3 w-full"
+              machine={{
+                id: m.id,
+                name: m.name,
+                asset_code: m.asset_code,
+                current_site_id: m.current_site_id,
+              }}
+            />
           </Section>
+
+          <MachineQrSection machine={{ id: m.id, name: m.name, asset_code: m.asset_code }} />
 
           <Section title="Zubehör">
             {relations.isLoading ? (
