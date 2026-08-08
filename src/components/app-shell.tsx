@@ -212,7 +212,7 @@ export function AppShell({
             >
               <item.icon className="h-5 w-5" strokeWidth={1.75} />
               <span className="w-full truncate text-center">
-                {item.label.split(" ")[0].replace("&", "")}
+                {(item.label.split(" ")[0] ?? item.label).replace("&", "")}
               </span>
             </Link>
           ))}
