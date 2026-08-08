@@ -277,3 +277,32 @@ export const unlockPin = createServerFn({ method: "POST" })
     if (error) throw new Error("Sperre konnte nicht aufgehoben werden.");
     return { ok: true };
   });
+
+/** Reset: issues a fresh start PIN, clears the lockout, forces a change. */
+export const resetPin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => userSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { randomPin, randomSalt, hashPin } = await import("./pin.server");
+
+    const pin = randomPin();
+    const salt = randomSalt();
+    const { error } = await supabaseAdmin
+      .from("employee_logins")
+      .update({
+        pin_hash: await hashPin(pin, salt),
+        pin_salt: salt,
+        pin_set_at: new Date().toISOString(),
+        pin_must_change: true,
+        failed_attempts: 0,
+        lock_count: 0,
+        locked_until: null,
+        enabled: true,
+      })
+      .eq("user_id", data.userId);
+    if (error) throw new Error("PIN konnte nicht zurückgesetzt werden.");
+
+    return { pin };
+  });
