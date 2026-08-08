@@ -293,3 +293,44 @@ export const machinesBySiteCountQuery = queryOptions({
     return counts;
   },
 });
+
+/** Machines the signed-in user is currently responsible for ("Meine Geräte"). */
+export function myMachinesQuery(userId: string | null) {
+  return queryOptions({
+    queryKey: ["machines", "mine", userId],
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("machines")
+        .select(MACHINE_LIST_SELECT)
+        .eq("responsible_user_id", userId!)
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Reservations owned by the signed-in user (reservations.reserved_by). */
+export function myReservationsQuery(userId: string | null) {
+  return queryOptions({
+    queryKey: ["reservations", "mine", userId],
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reservations")
+        .select(
+          "id, start_at, end_at, status, machine:machines(id, name, asset_code), site:sites(id, name)",
+        )
+        .eq("reserved_by", userId!)
+        .gte("end_at", new Date().toISOString())
+        .order("start_at")
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}

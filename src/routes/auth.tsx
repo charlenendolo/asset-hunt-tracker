@@ -46,7 +46,7 @@ function AuthPage() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInError) {
-      setError("Anmeldung fehlgeschlagen. Bitte prüfen Sie E-Mail und Passwort.");
+      setError("Anmeldung fehlgeschlagen. Bitte prüfe E-Mail und Passwort.");
       return;
     }
     navigate({ to: "/dashboard", replace: true });
@@ -61,7 +61,7 @@ function AuthPage() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <h1 className="text-xl font-light tracking-tight text-foreground">Anmelden</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Bitte melden Sie sich mit Ihrem Firmenkonto an.
+            Melde dich mit deinem Firmenkonto an.
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
