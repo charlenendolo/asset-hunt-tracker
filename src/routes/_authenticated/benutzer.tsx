@@ -8,6 +8,8 @@ import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
+import { CreateUserDialog, UserRowActions } from "@/components/user-admin";
+import { useIdentity } from "@/hooks/use-identity";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
   head: () => ({
@@ -35,11 +37,17 @@ function roleTone(role: string) {
 }
 
 function UsersPage() {
+  const identity = useIdentity();
+  const isAdmin = identity.role === "admin";
   const profiles = useQuery(profilesQuery);
   const rows = profiles.data ?? [];
 
   return (
-    <AppShell title="Benutzer" description="Rollen und Zugriff im Team">
+    <AppShell
+      title="Benutzer"
+      description="Rollen und Zugriff im Team"
+      actions={isAdmin ? <CreateUserDialog /> : undefined}
+    >
       {profiles.isError ? (
         <ErrorState message={(profiles.error as Error)?.message} />
       ) : profiles.isLoading ? (
@@ -60,6 +68,7 @@ function UsersPage() {
                   <th className="px-4 py-3">Rolle</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Angelegt</th>
+                  {isAdmin ? <th className="px-4 py-3 text-right">Verwaltung</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -77,6 +86,13 @@ function UsersPage() {
                       </Pill>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(p.created_at)}</td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end">
+                          <UserRowActions user={{ id: p.id, role: p.role, active: p.active }} />
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
