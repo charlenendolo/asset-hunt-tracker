@@ -59,7 +59,7 @@ export async function verifyPin(pin: string, salt: string, hash: string): Promis
 
 /** Rejects only obviously predictable PINs — no password-style complexity rules. */
 export function isWeakPin(pin: string): boolean {
-  if (!/^\d{6}$/.test(pin)) return true;
+  if (!/^\d{4}$/.test(pin)) return true;
   if (/^(\d)\1{5}$/.test(pin)) return true; // 000000, 111111 ...
 
   const digits = pin.split("").map(Number) as number[];

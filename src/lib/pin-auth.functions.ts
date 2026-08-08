@@ -44,7 +44,7 @@ export const listPinEmployees = createServerFn({ method: "GET" }).handler(async 
 
 const loginSchema = z.object({
   ref: z.string().uuid(),
-  pin: z.string().regex(/^\d{6}$/),
+  pin: z.string().regex(/^\d{4}$/),
 });
 
 export const pinLogin = createServerFn({ method: "POST" })
@@ -153,8 +153,8 @@ export const pinLogin = createServerFn({ method: "POST" })
   });
 
 const changeSchema = z.object({
-  currentPin: z.string().regex(/^\d{6}$/),
-  newPin: z.string().regex(/^\d{6}$/),
+  currentPin: z.string().regex(/^\d{4}$/),
+  newPin: z.string().regex(/^\d{4}$/),
 });
 
 export const changeOwnPin = createServerFn({ method: "POST" })
