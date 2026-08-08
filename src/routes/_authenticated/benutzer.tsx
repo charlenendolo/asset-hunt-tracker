@@ -113,7 +113,9 @@ function UsersPage() {
                     {isAdmin ? (
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-end gap-2">
-                          <UserRowActions user={{ id: p.id, role: p.role, active: p.active }} />
+                          <UserRowActions
+                            user={{ id: p.id, role: p.role ?? "user", active: p.active ?? true }}
+                          />
                           <PinAccessActions userId={p.id} />
                         </div>
                       </td>
