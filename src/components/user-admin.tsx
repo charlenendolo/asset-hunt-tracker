@@ -46,23 +46,31 @@ export function CreateUserDialog() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(randomPassword);
   const [role, setRole] = useState<Role>("user");
+  const [withPin, setWithPin] = useState(true);
+  const [newPin, setNewPin] = useState<string | null>(null);
 
   const submit = useServerFn(createEmployeeAccount);
   const mutation = useMutation({
-    mutationFn: async () => submit({ data: { fullName, email, password, role } }),
-    onSuccess: async () => {
+    mutationFn: async () => submit({ data: { fullName, email, password, role, withPin } }),
+    onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["profiles"] });
-      toast.success("Zugang angelegt. Bitte Zugangsdaten an die Person weitergeben.");
+      await qc.invalidateQueries({ queryKey: ["pin-access"] });
+      await qc.invalidateQueries({ queryKey: ["account-emails"] });
+      const pin = (result as { pin?: string | null }).pin ?? null;
+      if (pin) setNewPin(pin);
+      else toast.success("Zugang angelegt. Bitte Zugangsdaten an die Person weitergeben.");
       setOpen(false);
       setFullName("");
       setEmail("");
       setPassword(randomPassword());
       setRole("user");
+      setWithPin(true);
     },
     onError: (e: Error) => toast.error(e.message || "Zugang konnte nicht angelegt werden."),
   });
 
-  const invalid = fullName.trim().length < 2 || !email.includes("@") || password.length < 8;
+  const emailInvalid = email.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(email.trim());
+  const invalid = fullName.trim().length < 2 || emailInvalid || password.length < 8;
 
   return (
     <>
@@ -89,14 +97,18 @@ export function CreateUserDialog() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u-mail">E-Mail</Label>
+              <Label htmlFor="u-mail">E-Mail (optional)</Label>
               <Input
                 id="u-mail"
                 type="email"
                 className="h-11"
+                placeholder="Nur für Büro/Admin nötig"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Ohne E-Mail meldet sich die Person ausschließlich mit Auswahl + PIN an.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="u-role">Rolle</Label>
@@ -113,6 +125,15 @@ export function CreateUserDialog() {
                 ))}
               </select>
             </div>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={withPin}
+                onChange={(e) => setWithPin(e.target.checked)}
+              />
+              PIN-Zugang aktivieren
+            </label>
             <div className="space-y-1.5">
               <Label htmlFor="u-pass">Startpasswort</Label>
               <div className="flex gap-2">
@@ -142,6 +163,24 @@ export function CreateUserDialog() {
               {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Anlegen
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!newPin} onOpenChange={(o) => (!o ? setNewPin(null) : undefined)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start-PIN</DialogTitle>
+            <DialogDescription>
+              Dieser PIN wird genau einmal angezeigt. Gib ihn persönlich weiter — beim ersten Login
+              muss die Person einen eigenen PIN setzen.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="rounded-lg border border-border bg-muted/40 py-4 text-center font-mono text-2xl tracking-[0.4em]">
+            {newPin}
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setNewPin(null)}>Verstanden</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
