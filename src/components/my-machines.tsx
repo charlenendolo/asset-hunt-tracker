@@ -66,6 +66,11 @@ export function MyMachines({ heading = true }: { heading?: boolean }) {
                   <p className="truncate text-xs text-muted-foreground">
                     {textOrDash(m.category?.name)}
                   </p>
+                  {formatExpectedReturn(m.expected_return_at) ? (
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Voraussichtlich bis {formatExpectedReturn(m.expected_return_at)}
+                    </p>
+                  ) : null}
                 </div>
               </Link>
             </li>
