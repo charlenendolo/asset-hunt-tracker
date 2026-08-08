@@ -43,7 +43,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
 
   async function submitLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!ref || pin.length !== 6) return;
+    if (!ref || pin.length !== 4) return;
     setBusy(true);
     setError(null);
     try {
@@ -68,7 +68,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
 
   async function submitChange(e: React.FormEvent) {
     e.preventDefault();
-    if (newPin.length !== 6 || newPin !== repeatPin) {
+    if (newPin.length !== 4 || newPin !== repeatPin) {
       setError("Die beiden PINs stimmen nicht überein.");
       return;
     }
@@ -89,7 +89,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
         <div>
           <h2 className="text-base font-medium text-foreground">Neuen PIN festlegen</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Bevor es weitergeht, vergib bitte einen eigenen 6-stelligen PIN.
+            Bevor es weitergeht, vergib bitte einen eigenen 4-stelligen PIN.
           </p>
         </div>
         <div className="space-y-1.5">
@@ -101,7 +101,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
           <PinInput id="repeat-pin" value={repeatPin} onChange={setRepeatPin} />
         </div>
         {error ? <ErrorLine>{error}</ErrorLine> : null}
-        <Button type="submit" disabled={busy || newPin.length !== 6} className="h-11 w-full">
+        <Button type="submit" disabled={busy || newPin.length !== 4} className="h-11 w-full">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "PIN speichern"}
         </Button>
       </form>
@@ -165,7 +165,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
 
       {error ? <ErrorLine>{error}</ErrorLine> : null}
 
-      <Button type="submit" disabled={busy || !ref || pin.length !== 6} className="h-11 w-full">
+      <Button type="submit" disabled={busy || !ref || pin.length !== 4} className="h-11 w-full">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
       </Button>
     </form>
@@ -186,11 +186,11 @@ function PinInput({
       id={id}
       inputMode="numeric"
       autoComplete="off"
-      maxLength={6}
+      maxLength={4}
       placeholder="••••••"
       className="h-11 text-center font-mono text-lg tracking-[0.5em]"
       value={value}
-      onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
     />
   );
 }

@@ -1,7 +1,7 @@
 /**
  * Server-only PIN helpers. Never imported from client code (filename-blocked).
  *
- * A 6-digit PIN has low entropy, so three things carry the security:
+ * A 4-digit PIN has low entropy, so three things carry the security:
  *   1. PBKDF2-SHA256 with a high iteration count
  *   2. a per-user random salt stored next to the hash
  *   3. a server-side pepper (PIN_PEPPER) that is NOT in the database
@@ -59,8 +59,8 @@ export async function verifyPin(pin: string, salt: string, hash: string): Promis
 
 /** Rejects only obviously predictable PINs — no password-style complexity rules. */
 export function isWeakPin(pin: string): boolean {
-  if (!/^\d{6}$/.test(pin)) return true;
-  if (/^(\d)\1{5}$/.test(pin)) return true; // 000000, 111111 ...
+  if (!/^\d{4}$/.test(pin)) return true;
+  if (/^(\d)\1{3}$/.test(pin)) return true; // 0000, 1111 ...
 
   const digits = pin.split("").map(Number) as number[];
   const ascending = digits.every((d, i) => i === 0 || d === (digits[i - 1]! + 1) % 10);
@@ -70,11 +70,11 @@ export function isWeakPin(pin: string): boolean {
 
 export function randomPin(): string {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    const bytes = crypto.getRandomValues(new Uint32Array(6));
+    const bytes = crypto.getRandomValues(new Uint32Array(4));
     const pin = Array.from(bytes, (b) => b % 10).join("");
     if (!isWeakPin(pin)) return pin;
   }
-  return "482913";
+  return "4829";
 }
 
 export const MAX_FAILED_ATTEMPTS = 5;
