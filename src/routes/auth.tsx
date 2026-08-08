@@ -7,6 +7,8 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PinLoginForm } from "@/components/pin-login-form";
 
 const SAFE_PATH = /^\/[A-Za-z0-9\-_/]*$/;
 
