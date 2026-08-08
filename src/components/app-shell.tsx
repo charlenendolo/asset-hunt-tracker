@@ -116,7 +116,7 @@ function UserBlock() {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{name}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {role === "admin" ? "Administrator" : "Benutzer"}
+          {isLoading ? "" : (ROLE_LABEL[role] ?? "Mitarbeiter")}
         </p>
       </div>
       <button
