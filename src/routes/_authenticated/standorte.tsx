@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { machinesByeSiteCountQuery, sitesQuery } from "@/lib/queries";
+import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
 import { formatNumber, textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/standorte")({
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/standorte")({
 
 function SitesPage() {
   const sites = useQuery(sitesQuery);
-  const counts = useQuery(machinesByeSiteCountQuery);
+  const counts = useQuery(machinesBySiteCountQuery);
 
   return (
     <AppShell

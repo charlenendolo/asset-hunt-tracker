@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
 
@@ -35,6 +36,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStandorteRoute = AuthenticatedStandorteRouteImport.update({
+  id: '/standorte',
+  path: '/standorte',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMaschinenIndexRoute =
   AuthenticatedMaschinenIndexRouteImport.update({
     id: '/maschinen/',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/standorte': typeof AuthenticatedStandorteRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/standorte': typeof AuthenticatedStandorteRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
 }
@@ -68,21 +76,34 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/dashboard' | '/maschinen/$machineId' | '/maschinen/'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/standorte'
+    | '/maschinen/$machineId'
+    | '/maschinen/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/maschinen/$machineId' | '/maschinen'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/standorte'
+    | '/maschinen/$machineId'
+    | '/maschinen'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/standorte'
     | '/_authenticated/maschinen/$machineId'
     | '/_authenticated/maschinen/'
   fileRoutesById: FileRoutesById
@@ -123,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/standorte': {
+      id: '/_authenticated/standorte'
+      path: '/standorte'
+      fullPath: '/standorte'
+      preLoaderRoute: typeof AuthenticatedStandorteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/maschinen/': {
       id: '/_authenticated/maschinen/'
       path: '/maschinen'
@@ -142,12 +170,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
   AuthenticatedMaschinenMachineIdRoute: typeof AuthenticatedMaschinenMachineIdRoute
   AuthenticatedMaschinenIndexRoute: typeof AuthenticatedMaschinenIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
   AuthenticatedMaschinenMachineIdRoute: AuthenticatedMaschinenMachineIdRoute,
   AuthenticatedMaschinenIndexRoute: AuthenticatedMaschinenIndexRoute,
 }

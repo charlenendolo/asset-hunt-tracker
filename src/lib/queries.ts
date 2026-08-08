@@ -272,3 +272,23 @@ export const recentMovementsQuery = queryOptions({
     return data ?? [];
   },
 });
+
+/** Machine counts per site — one lightweight column read, aggregated client-side. */
+export const machinesBySiteCountQuery = queryOptions({
+  queryKey: ["machines", "site-counts"],
+  staleTime: 60 * 1000,
+  queryFn: async (): Promise<Record<string, number>> => {
+    const { data, error } = await supabase
+      .from("machines")
+      .select("current_site_id")
+      .eq("active", true)
+      .limit(5000);
+    if (error) throw error;
+    const counts: Record<string, number> = {};
+    for (const row of data ?? []) {
+      if (!row.current_site_id) continue;
+      counts[row.current_site_id] = (counts[row.current_site_id] ?? 0) + 1;
+    }
+    return counts;
+  },
+});
