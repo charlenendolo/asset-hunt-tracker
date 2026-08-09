@@ -23,13 +23,13 @@ export function PageHeader({
   return (
     <section
       className={cn(
-        "mb-5 rounded-2xl border border-primary/15 bg-primary/6 px-5 py-5 sm:px-6",
+        "mb-5 rounded-2xl border border-border bg-muted/70 px-5 py-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:px-6",
         className,
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             {icon}
           </span>
           <div className="min-w-0">
@@ -65,7 +65,7 @@ export function HeaderStat({
     defect: "text-status-defect",
   };
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
+    <div className="rounded-xl border border-border bg-card px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 text-lg font-medium", tones[tone])}>{value}</p>
     </div>

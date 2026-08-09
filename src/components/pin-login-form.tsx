@@ -1,45 +1,54 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, Search } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { changeOwnPin, listPinEmployees, pinLogin } from "@/lib/pin-auth.functions";
+import { changeOwnPin, pinLogin, searchPinEmployees } from "@/lib/pin-auth.functions";
 
 const GENERIC = "Anmeldung nicht möglich.";
 
 export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
-  const list = useServerFn(listPinEmployees);
+  const search = useServerFn(searchPinEmployees);
   const login = useServerFn(pinLogin);
   const change = useServerFn(changeOwnPin);
 
-  const employees = useQuery({
-    queryKey: ["pin-employees"],
-    staleTime: 60_000,
-    queryFn: async () => list(),
-  });
-
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
   const [ref, setRef] = useState<string | null>(null);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [repeatPin, setRepeatPin] = useState("");
   const [mustChange, setMustChange] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const boxRef = useRef<HTMLDivElement | null>(null);
 
-  const filtered = useMemo(() => {
-    const rows = employees.data ?? [];
-    const q = search.trim().toLowerCase();
-    return q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
-  }, [employees.data, search]);
+  const trimmed = query.trim();
+  // Namen werden ausschließlich geladen, wenn das Dropdown bewusst geöffnet
+  // wurde oder mindestens 2 Zeichen getippt sind – nie beim Seitenaufruf.
+  const enabled = open && (trimmed.length >= 2 || trimmed.length === 0);
+  const employees = useQuery({
+    queryKey: ["pin-employees", trimmed],
+    enabled,
+    staleTime: 30_000,
+    queryFn: async () => search({ data: { query: trimmed } }),
+  });
+  const results = employees.data ?? [];
 
-  const selectedName = (employees.data ?? []).find((r) => r.ref === ref)?.name;
+  useEffect(() => {
+    if (!open) return;
+    function onDown(event: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
 
   async function submitLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -110,38 +119,71 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <form onSubmit={submitLogin} className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-1.5" ref={boxRef}>
         <Label htmlFor="pin-search">Mitarbeiter</Label>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="pin-search"
-            placeholder="Name suchen"
-            className="h-11 pl-9"
-            value={search}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls="pin-employee-list"
+            placeholder="Mitarbeiter suchen…"
+            className="h-11 pr-10 pl-9"
+            value={selectedName ?? query}
             autoComplete="off"
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSelectedName(null);
+              setRef(null);
+              setQuery(e.target.value);
+              setOpen(e.target.value.trim().length >= 2);
+            }}
           />
+          <button
+            type="button"
+            aria-label={open ? "Mitarbeiterliste schließen" : "Mitarbeiterliste öffnen"}
+            onClick={() => {
+              setOpen((prev) => !prev);
+              if (selectedName) {
+                setSelectedName(null);
+                setRef(null);
+                setQuery("");
+              }
+            }}
+            className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+          </button>
         </div>
 
-        {employees.isLoading ? (
-          <Skeleton className="h-32 w-full" />
-        ) : (
-          <div className="max-h-48 overflow-y-auto rounded-md border border-border">
-            {filtered.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-muted-foreground">Keine Auswahl verfügbar.</p>
+        {open ? (
+          <div
+            id="pin-employee-list"
+            className="max-h-56 overflow-y-auto rounded-md border border-border bg-card shadow-sm"
+          >
+            {employees.isLoading ? (
+              <p className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Suche läuft…
+              </p>
+            ) : results.length === 0 ? (
+              <p className="px-3 py-4 text-sm text-muted-foreground">Kein Mitarbeiter gefunden.</p>
             ) : (
               <ul className="divide-y divide-border">
-                {filtered.map((row) => (
+                {results.map((row: { ref: string; name: string }) => (
                   <li key={row.ref}>
                     <button
                       type="button"
-                      onClick={() => setRef(row.ref)}
+                      onClick={() => {
+                        setRef(row.ref);
+                        setSelectedName(row.name);
+                        setQuery(row.name);
+                        setOpen(false);
+                      }}
                       className={cn(
                         "flex w-full items-center justify-between px-3 py-2.5 text-left text-sm",
                         ref === row.ref
-                          ? "bg-primary/5 font-medium text-foreground"
-                          : "text-foreground hover:bg-muted/60",
+                          ? "bg-accent font-medium text-foreground"
+                          : "text-foreground hover:bg-muted",
                       )}
                     >
                       {row.name}
@@ -152,9 +194,6 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
               </ul>
             )}
           </div>
-        )}
-        {selectedName ? (
-          <p className="text-xs text-muted-foreground">Ausgewählt: {selectedName}</p>
         ) : null}
       </div>
 

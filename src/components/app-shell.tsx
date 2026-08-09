@@ -65,8 +65,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           className={cn(
             "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             isActive(item.to)
-              ? "bg-primary/10 text-primary before:absolute before:top-1.5 before:bottom-1.5 before:-left-3 before:w-1 before:rounded-r-full before:bg-primary"
-              : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
+              ? "bg-card text-primary shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-border before:absolute before:top-1.5 before:bottom-1.5 before:-left-3 before:w-1 before:rounded-r-full before:bg-primary"
+              : "text-foreground/70 hover:bg-sidebar-accent hover:text-foreground",
           )}
         >
           <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -109,7 +109,7 @@ function UserBlock() {
     .toUpperCase();
 
   return (
-    <div className="flex items-center gap-3 border-t border-sidebar-border px-3 py-3">
+    <div className="flex items-center gap-3 border-t border-sidebar-border bg-sidebar-accent/40 px-3 py-3">
       <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-medium text-primary">
         {initials || "AH"}
       </div>
@@ -148,7 +148,7 @@ export function AppShell({
     <div className="min-h-screen w-full bg-background">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-        <div className="px-5 py-5">
+        <div className="border-b border-sidebar-border px-5 py-5">
           <Logo />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-4">
@@ -187,7 +187,7 @@ export function AppShell({
       ) : null}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
           <div className="mx-auto grid max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
             <button
               aria-label="Menü öffnen"
@@ -223,7 +223,7 @@ export function AppShell({
               className={cn(
                 "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors",
                 isActive(item.to)
-                  ? "bg-primary/8 text-primary"
+                  ? "bg-accent text-primary"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
