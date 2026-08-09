@@ -20,12 +20,12 @@ export const Route = createFileRoute("/_authenticated/kalender")({
       { title: "Kalender – AssetHunt" },
       {
         name: "description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte.",
+        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
       { property: "og:title", content: "Kalender – AssetHunt" },
       {
         property: "og:description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte.",
+        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
     ],
   }),
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/kalender")({
 
 /* ------------------------------------------------------------------ Helpers */
 
-const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr"];
 const monthFmt = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
 const dayFmt = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" });
 const shortFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit" });
@@ -201,7 +201,7 @@ function CalendarPage() {
     view === "day"
       ? dayFmt.format(cursor)
       : view === "week"
-        ? `${shortFmt.format(startOfWeek(cursor))} – ${shortFmt.format(addDays(startOfWeek(cursor), 6))}`
+        ? `${shortFmt.format(startOfWeek(cursor))} – ${shortFmt.format(addDays(startOfWeek(cursor), 4))}`
         : monthFmt.format(cursor);
 
   return (
@@ -418,7 +418,7 @@ function WeekView({
   machines: MachineRow[];
   events: PlannerEvent[];
 }) {
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const days = Array.from({ length: 5 }, (_, i) => addDays(start, i));
   const today = startOfDay(new Date()).getTime();
 
   const rows = machines
@@ -427,7 +427,7 @@ function WeekView({
       events: events.filter(
         (e) =>
           e.machineId === m.id &&
-          e.start <= days[6]!.getTime() &&
+          e.start <= days[4]!.getTime() &&
           e.end >= days[0]!.getTime(),
       ),
     }))
@@ -439,8 +439,8 @@ function WeekView({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-      <div className="min-w-[820px]">
-        <div className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-border bg-primary/5">
+      <div className="min-w-[680px]">
+        <div className="grid grid-cols-[200px_repeat(5,minmax(0,1fr))] border-b border-border bg-primary/5">
           <div className="px-4 py-3 text-xs font-medium text-muted-foreground">Maschine</div>
           {days.map((d) => (
             <div
@@ -460,7 +460,7 @@ function WeekView({
           {rows.map(({ machine, events: rowEvents }) => (
             <div
               key={machine.id}
-              className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] transition-colors hover:bg-accent/30"
+              className="grid grid-cols-[200px_repeat(5,minmax(0,1fr))] transition-colors hover:bg-accent/30"
             >
               <div className="min-w-0 px-4 py-2.5">
                 <Link
@@ -475,7 +475,7 @@ function WeekView({
                 </span>
               </div>
 
-              <div className="relative col-span-7 grid grid-cols-7 gap-px py-2">
+              <div className="relative col-span-5 grid grid-cols-5 gap-px py-2">
                 {days.map((d) => (
                   <div
                     key={d.toISOString()}
@@ -486,13 +486,13 @@ function WeekView({
                   />
                 ))}
 
-                <div className="pointer-events-none absolute inset-x-0 inset-y-2 grid grid-cols-7 gap-px">
+                <div className="pointer-events-none absolute inset-x-0 inset-y-2 grid grid-cols-5 gap-px">
                   {rowEvents.map((e) => {
                     const from = Math.max(
                       0,
                       Math.round((e.start - days[0]!.getTime()) / DAY),
                     );
-                    const to = Math.min(6, Math.round((e.end - days[0]!.getTime()) / DAY));
+                    const to = Math.min(4, Math.round((e.end - days[0]!.getTime()) / DAY));
                     const span = Math.max(1, to - from + 1);
                     return (
                       <div
@@ -534,19 +534,21 @@ function MonthView({
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const gridStart = startOfWeek(first);
-  const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  const days = Array.from({ length: 6 }, (_, week) =>
+    Array.from({ length: 5 }, (_, day) => addDays(gridStart, week * 7 + day)),
+  ).flat();
   const today = startOfDay(new Date()).getTime();
 
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <div className="grid grid-cols-7 gap-1 pb-1 text-center text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-5 gap-1 pb-1 text-center text-xs font-medium text-muted-foreground">
         {WEEKDAYS.map((d) => (
           <span key={d} className="py-1">
             {d}
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-5 gap-1">
         {days.map((d) => {
           const time = d.getTime();
           const dayEvents = events.filter((e) => e.start <= time && e.end >= time);
