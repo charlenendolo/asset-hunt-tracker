@@ -12,7 +12,7 @@ export function OverdueBadge({
   variant = "short",
   className,
 }: {
-  expectedReturnAt?: string | null;
+  expectedReturnAt?: string | null | undefined;
   variant?: "short" | "full";
   className?: string | undefined;
 }) {
@@ -35,7 +35,7 @@ export function OverdueNotice({
   message,
   className,
 }: {
-  expectedReturnAt?: string | null;
+  expectedReturnAt?: string | null | undefined;
   message?: string | undefined;
   className?: string | undefined;
 }) {
