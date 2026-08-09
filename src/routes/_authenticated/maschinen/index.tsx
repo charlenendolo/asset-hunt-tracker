@@ -99,7 +99,7 @@ function MachinesPage() {
         ) : null
       }
     >
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -117,14 +117,30 @@ function MachinesPage() {
             </option>
           ))}
         </Select>
-        <Select label="Standort" value={siteId} onChange={reset(setSiteId)}>
-          <option value="">Alle Standorte</option>
-          {(sites.data ?? []).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+        <Select
+          label="Standorttyp"
+          value={locationType}
+          onChange={(v) => {
+            reset(setLocationType)(v);
+            setSiteId("");
+          }}
+        >
+          <option value="">Alle Standorttypen</option>
+          {SITE_TYPE_ORDER.map((t) => (
+            <option key={t} value={t}>
+              {SITE_TYPE_LABELS[t]}
             </option>
           ))}
         </Select>
+        <SiteCombobox
+          value={siteId}
+          onChange={reset(setSiteId)}
+          typeFilter={locationType}
+          emptyLabel="Alle Standorte"
+          allowCreate={false}
+          className="h-10 bg-card"
+        />
+
         <Select label="Status" value={status} onChange={reset(setStatus)}>
           <option value="">Alle Status</option>
           {MACHINE_STATUS_ORDER.map((k) => (
