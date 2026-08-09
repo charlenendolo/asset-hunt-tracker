@@ -31,9 +31,10 @@ import {
   formatExpectedReturn,
   textOrDash,
 } from "@/lib/format";
-import {
 import { SiteTypeIcon } from "@/components/site-type-icon";
+import {
   machineStatusKey,
+
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
   DEFECT_STATUS_LABELS,
