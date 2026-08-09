@@ -57,7 +57,7 @@ function ReserveDialog({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
-  const sites = useQuery(sitesQuery);
+  
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
 
