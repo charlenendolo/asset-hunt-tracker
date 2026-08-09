@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
+import { AccessoryDraftList, type AccessoryDraft } from "@/components/accessory-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { createMachine } from "@/lib/machines.functions";
