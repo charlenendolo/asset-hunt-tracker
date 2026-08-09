@@ -16,6 +16,7 @@ import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialo
 import { ReassignResponsibleButton } from "@/components/reassign-responsible";
 import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
+import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { MachinePhotos } from "@/components/machine-photos";
 import { MachineAccessories } from "@/components/machine-accessories";
 import { ReserveMachineButton } from "@/components/reserve-machine";
@@ -117,6 +118,7 @@ function MachineDetailPage() {
   const { machineId } = Route.useParams();
   const identity = useIdentity();
   const machine = useQuery(machineDetailQuery(machineId));
+  const photoUrls = usePrimaryPhotos(machine.data ? [machine.data.id] : [], "full");
   const relations = useQuery(machineRelationsQuery(machineId));
 
   if (machine.isLoading) {
@@ -170,12 +172,21 @@ function MachineDetailPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="grid aspect-[16/7] w-full place-items-center bg-muted text-muted-foreground">
-              <div className="flex flex-col items-center gap-2">
-                <ImageOff className="h-7 w-7" strokeWidth={1.5} />
-                <p className="text-xs">Kein Foto hinterlegt</p>
+            {photoUrls[m.id] ? (
+              <img
+                src={photoUrls[m.id]}
+                alt={m.name}
+                className="aspect-[16/7] w-full object-cover"
+                onError={() => console.error("[machine-photos] Hauptbild konnte nicht geladen werden", m.id)}
+              />
+            ) : (
+              <div className="grid aspect-[16/7] w-full place-items-center bg-muted text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <ImageOff className="h-7 w-7" strokeWidth={1.5} />
+                  <p className="text-xs">Kein Foto hinterlegt</p>
+                </div>
               </div>
-            </div>
+            )}
             <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-3">
               <Field label="Status" value={<StatusBadge status={m.status} />} />
               <Field label="Gerätenummer" value={m.asset_code} />
