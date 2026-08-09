@@ -115,6 +115,22 @@ function SettingsPage() {
           <ThemeSwitch />
         </section>
 
+        {identity.canManage ? (
+          <section className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-1 text-sm font-medium text-foreground">Etiketten & QR-Codes</h2>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Permanente QR-Etiketten für Maschinen erzeugen und im Stapel drucken.
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/etiketten">
+                <QrCode className="mr-2 h-4 w-4" /> Etikettenverwaltung öffnen
+              </Link>
+            </Button>
+          </section>
+        ) : null}
+
+
+
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-foreground">System</h2>
           <Row label="Anwendung" value="Repenning Geräteportal" />
