@@ -122,7 +122,7 @@ function ActionDialog({
   actorName: string;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
-  
+
   const refresh = useRefresh(machine.id);
 
   const [siteId, setSiteId] = useState<string>(machine.current_site_id ?? "");
@@ -173,9 +173,7 @@ function ActionDialog({
     <Dialog open={!!mode} onOpenChange={(o) => (!o && !mutation.isPending ? onClose() : undefined)}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {mode === "checkout" ? "Gerät ausleihen" : "Gerät zurückgeben"}
-          </DialogTitle>
+          <DialogTitle>{mode === "checkout" ? "Gerät ausleihen" : "Gerät zurückgeben"}</DialogTitle>
           <DialogDescription>
             {machine.name} · {machine.asset_code}
           </DialogDescription>
@@ -188,11 +186,8 @@ function ActionDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="site">
-              {mode === "checkout" ? "Standort" : "Rückgabe-Standort"}
-            </Label>
+            <Label htmlFor="site">{mode === "checkout" ? "Standort" : "Rückgabe-Standort"}</Label>
             <SiteCombobox id="site" value={siteId} onChange={setSiteId} className="h-12" />
-
           </div>
 
           {mode === "checkout" ? (
@@ -222,8 +217,6 @@ function ActionDialog({
             </div>
           ) : null}
 
-
-
           <div className="space-y-2">
             <Label>Zubehör</Label>
             {accessories.length === 0 ? (
@@ -231,7 +224,10 @@ function ActionDialog({
             ) : (
               <ul className="divide-y divide-border rounded-md border border-border">
                 {accessories.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                  >
                     <span className="truncate">
                       {a.name}
                       {a.required ? (
