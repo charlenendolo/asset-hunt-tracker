@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, Plus, ImageOff } from "lucide-react";
+import { Search, Container, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
+import { AddMachineButton } from "@/components/machine-form";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentProfile } from "@/hooks/use-profile";
 import { SiteCombobox } from "@/components/site-combobox";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
@@ -61,7 +62,6 @@ function Select({
 }
 
 function MachinesPage() {
-  const { isAdmin } = useCurrentProfile();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
