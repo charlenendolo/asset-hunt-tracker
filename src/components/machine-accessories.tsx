@@ -96,9 +96,7 @@ export function MachineAccessories({ machineId }: { machineId: string }) {
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Checkbox
                       checked={a.required}
-                      onCheckedChange={(v) =>
-                        updateMutation.mutate({ ...a, required: v === true })
-                      }
+                      onCheckedChange={(v) => updateMutation.mutate({ ...a, required: v === true })}
                     />
                     Pflicht
                   </label>

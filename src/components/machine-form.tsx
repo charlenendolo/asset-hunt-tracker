@@ -374,8 +374,8 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
               <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
                 <Label>Zubehör</Label>
                 <p className="text-xs text-muted-foreground">
-                  Wähle bekannte Bezeichnungen aus oder lege neue an. Menge und Pflicht kannst du
-                  je Position anpassen.
+                  Wähle bekannte Bezeichnungen aus oder lege neue an. Menge und Pflicht kannst du je
+                  Position anpassen.
                 </p>
                 <AccessoryDraftList items={accessories} onChange={setAccessories} />
               </div>

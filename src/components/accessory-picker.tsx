@@ -66,7 +66,8 @@ export function AccessoryCombobox({
     const key = normalizeAccessoryName(query);
     return catalog.filter((n) => normalizeAccessoryName(n).includes(key)).slice(0, 20);
   }, [catalog, query]);
-  const exact = query && catalog.some((n) => normalizeAccessoryName(n) === normalizeAccessoryName(query));
+  const exact =
+    query && catalog.some((n) => normalizeAccessoryName(n) === normalizeAccessoryName(query));
 
   function pick(name: string) {
     onPick(canonicalAccessoryName(name, catalog));

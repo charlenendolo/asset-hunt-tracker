@@ -193,7 +193,6 @@ function KpiCard({
   );
 }
 
-
 function DashboardPage() {
   const identity = useIdentity();
   if (identity.isLoading) {
@@ -220,7 +219,6 @@ function UserDashboard() {
       />
 
       <MyMachines />
-
 
       <section className="mt-8">
         <h2 className="mb-3 text-base font-medium text-foreground">Meine Reservierungen</h2>
@@ -375,7 +373,6 @@ function ManagerDashboard() {
         Was braucht heute Aufmerksamkeit?
       </h2>
       <div className="grid gap-4 lg:grid-cols-2">
-
         <Card
           title="Anstehende Reservierungen"
           icon={CalendarClock}
@@ -510,8 +507,8 @@ function ManagerDashboard() {
                         {m.machine?.name ?? "Unbekanntes Gerät"}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {labelFor(MOVEMENT_TYPE_LABELS, m.movement_type)} ·{" "}
-                        {m.to_site?.name ?? "–"} · {formatDateTime(m.created_at)}
+                        {labelFor(MOVEMENT_TYPE_LABELS, m.movement_type)} · {m.to_site?.name ?? "–"}{" "}
+                        · {formatDateTime(m.created_at)}
                       </p>
                     </div>
                     <Pill>{m.performer?.full_name ?? "System"}</Pill>

@@ -21,10 +21,7 @@ export async function insertAccessories(
 ) {
   if (items.length === 0) return { inserted: 0 };
 
-  const { data: catalog } = await supabaseAdmin
-    .from("accessories")
-    .select("name")
-    .limit(2000);
+  const { data: catalog } = await supabaseAdmin.from("accessories").select("name").limit(2000);
   const known: string[] = (catalog ?? []).map((r: { name: string }) => r.name);
 
   const { data: existingRows, error: existingError } = await supabaseAdmin
