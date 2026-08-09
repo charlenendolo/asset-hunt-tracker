@@ -190,19 +190,8 @@ function ActionDialog({
             <Label htmlFor="site">
               {mode === "checkout" ? "Standort" : "Rückgabe-Standort"}
             </Label>
-            <select
-              id="site"
-              value={siteId}
-              onChange={(e) => setSiteId(e.target.value)}
-              className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Kein Standort</option>
-              {(sites.data ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <SiteCombobox id="site" value={siteId} onChange={setSiteId} className="h-12" />
+
           </div>
 
           {mode === "checkout" ? (
