@@ -198,6 +198,7 @@ function MachinesPage() {
               {MACHINE_STATUS_LABELS[k]}
             </option>
           ))}
+          <option value={OVERDUE_FILTER}>Überfällig</option>
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>
