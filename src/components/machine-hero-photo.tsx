@@ -13,7 +13,7 @@ export function MachineHeroPhoto({
   alt,
   className,
 }: {
-  src?: string;
+  src?: string | undefined;
   alt: string;
   className?: string;
 }) {
