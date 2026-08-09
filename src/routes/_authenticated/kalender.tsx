@@ -55,10 +55,6 @@ function startOfWeek(d: Date) {
 function sameDay(a: Date, b: Date) {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
 }
-function isWeekend(d: Date) {
-  const day = d.getDay();
-  return day === 0 || day === 6;
-}
 
 type EventKind = "reservation" | "borrowed" | "maintenance" | "defect";
 
