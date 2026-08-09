@@ -44,7 +44,9 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 function SettingsPage() {
   const { profile, user, isLoading, isAdmin } = useCurrentProfile();
+  const identity = useIdentity();
   const categories = useQuery(categoriesQuery);
+
 
   return (
     <AppShell title="Einstellungen" description="Konto und Systemangaben">
