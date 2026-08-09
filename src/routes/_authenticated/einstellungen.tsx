@@ -2,11 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { AppShell } from "@/components/app-shell";
+import { ChangePasswordForm } from "@/components/change-password";
 import { Pill } from "@/components/status-badge";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { categoriesQuery } from "@/lib/queries";
+import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/einstellungen")({
@@ -64,6 +66,25 @@ function SettingsPage() {
                 }
               />
             </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-1 text-sm font-medium text-foreground">Sicherheit</h2>
+          {isLoading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : isPinOnlyEmail(user?.email ?? null) ? (
+            <p className="py-2 text-sm text-muted-foreground">
+              Dein Zugang läuft über den Mitarbeiter-Login mit Name und PIN. Ein Passwort gibt es
+              hier nicht — deinen PIN kannst du beim Login ändern.
+            </p>
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Passwort ändern für deinen E-Mail-Zugang.
+              </p>
+              <ChangePasswordForm />
+            </>
           )}
         </section>
 

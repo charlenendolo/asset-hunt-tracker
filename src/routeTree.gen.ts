@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PasswortNeuRouteImport } from './routes/passwort-neu'
 import { Route as AuthenticatedBenutzerRouteImport } from './routes/_authenticated/benutzer'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDefekteRouteImport } from './routes/_authenticated/defekte'
@@ -36,6 +37,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasswortNeuRoute = PasswortNeuRouteImport.update({
+  id: '/passwort-neu',
+  path: '/passwort-neu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBenutzerRoute = AuthenticatedBenutzerRouteImport.update({
@@ -101,6 +107,7 @@ const AuthenticatedMaschinenMachineIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/passwort-neu': typeof PasswortNeuRoute
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/defekte': typeof AuthenticatedDefekteRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/passwort-neu': typeof PasswortNeuRoute
   '/benutzer': typeof AuthenticatedBenutzerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/defekte': typeof AuthenticatedDefekteRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/passwort-neu': typeof PasswortNeuRoute
   '/_authenticated/benutzer': typeof AuthenticatedBenutzerRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/defekte': typeof AuthenticatedDefekteRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/passwort-neu'
     | '/benutzer'
     | '/dashboard'
     | '/defekte'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/passwort-neu'
     | '/benutzer'
     | '/dashboard'
     | '/defekte'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/passwort-neu'
     | '/_authenticated/benutzer'
     | '/_authenticated/dashboard'
     | '/_authenticated/defekte'
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PasswortNeuRoute: typeof PasswortNeuRoute
   MaschineMachineIdRoute: typeof MaschineMachineIdRoute
 }
 
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/passwort-neu': {
+      id: '/passwort-neu'
+      path: '/passwort-neu'
+      fullPath: '/passwort-neu'
+      preLoaderRoute: typeof PasswortNeuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/benutzer': {
@@ -337,6 +357,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PasswortNeuRoute: PasswortNeuRoute,
   MaschineMachineIdRoute: MaschineMachineIdRoute,
 }
 export const routeTree = rootRouteImport
