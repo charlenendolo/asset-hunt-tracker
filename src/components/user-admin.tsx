@@ -26,8 +26,7 @@ import {
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
-  { value: "manager", label: "Bauleiter" },
-  { value: "office", label: "Büro" },
+  { value: "site_manager", label: "Bauleiter" },
   { value: "admin", label: "Administrator" },
 ] as const;
 
