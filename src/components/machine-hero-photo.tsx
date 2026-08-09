@@ -54,19 +54,9 @@ export function MachineHeroPhoto({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          showCloseButton={false}
-          className="max-w-[95vw] border-0 bg-background/95 p-2 sm:max-w-3xl"
-        >
+        <DialogContent className="max-w-[95vw] border-0 bg-background/95 p-2 sm:max-w-3xl">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Schließen"
-            className="absolute right-3 top-3 z-10 rounded-md bg-background/80 p-1.5 text-foreground shadow-sm"
-          >
-            <X className="h-4 w-4" />
-          </button>
+
           <img
             src={src}
             alt={alt}
