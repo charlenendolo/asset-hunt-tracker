@@ -397,23 +397,7 @@ function MachineDetailPage() {
           <MachineQrSection machine={{ id: m.id, name: m.name, asset_code: m.asset_code }} />
 
           <Section title="Zubehör">
-            {relations.isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (rel?.accessories.length ?? 0) === 0 ? (
-              <EmptyState className="border-0 py-8" title="Kein Zubehör hinterlegt." />
-            ) : (
-              <ul className="divide-y divide-border">
-                {rel!.accessories.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="min-w-0 truncate text-sm text-foreground">{a.name}</span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      {a.required ? <Pill tone="primary">Pflicht</Pill> : null}
-                      <span className="text-sm text-muted-foreground">{a.quantity}×</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <MachineAccessories machineId={m.id} />
           </Section>
 
           <Section title="Fotos">
