@@ -74,64 +74,13 @@ export const pinLogin = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const {
-      verifyPin,
-      MAX_FAILED_ATTEMPTS,
-      lockDurationMinutes,
-      LOCK_DECAY_HOURS,
-    } = await import("./pin.server");
+    const { verifyEmployeePin } = await import("./pin-verify.server");
 
-    const { data: row } = await supabaseAdmin
-      .from("employee_logins")
-      .select("*")
-      .eq("select_ref", data.ref)
-      .maybeSingle();
-    if (!row || !row.enabled) throw new Error(GENERIC);
-
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("active")
-      .eq("id", row.user_id)
-      .maybeSingle();
-    if (!profile?.active) throw new Error(GENERIC);
-
-    const now = Date.now();
-    if (row.locked_until && new Date(row.locked_until).getTime() > now) throw new Error(GENERIC);
-
-    // lock_count decays entirely after a quiet period.
-    let lockCount = row.lock_count;
-    if (
-      lockCount > 0 &&
-      row.locked_until &&
-      now - new Date(row.locked_until).getTime() > LOCK_DECAY_HOURS * 3_600_000
-    ) {
-      lockCount = 0;
-    }
-
-    const ok = await verifyPin(data.pin, row.pin_salt, row.pin_hash);
-    if (!ok) {
-      const attempts = row.failed_attempts + 1;
-      if (attempts >= MAX_FAILED_ATTEMPTS) {
-        const nextLock = lockCount + 1;
-        await supabaseAdmin
-          .from("employee_logins")
-          .update({
-            failed_attempts: 0,
-            lock_count: nextLock,
-            locked_until: new Date(now + lockDurationMinutes(nextLock) * 60_000).toISOString(),
-          })
-          .eq("user_id", row.user_id);
-      } else {
-        await supabaseAdmin
-          .from("employee_logins")
-          .update({ failed_attempts: attempts, lock_count: lockCount })
-          .eq("user_id", row.user_id);
-      }
-      throw new Error(GENERIC);
-    }
+    const result = await verifyEmployeePin({ select_ref: data.ref }, data.pin);
+    if (!result.ok) throw new Error(GENERIC);
 
     // Full server-side session exchange: the magic-link token never reaches the browser.
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(row.user_id);
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(result.userId);
     const email = authUser?.user?.email;
     if (!email) throw new Error(GENERIC);
 
@@ -154,20 +103,11 @@ export const pinLogin = createServerFn({ method: "POST" })
     });
     if (verifyError || !verified.session) throw new Error(GENERIC);
 
-    await supabaseAdmin
-      .from("employee_logins")
-      .update({
-        failed_attempts: 0,
-        locked_until: null,
-        lock_count: Math.max(0, lockCount - 1),
-        last_success_at: new Date(now).toISOString(),
-      })
-      .eq("user_id", row.user_id);
-
     return {
       accessToken: verified.session.access_token,
       refreshToken: verified.session.refresh_token,
-      mustChangePin: row.pin_must_change,
+      mustChangePin: result.mustChangePin,
+
     };
   });
 
