@@ -119,6 +119,7 @@ function UserBlock() {
           {isLoading ? "" : (ROLE_LABEL[role] ?? "Mitarbeiter")}
         </p>
       </div>
+      <ThemeToggleButton />
       <button
         onClick={handleSignOut}
         aria-label="Abmelden"
