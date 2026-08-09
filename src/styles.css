@@ -126,25 +126,26 @@
 }
 
 .dark {
-  --background: oklch(0.18 0.012 165);
-  --foreground: oklch(0.96 0.003 165);
-  --card: oklch(0.22 0.014 165);
-  --card-foreground: oklch(0.96 0.003 165);
-  --popover: oklch(0.22 0.014 165);
-  --popover-foreground: oklch(0.96 0.003 165);
-  --primary: oklch(0.62 0.09 165.5);
-  --primary-foreground: oklch(0.18 0.012 165);
-  --secondary: oklch(0.26 0.015 165);
-  --secondary-foreground: oklch(0.96 0.003 165);
-  --muted: oklch(0.26 0.015 165);
-  --muted-foreground: oklch(0.7 0.015 165);
-  --accent: oklch(0.28 0.02 165);
-  --accent-foreground: oklch(0.96 0.003 165);
+  /* Hochwertiges Anthrazit statt Schwarz, Jungle Green bleibt Markenfarbe. */
+  --background: oklch(0.2145 0.005 250);
+  --foreground: oklch(0.965 0.002 250);
+  --card: oklch(0.2565 0.006 250);
+  --card-foreground: oklch(0.965 0.002 250);
+  --popover: oklch(0.2565 0.006 250);
+  --popover-foreground: oklch(0.965 0.002 250);
+  --primary: oklch(0.6 0.095 165.5);
+  --primary-foreground: oklch(0.165 0.012 165);
+  --secondary: oklch(0.3125 0.007 250);
+  --secondary-foreground: oklch(0.965 0.002 250);
+  --muted: oklch(0.2955 0.006 250);
+  --muted-foreground: oklch(0.735 0.008 250);
+  --accent: oklch(0.3285 0.008 250);
+  --accent-foreground: oklch(0.965 0.002 250);
   --destructive: oklch(0.62 0.19 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.62 0.09 165.5);
+  --border: oklch(0.3785 0.008 250);
+  --input: oklch(0.4085 0.008 250);
+  --ring: oklch(0.6 0.095 165.5);
   --status-available: oklch(0.68 0.13 155);
   --status-reserved: oklch(0.76 0.14 78);
   --status-borrowed: oklch(0.68 0.13 250);
