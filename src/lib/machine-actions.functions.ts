@@ -125,7 +125,7 @@ export const returnMachine = createServerFn({ method: "POST" })
         .select("id, status, current_site_id, responsible_user_id, expected_return_at")
         .eq("id", data.machineId)
         .maybeSingle(),
-      supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle(),
+      supabaseAdmin.from("profiles").select("role, active").eq("id", userId).maybeSingle(),
     ]);
     if (readError) throw new Error("Gerät konnte nicht geladen werden.");
     if (!machine) throw new Error("Gerät nicht gefunden.");
@@ -142,6 +142,30 @@ export const returnMachine = createServerFn({ method: "POST" })
     if (machine.responsible_user_id !== userId && !isManager) {
       throw new Error("Dieses Gerät ist einer anderen Person zugewiesen.");
     }
+
+    // Mitarbeiter bestätigen die Rückgabe mit ihrem eigenen PIN. Die Prüfung
+    // erfolgt VOR jeder Datenänderung und nutzt die bestehende Serverlogik
+    // (gleicher Salt, Pepper, PBKDF2 und Lockout).
+    if (!isManager) {
+      if (!profile?.active) {
+        throw new Error("Dein Zugang ist deaktiviert. Bitte wende dich an die Verwaltung.");
+      }
+      if (!data.pin) {
+        throw new Error("Bitte bestätige die Rückgabe mit deinem PIN.");
+      }
+      const { verifyEmployeePin } = await import("./pin-verify.server");
+      const check = await verifyEmployeePin({ user_id: userId }, data.pin);
+      if (!check.ok) {
+        if (check.reason === "locked") {
+          throw new Error("PIN vorübergehend gesperrt. Bitte später erneut versuchen.");
+        }
+        if (check.reason === "wrong_pin") {
+          throw new Error("PIN ist nicht korrekt.");
+        }
+        throw new Error("PIN-Zugang ist nicht aktiv. Bitte wende dich an die Verwaltung.");
+      }
+    }
+
 
     const toSiteId = data.siteId ?? machine.current_site_id ?? null;
 
