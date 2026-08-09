@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
 import { checkoutMachine, returnMachine } from "@/lib/machine-actions.functions";
-import { machineRelationsQuery, sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
+import { machineRelationsQuery } from "@/lib/queries";
 import { machineStatusKey } from "@/lib/status";
 
 type MachineLike = {
