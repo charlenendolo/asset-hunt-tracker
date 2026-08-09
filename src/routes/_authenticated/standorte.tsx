@@ -128,6 +128,10 @@ function SitesPage() {
           ))}
         </ul>
       )}
+
+      {identity.canManage ? (
+        <CreateSiteDialog open={createOpen} onOpenChange={setCreateOpen} />
+      ) : null}
     </AppShell>
   );
 }
