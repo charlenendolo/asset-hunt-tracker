@@ -20,12 +20,12 @@ export const Route = createFileRoute("/_authenticated/kalender")({
       { title: "Kalender – AssetHunt" },
       {
         name: "description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte.",
+        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
       { property: "og:title", content: "Kalender – AssetHunt" },
       {
         property: "og:description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte.",
+        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
     ],
   }),
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/kalender")({
 
 /* ------------------------------------------------------------------ Helpers */
 
-const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr"];
 const monthFmt = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
 const dayFmt = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" });
 const shortFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit" });
@@ -54,6 +54,10 @@ function startOfWeek(d: Date) {
 }
 function sameDay(a: Date, b: Date) {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+function isWeekend(d: Date) {
+  const day = d.getDay();
+  return day === 0 || day === 6;
 }
 
 type EventKind = "reservation" | "borrowed" | "maintenance" | "defect";
