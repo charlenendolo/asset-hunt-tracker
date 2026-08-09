@@ -31,13 +31,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/kalender")({
   head: () => ({
     meta: [
-      { title: "Kalender – AssetHunt" },
+      { title: "Kalender – Repenning Geräteportal" },
       {
         name: "description",
         content:
           "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
-      { property: "og:title", content: "Kalender – AssetHunt" },
+      { property: "og:title", content: "Kalender – Repenning Geräteportal" },
       {
         property: "og:description",
         content:

@@ -16,9 +16,9 @@ import { RESERVATION_STATUS_LABELS, labelFor } from "@/lib/status";
 export const Route = createFileRoute("/_authenticated/reservierungen")({
   head: () => ({
     meta: [
-      { title: "Reservierungen – AssetHunt" },
+      { title: "Reservierungen – Repenning Geräteportal" },
       { name: "description", content: "Gerätereservierungen mit Zeitraum, Standort und Status." },
-      { property: "og:title", content: "Reservierungen – AssetHunt" },
+      { property: "og:title", content: "Reservierungen – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Gerätereservierungen mit Zeitraum, Standort und Status.",

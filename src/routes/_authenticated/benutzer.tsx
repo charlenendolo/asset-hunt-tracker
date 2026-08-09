@@ -17,9 +17,9 @@ import { useServerFn } from "@tanstack/react-start";
 export const Route = createFileRoute("/_authenticated/benutzer")({
   head: () => ({
     meta: [
-      { title: "Benutzer – AssetHunt" },
+      { title: "Benutzer – Repenning Geräteportal" },
       { name: "description", content: "Benutzerverwaltung mit Rollen und Status." },
-      { property: "og:title", content: "Benutzer – AssetHunt" },
+      { property: "og:title", content: "Benutzer – Repenning Geräteportal" },
       { property: "og:description", content: "Benutzerverwaltung mit Rollen und Status." },
     ],
   }),

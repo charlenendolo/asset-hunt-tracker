@@ -14,15 +14,15 @@ export const Route = createFileRoute("/passwort-neu")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Neues Passwort festlegen – AssetHunt" },
+      { title: "Neues Passwort festlegen – Repenning Geräteportal" },
       {
         name: "description",
-        content: "Lege nach dem Reset-Link ein neues Passwort für deinen AssetHunt-Zugang fest.",
+        content: "Lege nach dem Reset-Link ein neues Passwort für deinen Repenning Geräteportal-Zugang fest.",
       },
-      { property: "og:title", content: "Neues Passwort festlegen – AssetHunt" },
+      { property: "og:title", content: "Neues Passwort festlegen – Repenning Geräteportal" },
       {
         property: "og:description",
-        content: "Lege nach dem Reset-Link ein neues Passwort für deinen AssetHunt-Zugang fest.",
+        content: "Lege nach dem Reset-Link ein neues Passwort für deinen Repenning Geräteportal-Zugang fest.",
       },
       { name: "robots", content: "noindex" },
     ],

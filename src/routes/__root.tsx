@@ -81,14 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Repenning Geräteportal – Maschinen & Geräte" },
+      { name: "description", content: "Internes Geräteportal von Repenning für Maschinen, Geräte und Reservierungen." },
+      { name: "author", content: "Repenning" },
+      { property: "og:title", content: "Repenning Geräteportal" },
+      { property: "og:description", content: "Internes Geräteportal von Repenning für Maschinen, Geräte und Reservierungen." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

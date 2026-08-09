@@ -18,12 +18,12 @@ import { formatNumber, textOrDash } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/standorte")({
   head: () => ({
     meta: [
-      { title: "Standorte – AssetHunt" },
+      { title: "Standorte – Repenning Geräteportal" },
       {
         name: "description",
         content: "Alle Standorte wie Baustellen, Lager und Werkstätten mit Gerätebestand.",
       },
-      { property: "og:title", content: "Standorte – AssetHunt" },
+      { property: "og:title", content: "Standorte – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Alle Standorte wie Baustellen, Lager und Werkstätten mit Gerätebestand.",

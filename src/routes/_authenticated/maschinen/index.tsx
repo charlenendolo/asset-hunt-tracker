@@ -22,12 +22,12 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   head: () => ({
     meta: [
-      { title: "Maschinen & Geräte – AssetHunt" },
+      { title: "Maschinen & Geräte – Repenning Geräteportal" },
       {
         name: "description",
         content: "Übersicht aller Maschinen und Geräte mit Status, Standort und Verantwortlichen.",
       },
-      { property: "og:title", content: "Maschinen & Geräte – AssetHunt" },
+      { property: "og:title", content: "Maschinen & Geräte – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Übersicht aller Maschinen und Geräte mit Status, Standort und Verantwortlichen.",
