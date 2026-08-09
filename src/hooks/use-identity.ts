@@ -21,7 +21,8 @@ export function useIdentity(): Identity {
   const { user, profile, role, isLoading } = useCurrentProfile();
   const normalized = (role ?? "user").toLowerCase();
   const isAdmin = normalized === "admin";
-  const isSiteManager = normalized === "site_manager" || normalized === "bauleiter";
+  const isSiteManager =
+    normalized === "site_manager" || normalized === "bauleiter" || normalized === "manager";
 
   return {
     userId: profile?.id ?? user?.id ?? null,

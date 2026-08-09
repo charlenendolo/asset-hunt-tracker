@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
 import { createReservation } from "@/lib/reservations.functions";
-import { sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
 
 function localInput(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -57,7 +57,7 @@ function ReserveDialog({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
-  const sites = useQuery(sitesQuery);
+  
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
 
@@ -126,20 +126,9 @@ function ReserveDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="res-site">Standort</Label>
-            <select
-              id="res-site"
-              className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={siteId}
-              onChange={(e) => setSiteId(e.target.value)}
-            >
-              <option value="">Kein Standort</option>
-              {(sites.data ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <SiteCombobox id="res-site" value={siteId} onChange={setSiteId} className="h-11" />
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="res-notes">Kommentar (optional)</Label>
             <Textarea

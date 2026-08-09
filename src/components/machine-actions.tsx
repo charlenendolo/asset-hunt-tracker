@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
 import { checkoutMachine, returnMachine } from "@/lib/machine-actions.functions";
-import { machineRelationsQuery, sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
+import { machineRelationsQuery } from "@/lib/queries";
 import { machineStatusKey } from "@/lib/status";
 
 type MachineLike = {
@@ -121,7 +122,7 @@ function ActionDialog({
   actorName: string;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
-  const sites = useQuery({ ...sitesQuery, enabled: !!mode });
+  
   const refresh = useRefresh(machine.id);
 
   const [siteId, setSiteId] = useState<string>(machine.current_site_id ?? "");
@@ -190,19 +191,8 @@ function ActionDialog({
             <Label htmlFor="site">
               {mode === "checkout" ? "Standort" : "Rückgabe-Standort"}
             </Label>
-            <select
-              id="site"
-              value={siteId}
-              onChange={(e) => setSiteId(e.target.value)}
-              className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Kein Standort</option>
-              {(sites.data ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <SiteCombobox id="site" value={siteId} onChange={setSiteId} className="h-12" />
+
           </div>
 
           {mode === "checkout" ? (

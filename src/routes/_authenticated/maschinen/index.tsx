@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
-import { categoriesQuery, machinesQuery, sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
+import { categoriesQuery, machinesQuery } from "@/lib/queries";
+import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
 
@@ -62,23 +64,23 @@ function MachinesPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [locationType, setLocationType] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
 
   const filters = useMemo(
-    () => ({ search, categoryId, siteId, status, sort, page, pageSize: PAGE_SIZE }),
-    [search, categoryId, siteId, status, sort, page],
+    () => ({ search, categoryId, siteId, locationType, status, sort, page, pageSize: PAGE_SIZE }),
+    [search, categoryId, siteId, locationType, status, sort, page],
   );
 
   const categories = useQuery(categoriesQuery);
-  const sites = useQuery(sitesQuery);
   const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
 
   const rows = machines.data?.rows ?? [];
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilters = !!(search || categoryId || siteId || status);
+  const hasFilters = !!(search || categoryId || siteId || locationType || status);
 
   function reset<T>(setter: (v: T) => void) {
     return (v: T) => {
@@ -99,7 +101,7 @@ function MachinesPage() {
         ) : null
       }
     >
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -117,14 +119,30 @@ function MachinesPage() {
             </option>
           ))}
         </Select>
-        <Select label="Standort" value={siteId} onChange={reset(setSiteId)}>
-          <option value="">Alle Standorte</option>
-          {(sites.data ?? []).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+        <Select
+          label="Standorttyp"
+          value={locationType}
+          onChange={(v) => {
+            reset(setLocationType)(v);
+            setSiteId("");
+          }}
+        >
+          <option value="">Alle Standorttypen</option>
+          {SITE_TYPE_ORDER.map((t) => (
+            <option key={t} value={t}>
+              {SITE_TYPE_LABELS[t]}
             </option>
           ))}
         </Select>
+        <SiteCombobox
+          value={siteId}
+          onChange={reset(setSiteId)}
+          typeFilter={locationType}
+          emptyLabel="Alle Standorte"
+          allowCreate={false}
+          className="h-10 bg-card"
+        />
+
         <Select label="Status" value={status} onChange={reset(setStatus)}>
           <option value="">Alle Status</option>
           {MACHINE_STATUS_ORDER.map((k) => (
