@@ -46,6 +46,8 @@ export type MachineFilters = {
   search: string;
   categoryId: string;
   siteId: string;
+  /** Standorttyp (sites.location_type) — leer = alle Typen. */
+  locationType: string;
   status: string;
   sort: string;
   page: number;
@@ -53,7 +55,7 @@ export type MachineFilters = {
 };
 
 export const MACHINE_LIST_SELECT =
-  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name), responsible:profiles(id, full_name)";
+  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
 
 export function machinesQuery(filters: MachineFilters) {
   return queryOptions({
@@ -73,6 +75,17 @@ export function machinesQuery(filters: MachineFilters) {
       }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
       if (filters.siteId) q = q.eq("current_site_id", filters.siteId);
+      if (filters.locationType && !filters.siteId) {
+        // Standorttyp-Filter über die Standorte des gewählten Typs.
+        const { data: typeSites, error: typeError } = await supabase
+          .from("sites")
+          .select("id")
+          .eq("location_type", filters.locationType);
+        if (typeError) throw typeError;
+        const ids = (typeSites ?? []).map((s) => s.id);
+        if (ids.length === 0) return { rows: [], count: 0 };
+        q = q.in("current_site_id", ids);
+      }
       if (filters.status) q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
 
       const [column, direction] = filters.sort.split(":");
