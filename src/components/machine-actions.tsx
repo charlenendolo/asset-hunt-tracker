@@ -157,7 +157,7 @@ function ActionDialog({
           : null;
         return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
       }
-      return doReturn({ data: payload });
+      return doReturn({ data: { ...payload, pin: pinNeeded ? pin : null } });
     },
     onSuccess: async () => {
       await refresh();
@@ -165,16 +165,20 @@ function ActionDialog({
         mode === "checkout" ? "Gerät erfolgreich ausgeliehen." : "Gerät erfolgreich zurückgegeben.",
       );
       setComment("");
+      setPin("");
       onClose();
     },
     onError: (error: Error) => {
+      setPin("");
       toast.error(error.message || "Vorgang fehlgeschlagen. Bitte erneut versuchen.");
     },
   });
 
   const accessories = relations.data?.accessories ?? [];
   const commentRequired = mode === "return" && (!complete || condition !== "good");
-  const blocked = commentRequired && !comment.trim();
+  const blocked =
+    (commentRequired && !comment.trim()) || (pinNeeded && !/^\d{4}$/.test(pin));
+
 
   return (
     <Dialog open={!!mode} onOpenChange={(o) => (!o && !mutation.isPending ? onClose() : undefined)}>
