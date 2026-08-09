@@ -70,6 +70,7 @@ export const DEFECT_STATUS_LABELS: Record<string, string> = {
 };
 
 export const DEFECT_SEVERITY_LABELS: Record<string, string> = {
+  minor: "Gering",
   low: "Gering",
   normal: "Normal",
   high: "Hoch",
