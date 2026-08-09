@@ -76,7 +76,8 @@ function MachinesPage() {
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
   const [locationType, setLocationType] = useState("");
-  const [status, setStatus] = useState("");
+  const initialStatus = Route.useSearch().status;
+  const [status, setStatus] = useState(initialStatus);
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, true>>({});
