@@ -538,19 +538,21 @@ function MonthView({
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const gridStart = startOfWeek(first);
-  const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  const days = Array.from({ length: 6 }, (_, week) =>
+    Array.from({ length: 5 }, (_, day) => addDays(gridStart, week * 7 + day)),
+  ).flat();
   const today = startOfDay(new Date()).getTime();
 
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <div className="grid grid-cols-7 gap-1 pb-1 text-center text-xs font-medium text-muted-foreground">
+      <div className="grid grid-cols-5 gap-1 pb-1 text-center text-xs font-medium text-muted-foreground">
         {WEEKDAYS.map((d) => (
           <span key={d} className="py-1">
             {d}
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-5 gap-1">
         {days.map((d) => {
           const time = d.getTime();
           const dayEvents = events.filter((e) => e.start <= time && e.end >= time);
