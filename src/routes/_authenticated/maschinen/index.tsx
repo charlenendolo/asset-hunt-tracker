@@ -278,7 +278,12 @@ function MachinesPage() {
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
-                      <StatusBadge status={m.status} />
+                      <div className="flex flex-col items-start gap-1">
+                        <StatusBadge status={m.status} />
+                        {isOverdue(m) ? (
+                          <OverdueBadge expectedReturnAt={m.expected_return_at} />
+                        ) : null}
+                      </div>
                     </td>
 
                     <td className="px-4 py-3">
