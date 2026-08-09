@@ -1,17 +1,33 @@
-export function Logo({ compact = false }: { compact?: boolean }) {
+import logoAsset from "@/assets/repenning-logo.png.asset.json";
+import { cn } from "@/lib/utils";
+
+/**
+ * Zentrale Wortmarke (Repenning Geräteportal). Das Asset enthält bereits den
+ * kompletten Schriftzug — daneben darf kein zusätzlicher Text stehen.
+ *
+ * Das Logo ist für helle Flächen gestaltet, deshalb steht es immer auf einer
+ * ruhigen hellen Logo-Fläche (im Dark Mode als dezente Karte sichtbar).
+ */
+export function Logo({
+  compact = false,
+  className,
+}: {
+  /** Kompakte Variante für schmale Sidebar / Mobile-Header. */
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <div className="flex min-w-0 items-center gap-2.5">
-      <span
-        aria-hidden
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-primary"
-      >
-        <span className="block h-3 w-3 rotate-45 rounded-[3px] border-2 border-primary-foreground" />
-      </span>
-      {!compact ? (
-        <span className="min-w-0 truncate text-[15px] font-medium tracking-tight text-foreground">
-          Repenning Geräteportal
-        </span>
-      ) : null}
-    </div>
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-lg bg-white px-2.5 py-1.5 dark:border dark:border-border",
+        className,
+      )}
+    >
+      <img
+        src={logoAsset.url}
+        alt="Repenning Geräteportal"
+        className={cn("w-auto object-contain", compact ? "h-6" : "h-8")}
+      />
+    </span>
   );
 }
