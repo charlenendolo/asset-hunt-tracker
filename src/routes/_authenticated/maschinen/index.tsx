@@ -95,7 +95,6 @@ function MachinesPage() {
     <AppShell
       title="Maschinen & Geräte"
       description={total > 0 ? `${formatNumber(total)} Einträge` : undefined}
-      actions={<AddMachineButton className="h-10 font-medium" />}
     >
       <PageHeader
         icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
