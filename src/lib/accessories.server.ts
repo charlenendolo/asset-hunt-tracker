@@ -1,10 +1,11 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { normalizeAccessoryName } from "./accessory-name";
+import type { Database } from "@/integrations/supabase/types";
 
 type Item = { name: string; quantity: number; required: boolean };
 
-type AdminClient = {
-  from: (table: "accessories") => any;
-};
+type AdminClient = SupabaseClient<Database>;
 
 /**
  * Fügt Zubehör für eine Maschine ein und verhindert Dubletten:
