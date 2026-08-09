@@ -244,14 +244,39 @@ export const openDefectsQuery = queryOptions({
     const { data, error } = await supabase
       .from("defects")
       .select(
-        "id, description, severity, status, created_at, machine:machines(id, name, asset_code), site:sites(id, name), reporter:profiles!defects_reported_by_fkey(id, full_name)",
+        "id, description, severity, status, created_at, resolved_at, machine:machines(id, name, asset_code, status), site:sites(id, name), reporter:profiles!defects_reported_by_fkey(id, full_name), resolver:profiles!defects_resolved_by_fkey(id, full_name)",
       )
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(200);
     if (error) throw error;
     return data ?? [];
   },
 });
+
+/**
+ * Geräte mit Status "defekt", zu denen kein offener Defektvorgang existiert.
+ * Reine Lesekonsistenzprüfung — es werden keine Daten erzeugt.
+ */
+export const defectInconsistenciesQuery = queryOptions({
+  queryKey: ["defects", "inconsistencies"],
+  staleTime: 60 * 1000,
+  queryFn: async () => {
+    const [machines, open] = await Promise.all([
+      supabase
+        .from("machines")
+        .select("id, name, asset_code, current_site_id, site:sites(id, name)")
+        .eq("status", "defective")
+        .eq("active", true)
+        .limit(500),
+      supabase.from("defects").select("machine_id").neq("status", "resolved").limit(1000),
+    ]);
+    if (machines.error) throw machines.error;
+    if (open.error) throw open.error;
+    const withDefect = new Set((open.data ?? []).map((d) => d.machine_id));
+    return (machines.data ?? []).filter((m) => !withDefect.has(m.id));
+  },
+});
+
 
 export const maintenanceQuery = queryOptions({
   queryKey: ["maintenance", "list"],
