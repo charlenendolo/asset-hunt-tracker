@@ -172,21 +172,8 @@ function MachineDetailPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-border bg-card">
-            {photoUrls[m.id] ? (
-              <img
-                src={photoUrls[m.id]}
-                alt={m.name}
-                className="aspect-[16/7] w-full object-cover"
-                onError={() => console.error("[machine-photos] Hauptbild konnte nicht geladen werden", m.id)}
-              />
-            ) : (
-              <div className="grid aspect-[16/7] w-full place-items-center bg-muted text-muted-foreground">
-                <div className="flex flex-col items-center gap-2">
-                  <ImageOff className="h-7 w-7" strokeWidth={1.5} />
-                  <p className="text-xs">Kein Foto hinterlegt</p>
-                </div>
-              </div>
-            )}
+            <MachineHeroPhoto src={photoUrls[m.id]} alt={m.name} />
+
             <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-3">
               <Field label="Status" value={<StatusBadge status={m.status} />} />
               <Field label="Gerätenummer" value={m.asset_code} />
