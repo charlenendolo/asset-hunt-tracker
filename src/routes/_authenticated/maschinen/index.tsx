@@ -62,23 +62,23 @@ function MachinesPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [locationType, setLocationType] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
 
   const filters = useMemo(
-    () => ({ search, categoryId, siteId, status, sort, page, pageSize: PAGE_SIZE }),
-    [search, categoryId, siteId, status, sort, page],
+    () => ({ search, categoryId, siteId, locationType, status, sort, page, pageSize: PAGE_SIZE }),
+    [search, categoryId, siteId, locationType, status, sort, page],
   );
 
   const categories = useQuery(categoriesQuery);
-  const sites = useQuery(sitesQuery);
   const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
 
   const rows = machines.data?.rows ?? [];
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilters = !!(search || categoryId || siteId || status);
+  const hasFilters = !!(search || categoryId || siteId || locationType || status);
 
   function reset<T>(setter: (v: T) => void) {
     return (v: T) => {
