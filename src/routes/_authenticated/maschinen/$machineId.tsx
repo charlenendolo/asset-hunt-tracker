@@ -12,6 +12,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { MachineActions } from "@/components/machine-actions";
+import { MachinePhotos } from "@/components/machine-photos";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
@@ -350,22 +351,7 @@ function MachineDetailPage() {
           </Section>
 
           <Section title="Fotos">
-            {relations.isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (rel?.photos.length ?? 0) === 0 ? (
-              <EmptyState className="border-0 py-8" title="Noch keine Fotos hinterlegt." />
-            ) : (
-              <ul className="grid grid-cols-3 gap-2">
-                {rel!.photos.map((p) => (
-                  <li
-                    key={p.id}
-                    className="grid aspect-square place-items-center rounded-md border border-border bg-muted text-xs text-muted-foreground"
-                  >
-                    <ImageOff className="h-4 w-4" strokeWidth={1.5} />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <MachinePhotos machineId={m.id} />
           </Section>
 
           <Section title="Weitere Module">
