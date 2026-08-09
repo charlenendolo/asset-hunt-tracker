@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordAdminActions } from "@/components/password-admin";
 import { createEmployeeAccount, updateEmployeeAccount } from "@/lib/users.functions";
 import { setupEmployeeAccess, setupManagerAccess } from "@/lib/access.functions";
 import {
@@ -464,6 +465,8 @@ export function UserRowActions({
         />
       ) : null}
       <EmployeeAccessDialog userId={user.id} open={employeeOpen} onOpenChange={setEmployeeOpen} />
+      {/* Passwort-Aktionen nur bei echtem E-Mail-Zugang; PIN-Nutzer behalten die PIN-Verwaltung. */}
+      {email ? <PasswordAdminActions userId={user.id} email={email} /> : null}
     </div>
   );
 }
