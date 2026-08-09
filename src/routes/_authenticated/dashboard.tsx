@@ -582,3 +582,72 @@ function ListSkeleton() {
     </div>
   );
 }
+
+/**
+ * Kompakte Liste der abgeleitet überfälligen Geräte (ausgeliehen +
+ * Rückgabefrist überschritten). Kein gespeicherter Status, rein berechnet.
+ */
+function OverdueSection({
+  machines,
+  nextReservation,
+  loading,
+}: {
+  machines: Array<{
+    id: string;
+    name: string;
+    asset_code: string;
+    expected_return_at?: string | null;
+    site?: { name: string } | null;
+    responsible?: { full_name: string | null } | null;
+  }>;
+  nextReservation: Record<string, string>;
+  loading?: boolean;
+}) {
+  return (
+    <section id="ueberfaellig" className="mt-8">
+      <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Überfällige Geräte
+      </h2>
+      {loading ? (
+        <ListSkeleton />
+      ) : machines.length === 0 ? (
+        <EmptyState
+          icon={<CircleCheck className="h-6 w-6" strokeWidth={1.5} />}
+          title="Keine überfälligen Geräte."
+        />
+      ) : (
+        <ul className="divide-y divide-destructive/20 overflow-hidden rounded-xl border border-destructive/30 bg-destructive/5">
+          {machines.map((m) => (
+            <li key={m.id} className="px-4 py-3">
+              <Link
+                to="/maschinen/$machineId"
+                params={{ machineId: m.id }}
+                className="flex flex-wrap items-start justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {m.name} <span className="text-muted-foreground">· {m.asset_code}</span>
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    Verantwortlich: {m.responsible?.full_name ?? "–"} · Standort:{" "}
+                    {m.site?.name ?? "–"}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    Rückgabe erwartet: {formatExpectedReturn(m.expected_return_at) ?? "–"}
+                    {nextReservation[m.id]
+                      ? ` · nächste Reservierung ab ${formatDate(nextReservation[m.id])}`
+                      : ""}
+                  </p>
+                </div>
+                <span className="flex flex-col items-end gap-1">
+                  <OverdueBadge expectedReturnAt={m.expected_return_at} variant="full" />
+                  <span className="sr-only">{overdueLabel(m.expected_return_at)}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
