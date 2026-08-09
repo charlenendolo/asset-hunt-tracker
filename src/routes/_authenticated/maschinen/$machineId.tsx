@@ -18,6 +18,8 @@ import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { MachinePhotos } from "@/components/machine-photos";
+import { MachineHeroPhoto } from "@/components/machine-hero-photo";
+
 import { MachineAccessories } from "@/components/machine-accessories";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
