@@ -14,33 +14,52 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GENERIC = "Anmeldung nicht möglich.";
 
-export const listPinEmployees = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+/**
+ * Suche nach PIN-Mitarbeitern. Die Liste wird NIE automatisch beim Laden der
+ * Login-Seite gerendert; der Client ruft diese Funktion erst ab 2 Zeichen oder
+ * beim bewussten Öffnen des Dropdowns auf. Es werden ausschließlich Anzeigename
+ * und ein neutraler select_ref zurückgegeben (keine E-Mail, Rolle oder ID).
+ */
+export const searchPinEmployees = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({ query: z.string().max(80).optional() })
+      .catch({ query: "" })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { data, error } = await supabaseAdmin
-    .from("employee_logins")
-    .select("select_ref, profiles!inner(full_name, active)")
-    .eq("enabled", true)
-    .limit(500);
-  if (error) return [] as { ref: string; name: string }[];
+    const { data: rowsRaw, error } = await supabaseAdmin
+      .from("employee_logins")
+      .select("select_ref, profiles!inner(full_name, active)")
+      .eq("enabled", true)
+      .limit(500);
+    if (error) return [] as { ref: string; name: string }[];
 
-  const rows = (data ?? [])
-    .filter((row) => (row.profiles as { active: boolean } | null)?.active)
-    .map((row) => ({
-      ref: row.select_ref as string,
-      name: ((row.profiles as { full_name: string | null } | null)?.full_name ?? "").trim() ||
-        "Mitarbeiter",
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const rows = (rowsRaw ?? [])
+      .filter((row) => (row.profiles as { active: boolean } | null)?.active)
+      .map((row) => ({
+        ref: row.select_ref as string,
+        name:
+          ((row.profiles as { full_name: string | null } | null)?.full_name ?? "").trim() ||
+          "Mitarbeiter",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "de"));
 
-  // Neutral suffix for identical display names — no email, role or id is leaked.
-  const seen = new Map<string, number>();
-  return rows.map((row) => {
-    const count = (seen.get(row.name) ?? 0) + 1;
-    seen.set(row.name, count);
-    return count > 1 ? { ...row, name: `${row.name} (${count})` } : row;
+    // Neutral suffix for identical display names — no email, role or id is leaked.
+    const seen = new Map<string, number>();
+    const labelled = rows.map((row) => {
+      const count = (seen.get(row.name) ?? 0) + 1;
+      seen.set(row.name, count);
+      return count > 1 ? { ...row, name: `${row.name} (${count})` } : row;
+    });
+
+    const q = (data.query ?? "").trim().toLowerCase();
+    const matched = q ? labelled.filter((r) => r.name.toLowerCase().includes(q)) : labelled;
+    return matched.slice(0, 10);
   });
-});
+
 
 const loginSchema = z.object({
   ref: z.string().uuid(),
