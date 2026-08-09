@@ -17,6 +17,7 @@ import { ReassignResponsibleButton } from "@/components/reassign-responsible";
 import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
 import { MachinePhotos } from "@/components/machine-photos";
+import { MachineAccessories } from "@/components/machine-accessories";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
