@@ -81,14 +81,15 @@ function printLabel(machine: Machine, qrDataUrl: string, url: string) {
   * { box-sizing: border-box; }
   body { font-family: Inter, -apple-system, "Segoe UI", sans-serif; margin: 0; color: #101828; }
   .label { width: 62mm; border: 1px solid #101828; border-radius: 3mm; padding: 4mm; text-align: center; }
-  .brand { font-size: 9pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #1E5A4B; }
+  .brand { height: 7mm; width: auto; max-width: 40mm; object-fit: contain; display: block; margin: 0 auto 1mm; }
   .qr { width: 38mm; height: 38mm; margin: 3mm auto 2mm; display: block; }
   .name { font-size: 11pt; font-weight: 600; line-height: 1.2; }
   .code { font-size: 13pt; font-weight: 700; letter-spacing: .04em; margin-top: 1mm; }
   .hint { font-size: 7.5pt; margin-top: 2mm; color: #475467; }
 </style></head><body>
 <div class="label">
-  <div class="brand">Repenning Geräteportal</div>
+  <img class="brand" src="${window.location.origin}${logoAsset.url}" alt="Repenning Geräteportal" />
+
   <img class="qr" src="${qrDataUrl}" alt="QR-Code" />
   <div class="name">${machine.name.replace(/[<>&]/g, "")}</div>
   <div class="code">${machine.asset_code.replace(/[<>&]/g, "")}</div>
