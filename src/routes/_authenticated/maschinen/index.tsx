@@ -26,6 +26,9 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    status: typeof search["status"] === "string" ? (search["status"] as string) : "",
+  }),
   head: () => ({
     meta: [
       { title: "Maschinen & Geräte – Repenning Geräteportal" },
