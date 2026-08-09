@@ -10,19 +10,31 @@ import { machineQrUrl } from "@/lib/app-url";
 /** Zentraler Helfer — jede QR-Erzeugung muss diesen verwenden. */
 export const getMachineQrUrl = (machineId: string): string => machineQrUrl(machineId);
 
-export type LabelFormat = "standard" | "small";
+export type LabelFormat = "standard" | "compact";
 export type PrintMode = "labelprinter" | "a4";
 
 export const LABEL_FORMATS: Record<
   LabelFormat,
-  { key: LabelFormat; label: string; widthMm: number; heightMm: number }
+  { key: LabelFormat; label: string; hint: string; widthMm: number; heightMm: number }
 > = {
-  standard: { key: "standard", label: "Standard – 38 × 30 mm", widthMm: 38, heightMm: 30 },
-  small: { key: "small", label: "Klein – 30 × 20 mm", widthMm: 30, heightMm: 20 },
+  standard: {
+    key: "standard",
+    label: "Standard – 24 mm",
+    hint: "QR + Maschinenname + Gerätenummer",
+    widthMm: 62,
+    heightMm: 24,
+  },
+  compact: {
+    key: "compact",
+    label: "Kompakt – 24 mm",
+    hint: "QR + Gerätenummer",
+    widthMm: 38,
+    heightMm: 24,
+  },
 };
 
 export const PRINT_MODE_LABELS: Record<PrintMode, string> = {
-  labelprinter: "Etikettendrucker",
+  labelprinter: "Etikettendrucker – 24 mm",
   a4: "A4-Bogen",
 };
 
@@ -51,22 +63,18 @@ function escapeHtml(value: string): string {
 /** Monochromes, industrielles Etikett — identisches Markup in Vorschau und Druck. */
 export const LABEL_CSS = `
 .ah-label{box-sizing:border-box;background:#fff;color:#000;font-family:Inter,Arial,Helvetica,sans-serif;
-  display:flex;flex-direction:column;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
+  display:flex;align-items:center;gap:1.6mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
 .ah-label *{box-sizing:border-box;}
-.ah-label--standard{width:38mm;height:30mm;padding:1.6mm 1.8mm;}
-.ah-label--small{width:30mm;height:20mm;padding:1.2mm 1.4mm;}
-.ah-brand{font-size:4.6pt;letter-spacing:.12em;text-transform:uppercase;font-weight:700;line-height:1;}
-.ah-body{display:flex;align-items:center;gap:1.6mm;flex:1;min-height:0;}
-.ah-qr{flex:none;background:#fff;}
-.ah-label--standard .ah-qr{width:19mm;height:19mm;}
-.ah-label--small .ah-qr{width:15mm;height:15mm;}
+.ah-label--standard{width:62mm;height:24mm;padding:1.4mm 2mm;}
+.ah-label--compact{width:38mm;height:24mm;padding:1.4mm 1.6mm;}
+.ah-qr{flex:none;width:21mm;height:21mm;background:#fff;}
 .ah-qr svg{display:block;width:100%;height:100%;shape-rendering:crispEdges;}
-.ah-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:.8mm;}
-.ah-name{font-size:6.6pt;line-height:1.15;font-weight:500;display:-webkit-box;-webkit-line-clamp:3;
+.ah-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:.7mm;}
+.ah-name{font-size:8pt;line-height:1.1;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;
   -webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
-.ah-code{font-size:9.5pt;line-height:1;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
-.ah-label--small .ah-code{font-size:8.5pt;}
-.ah-label--small .ah-brand{font-size:3.8pt;}
+.ah-code{font-size:11pt;line-height:1;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
+.ah-label--compact .ah-code{font-size:10pt;}
+.ah-brand{font-size:5pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;line-height:1;color:#333;}
 `;
 
 /** Reines Label-Markup (ohne Styles) — Basis für Vorschau, Einzel- und Stapeldruck. */
@@ -77,17 +85,15 @@ export function labelMarkup(
 ): string {
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qr = `<div class="ah-qr">${qrSvg}</div>`;
-  if (format === "small") {
-    return `<div class="ah-label ah-label--small"><div class="ah-body">${qr}
-      <div class="ah-info"><div class="ah-code">${code}</div></div></div></div>`;
+  if (format === "compact") {
+    return `<div class="ah-label ah-label--compact">${qr}
+      <div class="ah-info"><div class="ah-code">${code}</div></div></div>`;
   }
-  return `<div class="ah-label ah-label--standard">
-    <div class="ah-brand">Repenning</div>
-    <div class="ah-body">${qr}
-      <div class="ah-info">
-        <div class="ah-name">${escapeHtml(labelName(machine))}</div>
-        <div class="ah-code">${code}</div>
-      </div>
+  return `<div class="ah-label ah-label--standard">${qr}
+    <div class="ah-info">
+      <div class="ah-name">${escapeHtml(labelName(machine))}</div>
+      <div class="ah-code">${code}</div>
+      <div class="ah-brand">Repenning · Geräte</div>
     </div>
   </div>`;
 }
