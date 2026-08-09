@@ -42,8 +42,12 @@ export function useCurrentProfile() {
     profile: query.data ?? null,
     role,
     isAdmin: role === "admin",
-    // Reserved for future, more granular roles (Bauleiter, Büro, Monteur ...).
-    isManager: role === "manager" || role === "bauleiter" || role === "admin",
+    // Bauleiter = site_manager (Legacy-Aliasse bleiben tolerant).
+    isManager:
+      role === "site_manager" ||
+      role === "manager" ||
+      role === "bauleiter" ||
+      role === "admin",
     isLoading: userLoading || query.isLoading,
   };
 }

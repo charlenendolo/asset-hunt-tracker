@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { AppShell } from "@/components/app-shell";
 import { Pill } from "@/components/status-badge";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { categoriesQuery } from "@/lib/queries";
@@ -19,6 +20,12 @@ export const Route = createFileRoute("/_authenticated/einstellungen")({
   }),
   component: SettingsPage,
 });
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrator",
+  site_manager: "Bauleiter",
+  user: "Mitarbeiter",
+};
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -46,7 +53,7 @@ function SettingsPage() {
               <Row label="E-Mail" value={textOrDash(user?.email ?? null)} />
               <Row
                 label="Rolle"
-                value={<Pill tone={isAdmin ? "primary" : "neutral"}>{textOrDash(profile?.role)}</Pill>}
+                value={<Pill tone={isAdmin ? "primary" : "neutral"}>{ROLE_LABELS[profile?.role ?? ""] ?? textOrDash(profile?.role)}</Pill>}
               />
               <Row
                 label="Status"
@@ -77,6 +84,14 @@ function SettingsPage() {
               ))}
             </ul>
           )}
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-1 text-sm font-medium text-foreground">Darstellung</h2>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Wähle, wie AssetHunt auf diesem Gerät angezeigt wird.
+          </p>
+          <ThemeSwitch />
         </section>
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">

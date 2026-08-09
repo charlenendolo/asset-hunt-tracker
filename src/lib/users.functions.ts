@@ -10,7 +10,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * (RLS-scoped is_admin()) before the service-role client is loaded.
  */
 
-const ROLES = ["admin", "office", "manager", "user"] as const;
+// Erlaubte Rollenwerte laut DB-Constraint profiles_role_check.
+const ROLES = ["admin", "site_manager", "user"] as const;
 
 async function assertAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
   const { data } = await supabase.rpc("is_admin");
@@ -134,8 +135,41 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
     if (typeof data.active === "boolean") patch.active = data.active;
     if (Object.keys(patch).length === 0) return { ok: true };
 
+    // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
+    const losesAdmin =
+      (data.role && data.role !== "admin") || data.active === false;
+    if (losesAdmin) {
+      const { data: target } = await supabaseAdmin
+        .from("profiles")
+        .select("role, active")
+        .eq("id", data.userId)
+        .maybeSingle();
+      if (target?.role === "admin" && target.active) {
+        const { count } = await supabaseAdmin
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("role", "admin")
+          .eq("active", true);
+        if ((count ?? 0) <= 1) {
+          throw new Error(
+            "Das ist der letzte aktive Administrator. Lege zuerst einen weiteren Administrator an.",
+          );
+        }
+      }
+    }
+
     const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.userId);
-    if (error) throw new Error("Änderung konnte nicht gespeichert werden.");
+    if (error) {
+      console.error("[users] profile update failed", {
+        userId: data.userId,
+        patch,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw new Error("Änderung konnte nicht gespeichert werden: " + error.message);
+    }
     return { ok: true };
   });
 

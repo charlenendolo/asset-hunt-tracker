@@ -88,8 +88,8 @@ function AuthPage() {
 
           <Tabs defaultValue="pin" className="mt-6">
             <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">Bauleiter</TabsTrigger>
               <TabsTrigger value="pin">Mitarbeiter</TabsTrigger>
-              <TabsTrigger value="email">Büro / Admin</TabsTrigger>
             </TabsList>
 
             <TabsContent value="pin" className="mt-6">

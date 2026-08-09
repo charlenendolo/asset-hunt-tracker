@@ -27,14 +27,13 @@ export const Route = createFileRoute("/_authenticated/benutzer")({
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrator",
-  office: "Büro",
-  manager: "Bauleiter",
+  site_manager: "Bauleiter",
   user: "Mitarbeiter",
 };
 
 function roleTone(role: string) {
   if (role === "admin") return "primary" as const;
-  if (role === "manager" || role === "office") return "warning" as const;
+  if (role === "site_manager") return "warning" as const;
   return "neutral" as const;
 }
 
