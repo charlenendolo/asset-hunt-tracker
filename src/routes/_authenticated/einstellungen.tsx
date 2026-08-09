@@ -1,15 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { QrCode } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChangePasswordForm } from "@/components/change-password";
 import { Pill } from "@/components/status-badge";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
+import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/einstellungen")({
   head: () => ({
@@ -40,7 +44,9 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 function SettingsPage() {
   const { profile, user, isLoading, isAdmin } = useCurrentProfile();
+  const identity = useIdentity();
   const categories = useQuery(categoriesQuery);
+
 
   return (
     <AppShell title="Einstellungen" description="Konto und Systemangaben">
@@ -114,6 +120,22 @@ function SettingsPage() {
           </p>
           <ThemeSwitch />
         </section>
+
+        {identity.canManage ? (
+          <section className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-1 text-sm font-medium text-foreground">Etiketten & QR-Codes</h2>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Permanente QR-Etiketten für Maschinen erzeugen und im Stapel drucken.
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/etiketten">
+                <QrCode className="mr-2 h-4 w-4" /> Etikettenverwaltung öffnen
+              </Link>
+            </Button>
+          </section>
+        ) : null}
+
+
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-foreground">System</h2>

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-import logoAsset from "@/assets/repenning-logo.png.asset.json";
-
-import { Printer, QrCode as QrIcon, Maximize2 } from "lucide-react";
+import { QrCode as QrIcon, Maximize2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { appBaseUrl, isTemporaryBaseUrl, machineQrUrl } from "@/lib/app-url";
+import { PrintLabelButton } from "@/components/label-print";
+import { isTemporaryBaseUrl } from "@/lib/app-url";
+import { getMachineQrUrl } from "@/lib/qr-labels";
 
 function useQrDataUrl(value: string, size: number) {
   const [src, setSrc] = useState<string | null>(null);
@@ -72,42 +72,9 @@ export function QrImage({
 
 type Machine = { id: string; name: string; asset_code: string };
 
-/** Printable equipment label — opened in a separate window so app styles never
- * interfere with label geometry. */
-function printLabel(machine: Machine, qrDataUrl: string, url: string) {
-  const win = window.open("", "_blank", "width=520,height=680");
-  if (!win) return;
-  win.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8" />
-<title>Etikett ${machine.asset_code}</title>
-<style>
-  @page { margin: 8mm; }
-  * { box-sizing: border-box; }
-  body { font-family: Inter, -apple-system, "Segoe UI", sans-serif; margin: 0; color: #101828; }
-  .label { width: 62mm; border: 1px solid #101828; border-radius: 3mm; padding: 4mm; text-align: center; }
-  .brand { height: 7mm; width: auto; max-width: 40mm; object-fit: contain; display: block; margin: 0 auto 1mm; }
-  .qr { width: 38mm; height: 38mm; margin: 3mm auto 2mm; display: block; }
-  .name { font-size: 11pt; font-weight: 600; line-height: 1.2; }
-  .code { font-size: 13pt; font-weight: 700; letter-spacing: .04em; margin-top: 1mm; }
-  .hint { font-size: 7.5pt; margin-top: 2mm; color: #475467; }
-</style></head><body>
-<div class="label">
-  <img class="brand" src="${window.location.origin}${logoAsset.url}" alt="Repenning Geräteportal" />
-
-  <img class="qr" src="${qrDataUrl}" alt="QR-Code" />
-  <div class="name">${machine.name.replace(/[<>&]/g, "")}</div>
-  <div class="code">${machine.asset_code.replace(/[<>&]/g, "")}</div>
-  <div class="hint">Scannen zum Ausleihen / Zurückgeben</div>
-</div>
-<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };<\/script>
-</body></html>`);
-  win.document.close();
-  void url;
-}
-
 export function MachineQrSection({ machine }: { machine: Machine }) {
   const [open, setOpen] = useState(false);
-  const url = machineQrUrl(machine.id);
-  const printSrc = useQrDataUrl(url, 600);
+  const url = getMachineQrUrl(machine.id);
   const temporary = isTemporaryBaseUrl();
 
   return (
@@ -133,14 +100,7 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
             <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
               <Maximize2 className="mr-2 h-4 w-4" /> Vergrößern
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!printSrc}
-              onClick={() => printSrc && printLabel(machine, printSrc, url)}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Etikett drucken
-            </Button>
+            <PrintLabelButton machine={machine} />
           </div>
           {temporary ? (
             <p className="text-xs text-status-defect">
@@ -162,18 +122,10 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
               <QrImage value={url} size={240} />
             </div>
             <p className="break-all text-center text-xs text-muted-foreground">{url}</p>
-            <Button
-              className="w-full"
-              disabled={!printSrc}
-              onClick={() => printSrc && printLabel(machine, printSrc, url)}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Etikett drucken
-            </Button>
+            <PrintLabelButton machine={machine} className="w-full" variant="default" size="default" />
           </div>
         </DialogContent>
       </Dialog>
-
-      <p className="sr-only">{appBaseUrl()}</p>
     </section>
   );
 }
