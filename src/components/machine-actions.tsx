@@ -105,6 +105,7 @@ export function MachineActions({
         machine={machine}
         onClose={() => setOpen(null)}
         actorName={identity.displayName}
+        requiresPin={!identity.canManage}
       />
     </div>
   );
@@ -115,11 +116,13 @@ function ActionDialog({
   machine,
   onClose,
   actorName,
+  requiresPin,
 }: {
   mode: "checkout" | "return" | null;
   machine: MachineLike;
   onClose: () => void;
   actorName: string;
+  requiresPin: boolean;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
 
@@ -131,9 +134,13 @@ function ActionDialog({
   const [comment, setComment] = useState("");
   const [expectedDate, setExpectedDate] = useState("");
   const [expectedTime, setExpectedTime] = useState("");
+  const [pin, setPin] = useState("");
+
+  const pinNeeded = mode === "return" && requiresPin;
 
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
+
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -150,7 +157,7 @@ function ActionDialog({
           : null;
         return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
       }
-      return doReturn({ data: payload });
+      return doReturn({ data: { ...payload, pin: pinNeeded ? pin : null } });
     },
     onSuccess: async () => {
       await refresh();
@@ -158,16 +165,20 @@ function ActionDialog({
         mode === "checkout" ? "Gerät erfolgreich ausgeliehen." : "Gerät erfolgreich zurückgegeben.",
       );
       setComment("");
+      setPin("");
       onClose();
     },
     onError: (error: Error) => {
+      setPin("");
       toast.error(error.message || "Vorgang fehlgeschlagen. Bitte erneut versuchen.");
     },
   });
 
   const accessories = relations.data?.accessories ?? [];
   const commentRequired = mode === "return" && (!complete || condition !== "good");
-  const blocked = commentRequired && !comment.trim();
+  const blocked =
+    (commentRequired && !comment.trim()) || (pinNeeded && !/^\d{4}$/.test(pin));
+
 
   return (
     <Dialog open={!!mode} onOpenChange={(o) => (!o && !mutation.isPending ? onClose() : undefined)}>
@@ -287,7 +298,31 @@ function ActionDialog({
               }
             />
           </div>
+
+          {pinNeeded ? (
+            <div className="space-y-2 rounded-lg border border-border bg-muted/40 px-4 py-4">
+              <Label htmlFor="return-pin" className="text-sm font-semibold">
+                Rückgabe mit PIN bestätigen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Bitte gib deinen 4-stelligen PIN ein.
+              </p>
+              <input
+                id="return-pin"
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="••••"
+                className="h-14 w-full rounded-md border border-input bg-background px-4 text-center text-2xl tracking-[0.6em]"
+              />
+            </div>
+          ) : null}
         </div>
+
 
         <DialogFooter className="mt-2 flex-col gap-2 sm:flex-col">
           <Button
