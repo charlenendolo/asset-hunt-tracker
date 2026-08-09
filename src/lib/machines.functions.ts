@@ -109,6 +109,22 @@ export const createMachine = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error("Maschine konnte nicht angelegt werden: " + error.message);
 
+    // Zubehör gehört zur Anlage: schlägt es fehl, wird die Maschine wieder
+    // entfernt, damit kein unbemerkter Teilzustand entsteht.
+    if (data.accessories.length > 0) {
+      const { insertAccessories } = await import("./accessories.server");
+      try {
+        await insertAccessories(supabaseAdmin, inserted.id, data.accessories);
+      } catch (accessoryError) {
+        await supabaseAdmin.from("accessories").delete().eq("machine_id", inserted.id);
+        await supabaseAdmin.from("machines").delete().eq("id", inserted.id);
+        throw new Error(
+          "Maschine wurde nicht angelegt, weil das Zubehör nicht gespeichert werden konnte: " +
+            (accessoryError as Error).message,
+        );
+      }
+    }
+
     return inserted;
   });
 
