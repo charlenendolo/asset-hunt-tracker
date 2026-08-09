@@ -319,11 +319,18 @@ function MachinesPage() {
           {/* Mobile cards */}
           <ul className="space-y-2 lg:hidden">
             {rows.map((m) => (
-              <li key={m.id}>
+              <li key={m.id} className="flex items-center gap-2">
+                {canSelect ? (
+                  <Checkbox
+                    checked={!!selected[m.id]}
+                    aria-label={`${m.name} auswählen`}
+                    onCheckedChange={(checked) => toggle(m.id, checked === true)}
+                  />
+                ) : null}
                 <Link
                   to="/maschinen/$machineId"
                   params={{ machineId: m.id }}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
                 >
                   <Thumb name={m.name} src={photoUrls[m.id]} />
                   <div className="min-w-0 flex-1">
@@ -341,6 +348,7 @@ function MachinesPage() {
               </li>
             ))}
           </ul>
+
 
           <div className="mt-4 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
