@@ -146,22 +146,19 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
       for (const p of profiles ?? []) names.set(p.id, p.full_name ?? "Unbekannt");
     }
 
-    const { error: updateError } = await supabaseAdmin
+    // Optimistischer Abgleich gegen den zuvor gelesenen Stand.
+    let updateQuery = supabaseAdmin
       .from("machines")
       .update({ responsible_user_id: data.responsibleUserId })
-      .eq("id", machine.id)
-      .eq("responsible_user_id", previousId as never)
-      .select("id")
-      .maybeSingle();
-    // Wenn zuvor niemand verantwortlich war, greift der eq-Filter nicht.
+      .eq("id", machine.id);
+    updateQuery = previousId
+      ? updateQuery.eq("responsible_user_id", previousId)
+      : updateQuery.is("responsible_user_id", null);
+
+    const { data: updated, error: updateError } = await updateQuery.select("id").maybeSingle();
     if (updateError) throw new Error("Änderung fehlgeschlagen: " + updateError.message);
-    if (previousId === null) {
-      const { error: nullUpdateError } = await supabaseAdmin
-        .from("machines")
-        .update({ responsible_user_id: data.responsibleUserId })
-        .eq("id", machine.id)
-        .is("responsible_user_id", null);
-      if (nullUpdateError) throw new Error("Änderung fehlgeschlagen: " + nullUpdateError.message);
+    if (!updated) {
+      throw new Error("Die Verantwortlichkeit wurde zwischenzeitlich geändert. Bitte neu laden.");
     }
 
     const from = previousId ? names.get(previousId) : null;
