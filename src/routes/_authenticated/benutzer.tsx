@@ -50,6 +50,24 @@ function UsersPage() {
     queryFn: async () => fetchEmails(),
   });
   const emailById = new Map((emails.data ?? []).map((e) => [e.id, e.email]));
+  const fetchPinAccess = useServerFn(listPinAccess);
+  const pinAccess = useQuery({
+    queryKey: ["pin-access"],
+    enabled: isAdmin,
+    staleTime: 30_000,
+    queryFn: async () => fetchPinAccess(),
+  });
+  const pinById = new Map((pinAccess.data ?? []).map((p) => [p.user_id, p.enabled]));
+
+  function accessLabel(id: string) {
+    const hasEmail = !!emailById.get(id);
+    const pin = pinById.get(id);
+    if (hasEmail && pin) return { text: "E-Mail aktiv · PIN aktiv", tone: "success" as const };
+    if (hasEmail && pin === false) return { text: "E-Mail aktiv · PIN deaktiviert", tone: "success" as const };
+    if (hasEmail) return { text: "E-Mail", tone: "success" as const };
+    if (pin) return { text: "PIN", tone: "neutral" as const };
+    return { text: "Kein Zugang", tone: "warning" as const };
+  }
 
   return (
     <AppShell
