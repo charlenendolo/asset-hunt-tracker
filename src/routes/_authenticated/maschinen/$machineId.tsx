@@ -175,6 +175,12 @@ function MachineDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
+          {isOverdue(m) ? (
+            <OverdueNotice
+              expectedReturnAt={m.expected_return_at}
+              message={`Rückgabe war für den ${formatExpectedReturn(m.expected_return_at)} vorgesehen. Bitte Rückgabe veranlassen.`}
+            />
+          ) : null}
           <section className="overflow-hidden rounded-xl border border-border bg-card">
             <MachineHeroPhoto src={photoUrls[m.id]} alt={m.name} />
 
