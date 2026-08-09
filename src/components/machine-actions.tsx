@@ -231,8 +231,13 @@ function ActionDialog({
             ) : (
               <ul className="divide-y divide-border rounded-md border border-border">
                 {accessories.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <span className="truncate">{a.name}</span>
+                  <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <span className="truncate">
+                      {a.name}
+                      {a.required ? (
+                        <span className="ml-2 text-xs text-muted-foreground">Pflicht</span>
+                      ) : null}
+                    </span>
                     <span className="text-muted-foreground">{a.quantity}×</span>
                   </li>
                 ))}
