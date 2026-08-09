@@ -68,6 +68,9 @@ export const profilesQuery = queryOptions({
   queryFn: async () => listProfiles(),
 });
 
+/** Pseudo-Statuswert für den abgeleiteten Überfällig-Filter (kein DB-Status). */
+export const OVERDUE_FILTER = "overdue";
+
 export type MachineFilters = {
   search: string;
   categoryId: string;
