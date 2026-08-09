@@ -150,7 +150,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <Logo />
+          <Logo size="fill" />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-4">
           <p className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
@@ -170,7 +170,7 @@ export function AppShell({
           />
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar shadow-xl">
             <div className="flex items-center justify-between px-5 py-5">
-              <Logo />
+              <Logo size="fill" />
               <button
                 aria-label="Menü schließen"
                 onClick={() => setMobileOpen(false)}

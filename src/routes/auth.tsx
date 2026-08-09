@@ -78,7 +78,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
-          <Logo />
+          <Logo size="lg" />
         </div>
         <div className="rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <h1 className="text-xl font-light tracking-tight text-foreground">Anmelden</h1>
@@ -143,7 +143,7 @@ function AuthPage() {
           </Tabs>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Repenning Geräteportal · Interne Geräte- und Maschinenverwaltung
+          Interne Geräte- und Maschinenverwaltung
         </p>
       </div>
     </div>
