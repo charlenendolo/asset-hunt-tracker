@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Printer, Download, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Printer, Download, AlertTriangle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,11 +31,13 @@ import { cn } from "@/lib/utils";
 function OptionButton({
   active,
   onClick,
-  children,
+  title,
+  hint,
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  title: string;
+  hint?: string;
 }) {
   return (
     <button
@@ -43,13 +45,14 @@ function OptionButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+        "flex-1 rounded-lg border px-3 py-2.5 text-left transition-colors",
         active
           ? "border-primary bg-primary/10 text-primary"
           : "border-border bg-card text-foreground/80 hover:bg-accent/50",
       )}
     >
-      {children}
+      <span className="block text-sm font-medium">{title}</span>
+      {hint ? <span className="block text-xs text-muted-foreground">{hint}</span> : null}
     </button>
   );
 }
@@ -63,8 +66,26 @@ function download(name: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
+export async function downloadQrSvg(machine: LabelMachine, svg: string) {
+  download(qrFileName(machine, "svg"), new Blob([svg], { type: "image/svg+xml" }));
+}
+
+export async function downloadQrPng(machine: LabelMachine) {
+  const { default: QRCode } = await import("qrcode");
+  const dataUrl = await QRCode.toDataURL(getMachineQrUrl(machine.id), {
+    width: 1024,
+    margin: 2,
+    errorCorrectionLevel: "M",
+    color: { dark: "#000000", light: "#FFFFFF" },
+  });
+  const res = await fetch(dataUrl);
+  download(qrFileName(machine, "png"), await res.blob());
+}
+
+type Step = "format" | "mode" | "preview";
+
 /**
- * Vorschau + Druck für ein oder mehrere Etiketten.
+ * Admin-Workflow: Format → Druckmodus → Vorschau → Drucken.
  * Gedruckt wird ausschließlich über ein separates Druckfenster, damit weder
  * Navigation, Buttons noch Dialog-Hintergrund im Ausdruck erscheinen.
  */
@@ -79,14 +100,20 @@ export function LabelPrintDialog({
 }) {
   const [format, setFormat] = useState<LabelFormat>("standard");
   const [mode, setMode] = useState<PrintMode>("labelprinter");
+  const [step, setStep] = useState<Step>("format");
+
+  useEffect(() => {
+    if (open) setStep("format");
+  }, [open]);
 
   const printable = useMemo(() => machines.filter(isPrintable), [machines]);
   const incomplete = useMemo(() => machines.filter((m) => !isPrintable(m)), [machines]);
   const single = machines.length === 1 ? machines[0] : undefined;
 
+  // QR-Codes erst erzeugen, wenn die Vorschau wirklich gebraucht wird.
   const ids = useMemo(
-    () => (open ? printable.slice(0, 500).map((m) => m.id) : []),
-    [open, printable],
+    () => (open && step === "preview" ? printable.slice(0, 1000).map((m) => m.id) : []),
+    [open, step, printable],
   );
   const { svgs, failed, isLoading } = useMachineQrSvgs(ids);
 
@@ -110,28 +137,6 @@ export function LabelPrintDialog({
     toast.success(`${ready.length} Etikett${ready.length === 1 ? "" : "en"} an den Druck übergeben.`);
   }
 
-  function handleDownloadSvg() {
-    if (!single || !svgs[single.id]) return;
-    download(qrFileName(single, "svg"), new Blob([svgs[single.id]!], { type: "image/svg+xml" }));
-  }
-
-  async function handleDownloadPng() {
-    if (!single || !svgs[single.id]) return;
-    try {
-      const { default: QRCode } = await import("qrcode");
-      const dataUrl = await QRCode.toDataURL(getMachineQrUrl(single.id), {
-        width: 1024,
-        margin: 2,
-        errorCorrectionLevel: "M",
-        color: { dark: "#000000", light: "#FFFFFF" },
-      });
-      const res = await fetch(dataUrl);
-      download(qrFileName(single, "png"), await res.blob());
-    } catch {
-      toast.error("PNG konnte nicht erzeugt werden.");
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -145,43 +150,21 @@ export function LabelPrintDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Format</p>
-            <div className="flex flex-wrap gap-2">
-              {Object.values(LABEL_FORMATS).map((f) => (
-                <OptionButton
-                  key={f.key}
-                  active={format === f.key}
-                  onClick={() => setFormat(f.key)}
-                >
-                  {f.label}
-                </OptionButton>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Druckmodus</p>
-            <div className="flex flex-wrap gap-2">
-              <OptionButton
-                active={mode === "labelprinter"}
-                onClick={() => setMode("labelprinter")}
-              >
-                {PRINT_MODE_LABELS.labelprinter}
-              </OptionButton>
-              <OptionButton active={mode === "a4"} onClick={() => setMode("a4")}>
-                Auf A4-Bogen drucken
-              </OptionButton>
-            </div>
-          </div>
-
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
             <p>
-              Etiketten: <span className="font-medium text-foreground">{ready.length}</span> ·
-              Format:{" "}
-              <span className="font-medium text-foreground">{LABEL_FORMATS[format].label}</span> ·
-              Druckmodus:{" "}
-              <span className="font-medium text-foreground">{PRINT_MODE_LABELS[mode]}</span>
+              <span className="font-medium text-foreground">{machines.length}</span> Maschine
+              {machines.length === 1 ? "" : "n"} ausgewählt ·{" "}
+              <span className="font-medium text-foreground">{printable.length}</span> Etikett
+              {printable.length === 1 ? "" : "en"} druckbereit
+              {incomplete.length > 0 ? (
+                <>
+                  {" "}
+                  ·{" "}
+                  <span className="font-medium text-status-defect">
+                    {incomplete.length} ohne Gerätenummer
+                  </span>
+                </>
+              ) : null}
             </p>
             {single ? (
               <p className="mt-1 break-all">Ziel-URL: {getMachineQrUrl(single.id)}</p>
@@ -191,8 +174,7 @@ export function LabelPrintDialog({
           {incomplete.length > 0 ? (
             <div className="rounded-lg border border-status-defect/40 bg-status-defect/10 p-3 text-xs">
               <p className="flex items-center gap-1.5 font-medium text-status-defect">
-                <AlertTriangle className="h-3.5 w-3.5" /> {incomplete.length} Gerät
-                {incomplete.length === 1 ? "" : "e"} ohne Gerätenummer – wird nicht gedruckt.
+                <AlertTriangle className="h-3.5 w-3.5" /> Gerätenummer fehlt – wird nicht gedruckt.
               </p>
               <ul className="mt-1 list-inside list-disc text-muted-foreground">
                 {incomplete.slice(0, 8).map((m) => (
@@ -202,65 +184,104 @@ export function LabelPrintDialog({
             </div>
           ) : null}
 
-          {failed.length > 0 ? (
-            <p className="text-xs text-status-defect">
-              {failed.length} QR-Code konnte nicht erzeugt werden.
-            </p>
+          {step === "format" ? (
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Etikettenformat</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {Object.values(LABEL_FORMATS).map((f) => (
+                  <OptionButton
+                    key={f.key}
+                    active={format === f.key}
+                    onClick={() => setFormat(f.key)}
+                    title={f.label}
+                    hint={f.hint}
+                  />
+                ))}
+              </div>
+            </div>
           ) : null}
 
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Vorschau {ready.length > preview.length ? `(erste ${preview.length})` : ""}
-            </p>
-            <div className="flex flex-wrap gap-3 rounded-lg border border-border bg-white p-3">
-              {isLoading && preview.length === 0 ? (
-                <p className="text-xs text-muted-foreground">QR-Codes werden erzeugt …</p>
-              ) : preview.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Keine druckbaren Etiketten.</p>
-              ) : (
-                preview.map((m) => (
-                  <MachineQrLabel key={m.id} machine={m} format={format} qrSvg={svgs[m.id]} />
-                ))
-              )}
+          {step === "mode" ? (
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Druckmodus</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <OptionButton
+                  active={mode === "labelprinter"}
+                  onClick={() => setMode("labelprinter")}
+                  title={PRINT_MODE_LABELS.labelprinter}
+                  hint="Endlos-Etikettenband, ein Etikett pro Seite"
+                />
+                <OptionButton
+                  active={mode === "a4"}
+                  onClick={() => setMode("a4")}
+                  title="A4-Bogen"
+                  hint="Raster für normale Bürodrucker"
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          {single ? (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!svgs[single.id]}
-                onClick={handleDownloadSvg}
-              >
-                <Download className="mr-2 h-4 w-4" /> QR-Code als SVG
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!svgs[single.id]}
-                onClick={() => void handleDownloadPng()}
-              >
-                <Download className="mr-2 h-4 w-4" /> PNG
-              </Button>
+          {step === "preview" ? (
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Druckvorschau · {ready.length} Etikett{ready.length === 1 ? "" : "en"} ·{" "}
+                {LABEL_FORMATS[format].label} · {PRINT_MODE_LABELS[mode]}
+                {ready.length > preview.length ? ` (erste ${preview.length} dargestellt)` : ""}
+              </p>
+              <div className="flex flex-wrap gap-3 overflow-x-auto rounded-lg border border-border bg-white p-3">
+                {isLoading && preview.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">QR-Codes werden erzeugt …</p>
+                ) : preview.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Keine druckbaren Etiketten.</p>
+                ) : (
+                  preview.map((m) => (
+                    <MachineQrLabel key={m.id} machine={m} format={format} qrSvg={svgs[m.id]} />
+                  ))
+                )}
+              </div>
+              {failed.length > 0 ? (
+                <p className="mt-2 text-xs text-status-defect">
+                  {failed.length} QR-Code konnte nicht erzeugt werden.
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>
 
         <DialogFooter className="gap-2 sm:justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Abbrechen
-          </Button>
-          <Button onClick={handlePrint} disabled={ready.length === 0}>
-            <Printer className="mr-2 h-4 w-4" /> Drucken
-          </Button>
+          {step === "format" ? (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={() => setStep("mode")} disabled={printable.length === 0}>
+                Weiter
+              </Button>
+            </>
+          ) : step === "mode" ? (
+            <>
+              <Button variant="outline" onClick={() => setStep("format")}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
+              </Button>
+              <Button onClick={() => setStep("preview")}>Druckvorschau</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setStep("mode")}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
+              </Button>
+              <Button onClick={handlePrint} disabled={ready.length === 0}>
+                <Printer className="mr-2 h-4 w-4" /> Drucken
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-/** Einzeldruck aus dem Gerätepass — öffnet immer zuerst die Vorschau. */
+/** Einzeldruck-Shortcut (nur Admin) — öffnet immer zuerst die Vorschau. */
 export function PrintLabelButton({
   machine,
   className,
@@ -280,5 +301,36 @@ export function PrintLabelButton({
       </Button>
       <LabelPrintDialog machines={[machine]} open={open} onOpenChange={setOpen} />
     </>
+  );
+}
+
+/** Einzelner QR-Download (SVG/PNG) — bewusst getrennt vom Etikettendruck. */
+export function QrDownloadButtons({
+  machine,
+  svg,
+}: {
+  machine: LabelMachine;
+  svg: string | undefined;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!svg}
+        onClick={() => void downloadQrSvg(machine, svg!)}
+      >
+        <Download className="mr-2 h-4 w-4" /> QR-Code herunterladen (SVG)
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          void downloadQrPng(machine).catch(() => toast.error("PNG konnte nicht erzeugt werden."))
+        }
+      >
+        <Download className="mr-2 h-4 w-4" /> PNG
+      </Button>
+    </div>
   );
 }
