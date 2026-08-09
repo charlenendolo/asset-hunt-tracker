@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEmployeeAccount, updateEmployeeAccount } from "@/lib/users.functions";
+import { setupEmployeeAccess, setupManagerAccess } from "@/lib/access.functions";
 import {
   disablePinAccess,
   enablePinAccess,
@@ -187,13 +188,211 @@ export function CreateUserDialog() {
   );
 }
 
+/** Dialog: Bauleiter-/Administrator-Zugang (E-Mail + Passwort) einrichten. */
+export function ManagerAccessDialog({
+  userId,
+  role,
+  email,
+  open,
+  onOpenChange,
+}: {
+  userId: string;
+  role: "site_manager" | "admin";
+  email: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const submit = useServerFn(setupManagerAccess);
+  const [mail, setMail] = useState(email ?? "");
+  const [password, setPassword] = useState(randomPassword);
+  const [done, setDone] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async () =>
+      submit({ data: { userId, role, email: mail.trim(), password } }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["profiles"] });
+      await qc.invalidateQueries({ queryKey: ["pin-access"] });
+      await qc.invalidateQueries({ queryKey: ["account-emails"] });
+      setDone(password);
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message || "Zugang konnte nicht eingerichtet werden."),
+  });
+
+  const invalid = !/^\S+@\S+\.\S+$/.test(mail.trim()) || password.length < 8;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(o) => (!mutation.isPending ? onOpenChange(o) : undefined)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bauleiter-Zugang einrichten</DialogTitle>
+            <DialogDescription>
+              Dieser Benutzer meldet sich künftig über „Bauleiter“ mit E-Mail und Passwort an. Ein
+              vorhandener PIN-Zugang wird erst danach deaktiviert.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="m-mail">Geschäftliche E-Mail</Label>
+              <Input
+                id="m-mail"
+                type="email"
+                className="h-11"
+                value={mail}
+                onChange={(e) => setMail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="m-pass">Startpasswort</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="m-pass"
+                  className="h-11 font-mono"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  onClick={() => setPassword(randomPassword())}
+                >
+                  Neu
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Das Passwort wird nur einmal angezeigt und nirgends gespeichert.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={() => mutation.mutate()} disabled={invalid || mutation.isPending}>
+              {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Zugang einrichten
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!done} onOpenChange={(o) => (!o ? setDone(null) : undefined)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Startpasswort</DialogTitle>
+            <DialogDescription>
+              Bitte persönlich weitergeben. Die Person kann es nach der Anmeldung ändern.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="rounded-lg border border-border bg-muted/40 px-3 py-4 text-center font-mono text-lg break-all">
+            {done}
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setDone(null)}>Verstanden</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/** Dialog: Mitarbeiter-Zugang (Name + PIN) einrichten bzw. reaktivieren. */
+function EmployeeAccessDialog({
+  userId,
+  open,
+  onOpenChange,
+}: {
+  userId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const submit = useServerFn(setupEmployeeAccess);
+  const [pin, setPin] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async () => submit({ data: { userId } }),
+    onSuccess: async (result) => {
+      await qc.invalidateQueries({ queryKey: ["profiles"] });
+      await qc.invalidateQueries({ queryKey: ["pin-access"] });
+      setPin((result as { pin: string }).pin);
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message || "Zugang konnte nicht eingerichtet werden."),
+  });
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(o) => (!mutation.isPending ? onOpenChange(o) : undefined)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mitarbeiter-Zugang einrichten</DialogTitle>
+            <DialogDescription>
+              Diese Person meldet sich künftig über „Mitarbeiter“ mit Namensauswahl und PIN an. Der
+              Start-PIN wird einmalig angezeigt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+              {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              PIN erstellen &amp; Rolle setzen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pin} onOpenChange={(o) => (!o ? setPin(null) : undefined)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start-PIN</DialogTitle>
+            <DialogDescription>
+              Dieser PIN wird genau einmal angezeigt. Beim ersten Login muss die Person einen
+              eigenen PIN setzen.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="rounded-lg border border-border bg-muted/40 py-4 text-center font-mono text-2xl tracking-[0.4em]">
+            {pin}
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setPin(null)}>Verstanden</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function UserRowActions({
   user,
+  email,
+  pinEnabled,
 }: {
   user: { id: string; role: string; active: boolean };
+  email?: string | null;
+  pinEnabled?: boolean;
 }) {
   const qc = useQueryClient();
   const submit = useServerFn(updateEmployeeAccount);
+  const [managerRole, setManagerRole] = useState<"site_manager" | "admin" | null>(null);
+  const [employeeOpen, setEmployeeOpen] = useState(false);
+
   const mutation = useMutation({
     mutationFn: async (patch: { role?: Role; active?: boolean }) =>
       submit({ data: { userId: user.id, ...patch } }),
@@ -204,14 +403,32 @@ export function UserRowActions({
     onError: (e: Error) => toast.error(e.message || "Änderung fehlgeschlagen."),
   });
 
+  const needsEmailLogin = user.role === "site_manager" || user.role === "admin";
+  const missingManagerLogin = needsEmailLogin && !email;
+
+  function onRoleChange(next: Role) {
+    if (next === user.role) return;
+    // Rolle und Zugang bleiben konsistent: fehlt der passende Login, führt ein
+    // Dialog durch die Einrichtung und setzt die Rolle erst danach.
+    if ((next === "site_manager" || next === "admin") && !email) {
+      setManagerRole(next);
+      return;
+    }
+    if (next === "user" && !pinEnabled) {
+      setEmployeeOpen(true);
+      return;
+    }
+    mutation.mutate({ role: next });
+  }
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <select
         aria-label="Rolle ändern"
         className="h-9 rounded-md border border-input bg-background px-2 text-sm"
         value={user.role}
         disabled={mutation.isPending}
-        onChange={(e) => mutation.mutate({ role: e.target.value as Role })}
+        onChange={(e) => onRoleChange(e.target.value as Role)}
       >
         {ROLE_OPTIONS.map((r) => (
           <option key={r.value} value={r.value}>
@@ -219,6 +436,15 @@ export function UserRowActions({
           </option>
         ))}
       </select>
+      {missingManagerLogin ? (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setManagerRole(user.role === "admin" ? "admin" : "site_manager")}
+        >
+          Bauleiter-Zugang einrichten
+        </Button>
+      ) : null}
       <Button
         variant="outline"
         size="sm"
@@ -227,6 +453,17 @@ export function UserRowActions({
       >
         {user.active ? "Deaktivieren" : "Aktivieren"}
       </Button>
+
+      {managerRole ? (
+        <ManagerAccessDialog
+          userId={user.id}
+          role={managerRole}
+          email={email ?? null}
+          open
+          onOpenChange={(o) => (!o ? setManagerRole(null) : undefined)}
+        />
+      ) : null}
+      <EmployeeAccessDialog userId={user.id} open={employeeOpen} onOpenChange={setEmployeeOpen} />
     </div>
   );
 }

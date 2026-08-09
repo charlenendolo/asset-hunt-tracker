@@ -11,6 +11,7 @@ import { formatDate, textOrDash } from "@/lib/format";
 import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
 import { useIdentity } from "@/hooks/use-identity";
 import { listAccountEmails } from "@/lib/users.functions";
+import { listPinAccess } from "@/lib/pin-auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
@@ -50,6 +51,24 @@ function UsersPage() {
     queryFn: async () => fetchEmails(),
   });
   const emailById = new Map((emails.data ?? []).map((e) => [e.id, e.email]));
+  const fetchPinAccess = useServerFn(listPinAccess);
+  const pinAccess = useQuery({
+    queryKey: ["pin-access"],
+    enabled: isAdmin,
+    staleTime: 30_000,
+    queryFn: async () => fetchPinAccess(),
+  });
+  const pinById = new Map((pinAccess.data ?? []).map((p) => [p.user_id, p.enabled]));
+
+  function accessLabel(id: string) {
+    const hasEmail = !!emailById.get(id);
+    const pin = pinById.get(id);
+    if (hasEmail && pin) return { text: "E-Mail aktiv · PIN aktiv", tone: "success" as const };
+    if (hasEmail && pin === false) return { text: "E-Mail aktiv · PIN deaktiviert", tone: "success" as const };
+    if (hasEmail) return { text: "E-Mail", tone: "success" as const };
+    if (pin) return { text: "PIN", tone: "neutral" as const };
+    return { text: "Kein Zugang", tone: "warning" as const };
+  }
 
   return (
     <AppShell
@@ -76,6 +95,7 @@ function UsersPage() {
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Rolle</th>
                   {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
+                  {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Angelegt</th>
                   {isAdmin ? <th className="px-4 py-3 text-right">Verwaltung</th> : null}
@@ -99,8 +119,13 @@ function UsersPage() {
                         {emailById.get(p.id) ? (
                           emailById.get(p.id)
                         ) : (
-                          <Pill tone="neutral">PIN-Login</Pill>
+                          <span className="text-muted-foreground">–</span>
                         )}
+                      </td>
+                    ) : null}
+                    {isAdmin ? (
+                      <td className="px-4 py-3">
+                        <Pill tone={accessLabel(p.id).tone}>{accessLabel(p.id).text}</Pill>
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
@@ -114,6 +139,8 @@ function UsersPage() {
                         <div className="flex flex-col items-end gap-2">
                           <UserRowActions
                             user={{ id: p.id, role: p.role ?? "user", active: p.active ?? true }}
+                            email={emailById.get(p.id) ?? null}
+                            pinEnabled={pinById.get(p.id) ?? false}
                           />
                           <PinAccessActions userId={p.id} />
                         </div>
