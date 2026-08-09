@@ -193,14 +193,6 @@ function KpiCard({
   );
 }
 
-const STATUS_DOT: Record<string, string> = {
-  available: "bg-status-available",
-  reserved: "bg-status-reserved",
-  borrowed: "bg-status-borrowed",
-  maintenance: "bg-status-maintenance",
-  defect: "bg-status-defect",
-  unknown: "bg-muted-foreground",
-};
 
 function DashboardPage() {
   const identity = useIdentity();
