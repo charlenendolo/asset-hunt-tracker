@@ -25,6 +25,8 @@ import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
+import { OverdueNotice } from "@/components/overdue-badge";
+import { isOverdue } from "@/lib/overdue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
 import {
