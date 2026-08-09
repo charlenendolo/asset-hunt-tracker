@@ -190,6 +190,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                 className="h-11"
                 onClick={() => {
                   setCreated(null);
+                  setAccessories([]);
                   setForm({ ...EMPTY, siteId: form.siteId, categoryId: form.categoryId });
                 }}
               >
