@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
+import { AccessoryDraftList, type AccessoryDraft } from "@/components/accessory-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { createMachine } from "@/lib/machines.functions";
@@ -114,6 +115,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
   const categories = useQuery(categoriesQuery);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
+  const [accessories, setAccessories] = useState<AccessoryDraft[]>([]);
   const run = useServerFn(createMachine);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -139,12 +141,14 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
           nextInspectionDate: form.nextInspectionDate || null,
           purchaseDate: form.purchaseDate || null,
           purchasePrice: form.purchasePrice ? Number(form.purchasePrice.replace(",", ".")) : null,
+          accessories,
         },
       }),
     onSuccess: async (machine) => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["machines"] }),
         qc.invalidateQueries({ queryKey: ["planner"] }),
+        qc.invalidateQueries({ queryKey: ["accessories", "names"] }),
       ]);
       toast.success("Maschine wurde angelegt.");
       setCreated({ id: machine.id, name: machine.name });
@@ -186,6 +190,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                 className="h-11"
                 onClick={() => {
                   setCreated(null);
+                  setAccessories([]);
                   setForm({ ...EMPTY, siteId: form.siteId, categoryId: form.categoryId });
                 }}
               >
@@ -362,9 +367,18 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                   rows={3}
                   value={form.description}
                   onChange={(e) => set("description", e.target.value)}
-                  placeholder="Besonderheiten, Zubehör, Hinweise"
+                  placeholder="Besonderheiten, Hinweise"
                 />
               </Field>
+
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+                <Label>Zubehör</Label>
+                <p className="text-xs text-muted-foreground">
+                  Wähle bekannte Bezeichnungen aus oder lege neue an. Menge und Pflicht kannst du je
+                  Position anpassen.
+                </p>
+                <AccessoryDraftList items={accessories} onChange={setAccessories} />
+              </div>
             </div>
 
             <DialogFooter className="mt-2 flex-col gap-2 sm:flex-col">

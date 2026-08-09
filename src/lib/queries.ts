@@ -19,6 +19,32 @@ export const categoriesQuery = queryOptions({
   },
 });
 
+/**
+ * Zubehör-Katalog für die Auswahl: eindeutige Bezeichnungen aus den bereits
+ * vorhandenen Zubehördatensätzen (kein eigenes Stammdatenmodell nötig).
+ * Es werden nur Bezeichnungen zurückgegeben, keine Datensätze anderer Maschinen.
+ */
+export const accessoryNamesQuery = queryOptions({
+  queryKey: ["accessories", "names"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("accessories")
+      .select("name")
+      .order("name")
+      .limit(2000);
+    if (error) throw error;
+    const seen = new Map<string, string>();
+    for (const row of data ?? []) {
+      const raw = (row.name ?? "").trim().replace(/\s+/g, " ");
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      if (!seen.has(key)) seen.set(key, raw);
+    }
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "de"));
+  },
+});
+
 export const sitesQuery = queryOptions({
   queryKey: ["sites"],
   staleTime: FIVE_MIN,
