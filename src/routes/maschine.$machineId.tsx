@@ -14,6 +14,8 @@ import { formatDateTime, formatExpectedReturn, textOrDash } from "@/lib/format";
 import { MOVEMENT_TYPE_LABELS, labelFor } from "@/lib/status";
 import { useIdentity } from "@/hooks/use-identity";
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
+import { MachineHeroPhoto } from "@/components/machine-hero-photo";
+
 
 export const Route = createFileRoute("/maschine/$machineId")({
   // Client-only gate: QR scans often arrive logged out. We keep the scanned
