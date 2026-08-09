@@ -582,6 +582,14 @@ export type Database = {
           role: string
         }[]
       }
+      debug_effective_role: {
+        Args: never
+        Returns: {
+          cur_user: string
+          jwt_role: string
+          sess_user: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
