@@ -23,6 +23,7 @@ import { Route as AuthenticatedWartungRouteImport } from './routes/_authenticate
 import { Route as MaschineMachineIdRouteImport } from './routes/maschine.$machineId'
 import { Route as AuthenticatedMaschinenIndexRouteImport } from './routes/_authenticated/maschinen/index'
 import { Route as AuthenticatedMaschinenMachineIdRouteImport } from './routes/_authenticated/maschinen/$machineId'
+import { Route as ApiPublicDiagRoleRouteImport } from './routes/api/public/_diag-role'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -97,6 +98,11 @@ const AuthenticatedMaschinenMachineIdRoute =
     path: '/maschinen/$machineId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicDiagRoleRoute = ApiPublicDiagRoleRouteImport.update({
+  id: '/api/public/_diag-role',
+  path: '/api/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/wartung': typeof AuthenticatedWartungRoute
   '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
+  '/api/public': typeof ApiPublicDiagRoleRoute
   '/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
 export interface FileRoutesByTo {
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/wartung': typeof AuthenticatedWartungRoute
   '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
+  '/api/public': typeof ApiPublicDiagRoleRoute
   '/maschinen': typeof AuthenticatedMaschinenIndexRoute
 }
 export interface FileRoutesById {
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/wartung': typeof AuthenticatedWartungRoute
   '/maschine/$machineId': typeof MaschineMachineIdRoute
   '/_authenticated/maschinen/$machineId': typeof AuthenticatedMaschinenMachineIdRoute
+  '/api/public/_diag-role': typeof ApiPublicDiagRoleRoute
   '/_authenticated/maschinen/': typeof AuthenticatedMaschinenIndexRoute
 }
 export interface FileRouteTypes {
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/wartung'
     | '/maschine/$machineId'
     | '/maschinen/$machineId'
+    | '/api/public'
     | '/maschinen/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/wartung'
     | '/maschine/$machineId'
     | '/maschinen/$machineId'
+    | '/api/public'
     | '/maschinen'
   id:
     | '__root__'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wartung'
     | '/maschine/$machineId'
     | '/_authenticated/maschinen/$machineId'
+    | '/api/public/_diag-role'
     | '/_authenticated/maschinen/'
   fileRoutesById: FileRoutesById
 }
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   MaschineMachineIdRoute: typeof MaschineMachineIdRoute
+  ApiPublicDiagRoleRoute: typeof ApiPublicDiagRoleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMaschinenMachineIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/_diag-role': {
+      id: '/api/public/_diag-role'
+      path: '/api/public'
+      fullPath: '/api/public'
+      preLoaderRoute: typeof ApiPublicDiagRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -338,6 +358,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   MaschineMachineIdRoute: MaschineMachineIdRoute,
+  ApiPublicDiagRoleRoute: ApiPublicDiagRoleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
