@@ -82,8 +82,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrator",
-  office: "Büro",
-  manager: "Bauleiter",
+  site_manager: "Bauleiter",
   user: "Mitarbeiter",
 };
 
