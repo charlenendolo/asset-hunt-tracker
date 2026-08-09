@@ -118,43 +118,64 @@ function Card({
   );
 }
 
+/**
+ * KPI-Karten des Dashboards. Die Statusfarbe bestimmt die gesamte Kartenfläche
+ * (leicht entsättigte Flächen aus Design-Tokens), „Geräte gesamt“ ist die
+ * Jungle-Green-Markenkarte. Bewusst nur hier farbig — Datenflächen bleiben neutral.
+ */
+const KPI_TONES: Record<string, string> = {
+  available:
+    "border-kpi-available-border bg-kpi-available-surface text-kpi-available-ink hover:brightness-[0.98]",
+  reserved:
+    "border-kpi-reserved-border bg-kpi-reserved-surface text-kpi-reserved-ink hover:brightness-[0.98]",
+  borrowed:
+    "border-kpi-borrowed-border bg-kpi-borrowed-surface text-kpi-borrowed-ink hover:brightness-[0.98]",
+  maintenance:
+    "border-kpi-maintenance-border bg-kpi-maintenance-surface text-kpi-maintenance-ink hover:brightness-[0.98]",
+  defect:
+    "border-kpi-defect-border bg-kpi-defect-surface text-kpi-defect-ink hover:brightness-[0.98]",
+};
+
 function KpiCard({
   label,
   value,
-  tone,
+  toneKey,
   loading,
   accent,
+  icon: Icon,
 }: {
   label: string;
   value: number;
-  tone?: string | undefined;
+  toneKey?: string | undefined;
   loading?: boolean | undefined;
   accent?: boolean | undefined;
+  icon?: typeof Container | undefined;
 }) {
+  const tone = accent
+    ? "border-primary bg-primary text-primary-foreground shadow-sm hover:brightness-110"
+    : (toneKey && KPI_TONES[toneKey]) || "border-border bg-card text-foreground hover:bg-accent/40";
+
   return (
     <div
-      className={
-        accent
-          ? "relative overflow-hidden rounded-xl border border-primary/20 bg-primary/6 px-4 py-4"
-          : "relative overflow-hidden rounded-xl border border-border bg-card px-4 py-4"
-      }
+      className={`relative overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone}`}
     >
-      <span
-        aria-hidden
-        className={`absolute inset-y-3 left-0 w-0.5 rounded-full ${
-          accent ? "bg-primary" : (tone ?? "bg-border")
-        }`}
-      />
-      <div className="flex items-center gap-2 pl-2">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold tracking-wide opacity-80">{label}</p>
+        {Icon ? (
+          <span
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+              accent ? "bg-primary-foreground/15" : "bg-current/10"
+            }`}
+          >
+            <Icon className="h-4 w-4 opacity-90" strokeWidth={1.75} />
+          </span>
+        ) : null}
       </div>
       {loading ? (
-        <Skeleton className="ml-2 mt-2 h-8 w-16" />
+        <Skeleton className="mt-2 h-8 w-16 opacity-40" />
       ) : (
         <p
-          className={`mt-1.5 pl-2 text-2xl font-light tracking-tight ${
-            accent ? "text-primary" : "text-foreground"
-          }`}
+          className={`mt-2 tracking-tight ${accent ? "text-3xl font-semibold" : "text-2xl font-semibold"}`}
         >
           {formatNumber(value)}
         </p>
