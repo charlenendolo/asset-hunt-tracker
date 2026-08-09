@@ -118,6 +118,14 @@ function Card({
   );
 }
 
+const KPI_ICONS: Record<string, typeof Container> = {
+  available: CircleCheck,
+  reserved: CalendarClock,
+  borrowed: ArrowRight,
+  maintenance: Wrench,
+  defect: TriangleAlert,
+};
+
 /**
  * KPI-Karten des Dashboards. Die Statusfarbe bestimmt die gesamte Kartenfläche
  * (leicht entsättigte Flächen aus Design-Tokens), „Geräte gesamt“ ist die
