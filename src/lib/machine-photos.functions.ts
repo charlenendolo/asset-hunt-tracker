@@ -69,36 +69,62 @@ export const listMachinePhotos = createServerFn({ method: "POST" })
     }));
   });
 
-/** Hauptbild-Thumbnails für Listen (Maschinenliste, Meine Geräte, QR-Ansicht). */
+/**
+ * Hauptbild je Maschine für Listen und den Gerätepass.
+ * Defensiv: gibt es kein als Hauptbild markiertes Foto, wird das älteste
+ * vorhandene Foto verwendet. Fehlt das Thumbnail im Storage, wird auf das
+ * Originalbild zurückgefallen — so entsteht nie ein falscher Leerzustand.
+ */
 export const primaryPhotoUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ machineIds: z.array(z.string().uuid()).max(200) }).parse(data),
+    z
+      .object({
+        machineIds: z.array(z.string().uuid()).max(200),
+        variant: z.enum(["thumb", "full"]).default("thumb"),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     if (data.machineIds.length === 0) return {} as Record<string, string>;
 
-    const { data: rows } = await context.supabase
+    const { data: rows, error } = await context.supabase
       .from("machine_photos")
-      .select("machine_id, storage_path, is_primary")
+      .select("machine_id, storage_path, is_primary, created_at")
       .in("machine_id", data.machineIds)
-      .eq("is_primary", true);
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error("[machine-photos] primary lookup failed", error);
+      return {} as Record<string, string>;
+    }
 
-    const photos = rows ?? [];
-    if (photos.length === 0) return {} as Record<string, string>;
+    type Row = {
+      machine_id: string;
+      storage_path: string;
+      is_primary: boolean;
+      created_at: string;
+    };
+    const chosen = new Map<string, Row>();
+    for (const row of (rows ?? []) as Row[]) {
+      if (!chosen.has(row.machine_id)) chosen.set(row.machine_id, row);
+    }
+    if (chosen.size === 0) return {} as Record<string, string>;
 
+    const picks = [...chosen.values()];
+    const paths = picks.flatMap((p) => [p.storage_path, thumbPathFor(p.storage_path)]);
     const { data: signed } = await context.supabase.storage
       .from(BUCKET)
-      .createSignedUrls(
-        photos.map((p: { storage_path: string }) => thumbPathFor(p.storage_path)),
-        SIGNED_URL_TTL,
-      );
+      .createSignedUrls(paths, SIGNED_URL_TTL);
     const urls = signedUrlMap(signed);
 
     const result: Record<string, string> = {};
-    for (const p of photos as { machine_id: string; storage_path: string }[]) {
-      const url = urls.get(thumbPathFor(p.storage_path));
+    for (const p of picks) {
+      const thumb = urls.get(thumbPathFor(p.storage_path));
+      const full = urls.get(p.storage_path);
+      const url = data.variant === "full" ? (full ?? thumb) : (thumb ?? full);
       if (url) result[p.machine_id] = url;
+      else console.error("[machine-photos] no signed url for", p.storage_path);
     }
     return result;
   });
