@@ -71,6 +71,12 @@ export function MyMachines({ heading = true }: { heading?: boolean }) {
                     <StatusBadge status={m.status} />
                   </div>
                   <p className="mt-0.5 text-sm text-muted-foreground">{m.asset_code}</p>
+                  {isOverdue(m) ? (
+                    <p className="mt-2 flex items-center gap-1.5 rounded-lg border border-destructive/35 bg-destructive/10 px-2.5 py-1.5 text-xs font-semibold text-destructive">
+                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                      {overdueLabel(m.expected_return_at)} – bitte zurückgeben
+                    </p>
+                  ) : null}
                   <p className="mt-2 truncate text-sm text-foreground">
                     {textOrDash(m.site?.name)}
                   </p>
@@ -81,7 +87,11 @@ export function MyMachines({ heading = true }: { heading?: boolean }) {
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       Voraussichtlich bis {formatExpectedReturn(m.expected_return_at)}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Keine Rückgabe geplant
+                    </p>
+                  )}
                 </div>
               </Link>
             </li>
