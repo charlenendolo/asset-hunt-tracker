@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarClock } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
+import { CancelReservationButton } from "@/components/cancel-reservation";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +33,7 @@ type Row = {
   start_at: string;
   end_at: string;
   status: string | null;
+  reserved_by?: string | null;
   machine: { id: string; name: string; asset_code: string } | null;
   site: { id: string; name: string } | null;
   reserved?: { id: string; full_name: string | null } | null;
@@ -70,7 +73,20 @@ function ReservationList({ rows, showOwner }: { rows: Row[]; showOwner: boolean 
               {showOwner ? ` · ${textOrDash(r.reserved?.full_name)}` : ""}
             </p>
           </div>
-          <Pill>{labelFor(RESERVATION_STATUS_LABELS, r.status)}</Pill>
+          <span className="flex shrink-0 items-center gap-1">
+            <Pill
+              tone={
+                (r.status ?? "").toLowerCase() === "cancelled"
+                  ? "danger"
+                  : (r.status ?? "").toLowerCase() === "confirmed"
+                    ? "success"
+                    : "neutral"
+              }
+            >
+              {labelFor(RESERVATION_STATUS_LABELS, r.status)}
+            </Pill>
+            <CancelReservationButton reservation={r} size="sm" className="h-8 px-2 text-xs" />
+          </span>
         </li>
       ))}
     </ul>
@@ -102,6 +118,12 @@ function ReservationsPage() {
         identity.canManage ? "Geplante Gerätenutzung" : "Deine geplanten und vergangenen Buchungen"
       }
     >
+      <PageHeader
+        icon={<CalendarClock className="h-5 w-5" strokeWidth={1.75} />}
+        title={identity.canManage ? "Reservierungen" : "Meine Reservierungen"}
+        description="Geplante Gerätenutzung. Stornierte Buchungen bleiben in der Historie sichtbar."
+      />
+
       {reservations.isError ? (
         <ErrorState message={(reservations.error as Error)?.message} />
       ) : reservations.isLoading || identity.isLoading ? (
