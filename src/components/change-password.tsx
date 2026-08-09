@@ -32,8 +32,14 @@ export function ChangePasswordForm() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const ruleError = checkPassword(next);
-    if (ruleError) return toast.error(ruleError);
-    if (next !== confirm) return toast.error("Die Passwortbestätigung stimmt nicht überein.");
+    if (ruleError) {
+      toast.error(ruleError);
+      return;
+    }
+    if (next !== confirm) {
+      toast.error("Die Passwortbestätigung stimmt nicht überein.");
+      return;
+    }
     mutation.mutate();
   }
 
