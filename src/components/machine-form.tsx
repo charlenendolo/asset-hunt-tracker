@@ -115,6 +115,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
   const categories = useQuery(categoriesQuery);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
+  const [accessories, setAccessories] = useState<AccessoryDraft[]>([]);
   const run = useServerFn(createMachine);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -140,12 +141,14 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
           nextInspectionDate: form.nextInspectionDate || null,
           purchaseDate: form.purchaseDate || null,
           purchasePrice: form.purchasePrice ? Number(form.purchasePrice.replace(",", ".")) : null,
+          accessories,
         },
       }),
     onSuccess: async (machine) => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["machines"] }),
         qc.invalidateQueries({ queryKey: ["planner"] }),
+        qc.invalidateQueries({ queryKey: ["accessories", "names"] }),
       ]);
       toast.success("Maschine wurde angelegt.");
       setCreated({ id: machine.id, name: machine.name });
