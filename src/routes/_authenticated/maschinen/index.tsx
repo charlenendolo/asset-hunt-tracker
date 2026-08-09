@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, Plus, ImageOff } from "lucide-react";
+import { Search, Container, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
+import { AddMachineButton } from "@/components/machine-form";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentProfile } from "@/hooks/use-profile";
 import { SiteCombobox } from "@/components/site-combobox";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
@@ -61,7 +62,6 @@ function Select({
 }
 
 function MachinesPage() {
-  const { isAdmin } = useCurrentProfile();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
@@ -95,15 +95,17 @@ function MachinesPage() {
     <AppShell
       title="Maschinen & Geräte"
       description={total > 0 ? `${formatNumber(total)} Einträge` : undefined}
-      actions={
-        isAdmin ? (
-          <Button className="h-10 font-medium" disabled>
-            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Maschine hinzufügen</span>
-          </Button>
-        ) : null
-      }
+      actions={<AddMachineButton className="h-10 font-medium" />}
     >
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+      <PageHeader
+        icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
+        title="Maschinen & Geräte"
+        description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
+        actions={<AddMachineButton className="h-10 font-medium" />}
+      />
+
+      <div className="mb-4 grid gap-2 rounded-xl border border-border bg-card/60 p-2 sm:grid-cols-2 xl:grid-cols-6">
+
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input

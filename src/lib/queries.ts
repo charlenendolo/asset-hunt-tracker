@@ -153,7 +153,7 @@ export function machineRelationsQuery(id: string) {
           supabase
             .from("reservations")
             .select(
-              "id, start_at, end_at, status, notes, site:sites(id, name), reserved:profiles(id, full_name)",
+              "id, start_at, end_at, status, notes, reserved_by, site:sites(id, name), reserved:profiles(id, full_name)",
             )
             .eq("machine_id", id)
             .order("start_at", { ascending: false })
@@ -228,7 +228,7 @@ export const allReservationsQuery = queryOptions({
     const { data, error } = await supabase
       .from("reservations")
       .select(
-        "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+        "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
       )
       .order("start_at", { ascending: false })
       .limit(100);
@@ -244,14 +244,39 @@ export const openDefectsQuery = queryOptions({
     const { data, error } = await supabase
       .from("defects")
       .select(
-        "id, description, severity, status, created_at, machine:machines(id, name, asset_code), site:sites(id, name), reporter:profiles!defects_reported_by_fkey(id, full_name)",
+        "id, description, severity, status, created_at, resolved_at, machine:machines(id, name, asset_code, status), site:sites(id, name), reporter:profiles!defects_reported_by_fkey(id, full_name), resolver:profiles!defects_resolved_by_fkey(id, full_name)",
       )
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(200);
     if (error) throw error;
     return data ?? [];
   },
 });
+
+/**
+ * Geräte mit Status "defekt", zu denen kein offener Defektvorgang existiert.
+ * Reine Lesekonsistenzprüfung — es werden keine Daten erzeugt.
+ */
+export const defectInconsistenciesQuery = queryOptions({
+  queryKey: ["defects", "inconsistencies"],
+  staleTime: 60 * 1000,
+  queryFn: async () => {
+    const [machines, open] = await Promise.all([
+      supabase
+        .from("machines")
+        .select("id, name, asset_code, current_site_id, site:sites(id, name)")
+        .eq("status", "defective")
+        .eq("active", true)
+        .limit(500),
+      supabase.from("defects").select("machine_id").neq("status", "resolved").limit(1000),
+    ]);
+    if (machines.error) throw machines.error;
+    if (open.error) throw open.error;
+    const withDefect = new Set((open.data ?? []).map((d) => d.machine_id));
+    return (machines.data ?? []).filter((m) => !withDefect.has(m.id));
+  },
+});
+
 
 export const maintenanceQuery = queryOptions({
   queryKey: ["maintenance", "list"],
@@ -326,7 +351,7 @@ export function myMachinesQuery(userId: string | null) {
 
 /** Reservations owned by the signed-in user (reservations.reserved_by). */
 export const MY_RESERVATION_SELECT =
-  "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code, status, category:machine_categories(id, name)), site:sites(id, name)";
+  "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code, status, category:machine_categories(id, name)), site:sites(id, name)";
 
 export function myReservationsQuery(userId: string | null) {
   return queryOptions({
@@ -361,7 +386,7 @@ export function scopedReservationsQuery(userId: string | null, canSeeAll: boolea
       let q = supabase
         .from("reservations")
         .select(
-          "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+          "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
         )
         .order("start_at", { ascending: false })
         .limit(300);
@@ -369,6 +394,61 @@ export function scopedReservationsQuery(userId: string | null, canSeeAll: boolea
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
+    },
+  });
+}
+
+/**
+ * Datenbasis für den Kalender/Planer: aktive Geräte plus alle belegenden
+ * Vorgänge. Reine Leseabfragen auf bestehende Tabellen.
+ */
+export function plannerQuery(userId: string | null, canSeeAll: boolean) {
+  return queryOptions({
+    queryKey: ["planner", canSeeAll ? "all" : userId],
+    enabled: canSeeAll || !!userId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      let reservationQuery = supabase
+        .from("reservations")
+        .select(
+          "id, machine_id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+        )
+        .neq("status", "cancelled")
+        .order("start_at")
+        .limit(500);
+      if (!canSeeAll) reservationQuery = reservationQuery.eq("reserved_by", userId!);
+
+      const [machines, reservations, defects, maintenance] = await Promise.all([
+        supabase
+          .from("machines")
+          .select(
+            "id, name, asset_code, status, expected_return_at, current_site_id, responsible_user_id, category:machine_categories(id, name), site:sites(id, name), responsible:profiles(id, full_name)",
+          )
+          .eq("active", true)
+          .order("name")
+          .limit(500),
+        reservationQuery,
+        supabase
+          .from("defects")
+          .select("id, machine_id, description, severity, status, created_at")
+          .neq("status", "resolved")
+          .limit(500),
+        supabase
+          .from("maintenance")
+          .select("id, machine_id, maintenance_type, scheduled_date, completed_date, status")
+          .neq("status", "cancelled")
+          .limit(500),
+      ]);
+
+      const firstError = [machines, reservations, defects, maintenance].find((r) => r.error);
+      if (firstError?.error) throw firstError.error;
+
+      return {
+        machines: machines.data ?? [],
+        reservations: reservations.data ?? [],
+        defects: defects.data ?? [],
+        maintenance: maintenance.data ?? [],
+      };
     },
   });
 }
