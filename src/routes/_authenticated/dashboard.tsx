@@ -291,6 +291,11 @@ function ManagerDashboard() {
   const defects = useQuery(openDefectsQuery);
   const maintenance = useQuery(maintenanceQuery);
   const movements = useQuery({ ...recentMovementsQuery, enabled: isAdmin });
+  const managerIdentity = useIdentity();
+  const overdue = useQuery(
+    overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage),
+  );
+  const overdueMachines = overdue.data?.machines ?? [];
 
   const byStatus = (key: string) => {
     const c = counts.data?.counts ?? {};
