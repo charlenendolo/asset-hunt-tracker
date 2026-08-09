@@ -543,6 +543,7 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          location_type: string
           name: string
           site_number: string | null
         }
@@ -551,6 +552,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          location_type?: string
           name: string
           site_number?: string | null
         }
@@ -559,6 +561,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          location_type?: string
           name?: string
           site_number?: string | null
         }
