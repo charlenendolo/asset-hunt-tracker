@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // TEMPORARY diagnostic route — removed immediately after verification.
-export const Route = createFileRoute("/api/public/_diag-role")({
+export const Route = createFileRoute("/api/public/diag-role")({
   server: {
     handlers: {
       GET: async () => {
