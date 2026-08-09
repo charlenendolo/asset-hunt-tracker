@@ -122,7 +122,7 @@ function ActionDialog({
   actorName: string;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
-  const sites = useQuery({ ...sitesQuery, enabled: !!mode });
+  
   const refresh = useRefresh(machine.id);
 
   const [siteId, setSiteId] = useState<string>(machine.current_site_id ?? "");
