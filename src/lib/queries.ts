@@ -25,7 +25,7 @@ export const sitesQuery = queryOptions({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("sites")
-      .select("id, name, site_number, address, active, created_at")
+      .select("id, name, site_number, address, active, location_type, created_at")
       .order("name");
     if (error) throw error;
     return data ?? [];
