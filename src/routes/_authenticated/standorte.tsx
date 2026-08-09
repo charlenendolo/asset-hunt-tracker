@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
+import { CreateSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIdentity } from "@/hooks/use-identity";
 import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
+import { SITE_TYPE_LABELS, SITE_TYPE_ORDER, siteTypeLabel } from "@/lib/site-types";
 import { formatNumber, textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/standorte")({
