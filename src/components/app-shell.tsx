@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
+import { ThemeToggleButton } from "@/components/theme-switch";
 
 type NavItem = {
   to: string;
