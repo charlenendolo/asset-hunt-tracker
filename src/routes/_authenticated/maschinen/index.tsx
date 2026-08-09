@@ -375,7 +375,16 @@ function MachinesPage() {
           </div>
         </>
       )}
+
+      {canSelect ? (
+        <LabelPrintDialog
+          machines={selectedMachines}
+          open={labelDialog}
+          onOpenChange={setLabelDialog}
+        />
+      ) : null}
     </AppShell>
+
   );
 }
 
