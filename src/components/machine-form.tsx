@@ -362,9 +362,18 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                   rows={3}
                   value={form.description}
                   onChange={(e) => set("description", e.target.value)}
-                  placeholder="Besonderheiten, Zubehör, Hinweise"
+                  placeholder="Besonderheiten, Hinweise"
                 />
               </Field>
+
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+                <Label>Zubehör</Label>
+                <p className="text-xs text-muted-foreground">
+                  Wähle bekannte Bezeichnungen aus oder lege neue an. Menge und Pflicht kannst du
+                  je Position anpassen.
+                </p>
+                <AccessoryDraftList items={accessories} onChange={setAccessories} />
+              </div>
             </div>
 
             <DialogFooter className="mt-2 flex-col gap-2 sm:flex-col">
