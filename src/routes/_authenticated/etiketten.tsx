@@ -10,10 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SiteCombobox } from "@/components/site-combobox";
-import { LabelPrintDialog } from "@/components/label-print";
+import { LabelPrintDialog, PrintLabelButton, QrDownloadButtons } from "@/components/label-print";
+import { useMachineQrSvgs } from "@/hooks/use-machine-qr";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
+import { getMachineQrUrl, labelName, type LabelMachine } from "@/lib/qr-labels";
 import { useIdentity } from "@/hooks/use-identity";
 import { formatNumber, textOrDash } from "@/lib/format";
 
@@ -37,6 +47,73 @@ export const Route = createFileRoute("/_authenticated/etiketten")({
 
 const PAGE_SIZE = 50;
 
+function QrThumb({ svg, onClick }: { svg: string | undefined; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="QR-Code vergrößern"
+      className="h-10 w-10 shrink-0 rounded-md border border-border bg-white p-0.5"
+    >
+      {svg ? (
+        <span
+          className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      ) : null}
+    </button>
+  );
+}
+
+function QrPreviewDialog({
+  machine,
+  svg,
+  open,
+  onOpenChange,
+}: {
+  machine: LabelMachine | null;
+  svg: string | undefined;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        {machine ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>{labelName(machine)}</DialogTitle>
+              <DialogDescription>
+                {machine.asset_code ?? "Gerätenummer fehlt"}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mx-auto h-56 w-56 rounded-lg border border-border bg-white p-3">
+              {svg ? (
+                <span
+                  className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                  dangerouslySetInnerHTML={{ __html: svg }}
+                />
+              ) : null}
+            </div>
+            <p className="break-all text-center text-xs text-muted-foreground">
+              {getMachineQrUrl(machine.id)}
+            </p>
+            <div className="flex flex-col gap-2">
+              <PrintLabelButton machine={machine} />
+              <QrDownloadButtons machine={machine} svg={svg} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Schließen
+              </Button>
+            </DialogFooter>
+          </>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LabelsPage() {
   const identity = useIdentity();
   const [search, setSearch] = useState("");
@@ -46,6 +123,7 @@ function LabelsPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [open, setOpen] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const filters = useMemo(
     () => ({
@@ -65,7 +143,7 @@ function LabelsPage() {
   const machines = useQuery({
     ...machinesQuery(filters),
     placeholderData: keepPreviousData,
-    enabled: identity.canManage,
+    enabled: identity.isAdmin,
   });
 
   const rows = machines.data?.rows ?? [];
@@ -81,13 +159,21 @@ function LabelsPage() {
   );
   const allVisibleSelected = rows.length > 0 && rows.every((m) => selected[m.id]);
 
-  if (!identity.isLoading && !identity.canManage) {
+  // QR nur für die aktuell sichtbare Seite erzeugen — skaliert auf tausende Geräte.
+  const visibleIds = useMemo(() => rows.map((m) => m.id), [rows]);
+  const { svgs } = useMachineQrSvgs(identity.isAdmin ? visibleIds : []);
+  const previewMachine = useMemo(() => {
+    const m = rows.find((r) => r.id === previewId);
+    return m ? { id: m.id, name: m.name, asset_code: m.asset_code } : null;
+  }, [rows, previewId]);
+
+  if (!identity.isLoading && !identity.isAdmin) {
     return (
       <AppShell title="Etiketten & QR-Codes">
         <EmptyState
           icon={<QrCode className="h-7 w-7" strokeWidth={1.5} />}
           title="Kein Zugriff."
-          description="Etikettenverwaltung ist Administratoren und Bauleitern vorbehalten."
+          description="Die Etikettenverwaltung ist ausschließlich Administratoren vorbehalten."
         />
       </AppShell>
     );
@@ -106,7 +192,7 @@ function LabelsPage() {
             onClick={() => setOpen(true)}
           >
             <Printer className="mr-2 h-4 w-4" />
-            {selectedIds.length > 0 ? `${selectedIds.length} Etiketten drucken` : "Etiketten drucken"}
+            Etiketten drucken
           </Button>
         }
       />
@@ -120,7 +206,7 @@ function LabelsPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Suche nach Name oder Gerätenummer …"
+            placeholder="Maschinen suchen …"
             className="h-10 bg-card pl-9"
           />
         </div>
@@ -193,12 +279,27 @@ function LabelsPage() {
           onClick={() => setSelected({})}
           disabled={selectedIds.length === 0}
         >
-          Auswahl leeren
+          Auswahl aufheben
         </Button>
         <p className="text-xs text-muted-foreground">
-          {selectedIds.length} ausgewählt · {formatNumber(total)} Geräte
+          {selectedIds.length} Maschine{selectedIds.length === 1 ? "" : "n"} ausgewählt ·{" "}
+          {formatNumber(total)} Geräte gefunden
         </p>
       </div>
+
+      {selectedIds.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+          <p className="text-sm font-medium text-foreground">
+            {selectedIds.length} Maschine{selectedIds.length === 1 ? "" : "n"} ausgewählt
+            {selectedMachines.length < selectedIds.length
+              ? ` · ${selectedMachines.length} auf dieser Seite druckbar`
+              : ""}
+          </p>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Printer className="mr-2 h-4 w-4" /> Etiketten drucken
+          </Button>
+        </div>
+      ) : null}
 
       {machines.isError ? (
         <ErrorState message={(machines.error as Error)?.message} />
@@ -217,7 +318,7 @@ function LabelsPage() {
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {rows.map((m) => (
-            <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+            <li key={m.id} className="flex items-center gap-3 px-3 py-2">
               <Checkbox
                 checked={!!selected[m.id]}
                 onCheckedChange={(checked) =>
@@ -230,21 +331,24 @@ function LabelsPage() {
                 }
                 aria-label={`${m.name} auswählen`}
               />
+              <QrThumb svg={svgs[m.id]} onClick={() => setPreviewId(m.id)} />
               <div className="min-w-0 flex-1">
-                <Link
-                  to="/maschinen/$machineId"
-                  params={{ machineId: m.id }}
-                  className="block truncate text-sm font-medium text-foreground"
-                >
-                  {m.name}
-                </Link>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="truncate text-sm font-medium text-foreground">
                   {m.asset_code ? (
-                    m.asset_code
+                    <span className="font-mono">{m.asset_code}</span>
                   ) : (
-                    <span className="text-status-defect">Gerätenummer fehlt</span>
+                    <span className="text-status-defect">⚠ Gerätenummer fehlt</span>
                   )}{" "}
-                  · {textOrDash(m.site?.name)}
+                  <Link
+                    to="/maschinen/$machineId"
+                    params={{ machineId: m.id }}
+                    className="font-normal text-foreground/90 hover:underline"
+                  >
+                    {m.name}
+                  </Link>
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {textOrDash(m.category?.name)} · {textOrDash(m.site?.name)}
                 </p>
               </div>
             </li>
@@ -277,6 +381,14 @@ function LabelsPage() {
       </div>
 
       <LabelPrintDialog machines={selectedMachines} open={open} onOpenChange={setOpen} />
+      <QrPreviewDialog
+        machine={previewMachine}
+        svg={previewMachine ? svgs[previewMachine.id] : undefined}
+        open={!!previewMachine}
+        onOpenChange={(v) => {
+          if (!v) setPreviewId(null);
+        }}
+      />
     </AppShell>
   );
 }

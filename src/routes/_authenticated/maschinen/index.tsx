@@ -92,7 +92,7 @@ function MachinesPage() {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilters = !!(search || categoryId || siteId || locationType || status);
 
-  const canSelect = identity.canManage;
+  const canSelect = identity.isAdmin;
   const selectedIds = Object.keys(selected);
   const selectedMachines = useMemo(
     () =>

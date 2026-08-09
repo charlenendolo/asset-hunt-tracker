@@ -121,7 +121,7 @@ function SettingsPage() {
           <ThemeSwitch />
         </section>
 
-        {identity.canManage ? (
+        {identity.isAdmin ? (
           <section className="rounded-xl border border-border bg-card p-5">
             <h2 className="mb-1 text-sm font-medium text-foreground">Etiketten & QR-Codes</h2>
             <p className="mb-3 text-sm text-muted-foreground">

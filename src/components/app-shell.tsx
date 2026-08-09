@@ -9,6 +9,7 @@ import {
   TriangleAlert,
   Wrench,
   Users,
+  QrCode,
   Settings,
   LogOut,
   Menu,
@@ -38,6 +39,7 @@ const NAV: NavItem[] = [
   { to: "/defekte", label: "Defekte", icon: TriangleAlert },
   { to: "/wartung", label: "Wartung", icon: Wrench },
   { to: "/benutzer", label: "Benutzer", icon: Users, adminOnly: true },
+  { to: "/etiketten", label: "Etiketten & QR-Codes", icon: QrCode, adminOnly: true },
   { to: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];
 
