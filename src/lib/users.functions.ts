@@ -10,7 +10,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * (RLS-scoped is_admin()) before the service-role client is loaded.
  */
 
-const ROLES = ["admin", "office", "manager", "user"] as const;
+// Erlaubte Rollenwerte laut DB-Constraint profiles_role_check.
+const ROLES = ["admin", "site_manager", "user"] as const;
 
 async function assertAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
   const { data } = await supabase.rpc("is_admin");
