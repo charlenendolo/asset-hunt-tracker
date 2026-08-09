@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
@@ -10,14 +10,18 @@ import { AddMachineButton } from "@/components/machine-form";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteCombobox } from "@/components/site-combobox";
+import { LabelPrintDialog } from "@/components/label-print";
+import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
+
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   head: () => ({
