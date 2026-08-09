@@ -47,7 +47,7 @@ function SettingsPage() {
               <Row label="E-Mail" value={textOrDash(user?.email ?? null)} />
               <Row
                 label="Rolle"
-                value={<Pill tone={isAdmin ? "primary" : "neutral"}>{textOrDash(profile?.role)}</Pill>}
+                value={<Pill tone={isAdmin ? "primary" : "neutral"}>{ROLE_LABELS[profile?.role ?? ""] ?? textOrDash(profile?.role)}</Pill>}
               />
               <Row
                 label="Status"
