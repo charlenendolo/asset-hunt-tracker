@@ -205,7 +205,7 @@ function CalendarPage() {
     view === "day"
       ? dayFmt.format(cursor)
       : view === "week"
-        ? `${shortFmt.format(startOfWeek(cursor))} – ${shortFmt.format(addDays(startOfWeek(cursor), 6))}`
+        ? `${shortFmt.format(startOfWeek(cursor))} – ${shortFmt.format(addDays(startOfWeek(cursor), 4))}`
         : monthFmt.format(cursor);
 
   return (
