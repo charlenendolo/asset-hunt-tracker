@@ -9,11 +9,13 @@ import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { prepareMachinePhoto } from "@/lib/image-compress";
+import { supabase } from "@/integrations/supabase/client";
 import {
+  confirmMachinePhoto,
+  createPhotoUploadTicket,
   deleteMachinePhoto,
   listMachinePhotos,
   setPrimaryMachinePhoto,
-  uploadMachinePhoto,
 } from "@/lib/machine-photos.functions";
 
 const MAX_PHOTOS = 8;
@@ -26,7 +28,8 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
   const [busy, setBusy] = useState(false);
 
   const list = useServerFn(listMachinePhotos);
-  const upload = useServerFn(uploadMachinePhoto);
+  const createTicket = useServerFn(createPhotoUploadTicket);
+  const confirmPhoto = useServerFn(confirmMachinePhoto);
   const remove = useServerFn(deleteMachinePhoto);
   const setPrimary = useServerFn(setPrimaryMachinePhoto);
 
@@ -69,12 +72,37 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
     try {
       for (const file of Array.from(files).slice(0, remaining)) {
         const prepared = await prepareMachinePhoto(file);
-        await upload({ data: { machineId, ...prepared } });
+        const ticket = await createTicket({
+          data: { machineId, extension: prepared.extension },
+        });
+
+        const main = await supabase.storage
+          .from(ticket.bucket)
+          .uploadToSignedUrl(ticket.path, ticket.token, prepared.image, {
+            contentType: prepared.contentType,
+            upsert: true,
+          });
+        if (main.error) throw new Error("Foto konnte nicht hochgeladen werden.");
+
+        await supabase.storage
+          .from(ticket.bucket)
+          .uploadToSignedUrl(ticket.thumbPath, ticket.thumbToken, prepared.thumbnail, {
+            contentType: prepared.contentType,
+            upsert: true,
+          });
+
+        await confirmPhoto({ data: { machineId, path: ticket.path } });
       }
-      toast.success("Foto hochgeladen.");
+      toast.success("Foto wurde hochgeladen.");
       invalidate();
     } catch (error) {
-      toast.error((error as Error).message || "Upload fehlgeschlagen.");
+      console.error("[machine-photos] upload failed", error);
+      const message = (error as Error)?.message ?? "";
+      toast.error(
+        message && message.length < 160 && !message.startsWith("{")
+          ? message
+          : "Foto konnte nicht hochgeladen werden. Bitte versuche es erneut.",
+      );
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -156,12 +184,14 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
             accept="image/*"
             multiple
             className="hidden"
+            disabled={busy}
             onChange={(e) => void handleFiles(e.target.files)}
           />
           <Button
             variant="outline"
             className="h-9"
             disabled={busy || items.length >= MAX_PHOTOS}
+            aria-busy={busy}
             onClick={() => inputRef.current?.click()}
           >
             {busy ? (
@@ -169,7 +199,7 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
             ) : (
               <Upload className="h-4 w-4" strokeWidth={1.75} />
             )}
-            Foto hochladen
+            {busy ? "Wird hochgeladen …" : "Foto hochladen"}
           </Button>
         </div>
       ) : null}

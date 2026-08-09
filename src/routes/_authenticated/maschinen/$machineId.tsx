@@ -31,8 +31,10 @@ import {
   formatExpectedReturn,
   textOrDash,
 } from "@/lib/format";
+import { SiteTypeIcon } from "@/components/site-type-icon";
 import {
   machineStatusKey,
+
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
   DEFECT_STATUS_LABELS,
@@ -182,7 +184,15 @@ function MachineDetailPage() {
               <Field label="Hersteller" value={textOrDash(m.manufacturer)} />
               <Field label="Modell" value={textOrDash(m.model)} />
               <Field label="Seriennummer" value={textOrDash(m.serial_number)} />
-              <Field label="Aktueller Standort" value={textOrDash(m.site?.name)} />
+              <Field
+                label="Aktueller Standort"
+                value={
+                  <span className="flex items-center gap-1.5">
+                    {m.site ? <SiteTypeIcon type={m.site.location_type} withTitle={false} /> : null}
+                    {textOrDash(m.site?.name)}
+                  </span>
+                }
+              />
               <Field label="Verantwortlich" value={textOrDash(m.responsible?.full_name)} />
               <Field
                 label="Voraussichtlich benötigt bis"

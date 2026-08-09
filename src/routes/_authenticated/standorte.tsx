@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER, siteTypeLabel } from "@/lib/site-types";
+import { SiteTypeIcon } from "@/components/site-type-icon";
 import { formatNumber, textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/standorte")({
@@ -103,14 +104,19 @@ function SitesPage() {
           {visible.map((s) => (
             <li key={s.id} className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-muted/50">
+                    <SiteTypeIcon type={s.location_type} className="h-4.5 w-4.5 text-foreground/70" />
+                  </span>
+                  <div className="min-w-0">
                   <p className="truncate text-base font-medium text-foreground">{s.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {textOrDash(s.site_number)}
                   </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <Pill tone="primary">{siteTypeLabel(s.location_type)}</Pill>
+                  <Pill tone="neutral">{siteTypeLabel(s.location_type)}</Pill>
                   <Pill tone={s.active ? "success" : "neutral"}>
                     {s.active ? "Aktiv" : "Inaktiv"}
                   </Pill>

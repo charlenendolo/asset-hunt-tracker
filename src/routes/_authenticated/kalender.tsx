@@ -1,17 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  CalendarRange,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  PackageOpen,
+  Wrench,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { plannerQuery } from "@/lib/queries";
 import { useIdentity } from "@/hooks/use-identity";
-import { formatDate, textOrDash } from "@/lib/format";
-import { machineStatusKey, type StatusKey } from "@/lib/status";
+import { textOrDash } from "@/lib/format";
+import { machineStatusKey } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/kalender")({
@@ -20,12 +34,14 @@ export const Route = createFileRoute("/_authenticated/kalender")({
       { title: "Kalender – AssetHunt" },
       {
         name: "description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
+        content:
+          "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
       { property: "og:title", content: "Kalender – AssetHunt" },
       {
         property: "og:description",
-        content: "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
+        content:
+          "Einsatzplanung als Tages-, Wochen- und Monatsansicht für alle Geräte an Wochentagen.",
       },
     ],
   }),
@@ -35,6 +51,7 @@ export const Route = createFileRoute("/_authenticated/kalender")({
 /* ------------------------------------------------------------------ Helpers */
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr"];
+const WEEKDAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const monthFmt = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
 const dayFmt = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" });
 const shortFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit" });
@@ -52,8 +69,9 @@ function addDays(d: Date, n: number) {
 function startOfWeek(d: Date) {
   return addDays(d, -((d.getDay() + 6) % 7));
 }
-function sameDay(a: Date, b: Date) {
-  return startOfDay(a).getTime() === startOfDay(b).getTime();
+function isWeekend(d: Date) {
+  const day = d.getDay();
+  return day === 0 || day === 6;
 }
 
 type EventKind = "reservation" | "borrowed" | "maintenance" | "defect";
@@ -68,36 +86,34 @@ type PlannerEvent = {
   detail: string;
 };
 
-const KIND_STYLES: Record<EventKind, { block: string; dot: string; label: string }> = {
+const KIND_STYLES: Record<
+  EventKind,
+  { bar: string; dot: string; label: string; icon: typeof Wrench }
+> = {
   reservation: {
-    block: "bg-status-reserved/15 text-status-reserved border-status-reserved/30",
+    bar: "bg-status-reserved/18 text-status-reserved ring-1 ring-inset ring-status-reserved/25 hover:bg-status-reserved/28",
     dot: "bg-status-reserved",
     label: "Reservierung",
+    icon: CalendarRange,
   },
   borrowed: {
-    block: "bg-status-borrowed/15 text-status-borrowed border-status-borrowed/30",
+    bar: "bg-status-borrowed/18 text-status-borrowed ring-1 ring-inset ring-status-borrowed/25 hover:bg-status-borrowed/28",
     dot: "bg-status-borrowed",
     label: "Ausgeliehen",
+    icon: PackageOpen,
   },
   maintenance: {
-    block: "bg-status-maintenance/15 text-status-maintenance border-status-maintenance/30",
+    bar: "bg-status-maintenance/18 text-status-maintenance ring-1 ring-inset ring-status-maintenance/25 hover:bg-status-maintenance/28",
     dot: "bg-status-maintenance",
     label: "Wartung",
+    icon: Wrench,
   },
   defect: {
-    block: "bg-status-defect/15 text-status-defect border-status-defect/30",
+    bar: "bg-status-defect/18 text-status-defect ring-1 ring-inset ring-status-defect/25 hover:bg-status-defect/28",
     dot: "bg-status-defect",
     label: "Defekt",
+    icon: AlertTriangle,
   },
-};
-
-const STATUS_TINT: Record<StatusKey, string> = {
-  available: "bg-status-available/10 text-status-available",
-  reserved: "bg-status-reserved/10 text-status-reserved",
-  borrowed: "bg-status-borrowed/10 text-status-borrowed",
-  maintenance: "bg-status-maintenance/10 text-status-maintenance",
-  defect: "bg-status-defect/10 text-status-defect",
-  unknown: "bg-muted text-muted-foreground",
 };
 
 /* --------------------------------------------------------------------- Page */
@@ -177,10 +193,7 @@ function CalendarPage() {
   }, [data]);
 
   const machines = data?.machines ?? [];
-  const machineById = useMemo(
-    () => new Map(machines.map((m) => [m.id, m] as const)),
-    [machines],
-  );
+  const machineById = useMemo(() => new Map(machines.map((m) => [m.id, m] as const)), [machines]);
 
   function eventsOn(day: Date) {
     const from = startOfDay(day).getTime();
@@ -206,13 +219,22 @@ function CalendarPage() {
 
   return (
     <AppShell title="Kalender" description="Einsatz- und Reservierungsplanung">
-      <PageHeader
-        icon={<CalendarDays className="h-5 w-5" strokeWidth={1.75} />}
-        title="Einsatzplanung"
-        description="Tages-, Wochen- und Monatsansicht aller Geräte auf einen Blick."
-        actions={
+      <section className="mb-5 overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-col gap-4 border-b border-border/70 bg-muted/30 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <CalendarDays className="h-5 w-5" strokeWidth={1.75} />
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">Kalender</h1>
+              <p className="text-sm text-muted-foreground">
+                Reservierungen, Ausleihen, Wartungen und Defekte im Überblick.
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-lg border border-border bg-card p-0.5">
+            <div className="flex rounded-lg border border-border bg-background p-0.5">
               {(
                 [
                   ["day", "Tag"],
@@ -235,7 +257,11 @@ function CalendarPage() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" className="h-9" onClick={() => setCursor(startOfDay(new Date()))}>
+            <Button
+              variant="outline"
+              className="h-9"
+              onClick={() => setCursor(startOfDay(new Date()))}
+            >
               Heute
             </Button>
             <div className="flex gap-1">
@@ -247,18 +273,18 @@ function CalendarPage() {
               </Button>
             </div>
           </div>
-        }
-      />
+        </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-medium text-foreground">{rangeLabel}</h2>
-        <Legend />
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+          <h2 className="text-base font-semibold capitalize text-foreground">{rangeLabel}</h2>
+          <Legend />
+        </div>
+      </section>
 
       {planner.isError ? (
         <ErrorState message={(planner.error as Error)?.message} />
       ) : planner.isLoading ? (
-        <Skeleton className="h-96 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
       ) : view === "day" ? (
         <DayView day={cursor} machines={machines} eventsOn={eventsOn} />
       ) : view === "week" ? (
@@ -298,8 +324,6 @@ function Legend() {
   );
 }
 
-/* ----------------------------------------------------------------- Day view */
-
 type MachineRow = {
   id: string;
   name: string;
@@ -309,6 +333,35 @@ type MachineRow = {
   site?: { name: string } | null;
   responsible?: { full_name: string | null } | null;
 };
+
+/** Kompakter Event-Balken — bewusst ohne Tabellenoptik. */
+function EventBar({
+  event,
+  label,
+  className,
+}: {
+  event: PlannerEvent;
+  label: string;
+  className?: string;
+}) {
+  const style = KIND_STYLES[event.kind];
+  const Icon = style.icon;
+  return (
+    <span
+      title={`${style.label}: ${event.title}${event.detail ? " – " + event.detail : ""}`}
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors",
+        style.bar,
+        className,
+      )}
+    >
+      <Icon className="h-3 w-3 shrink-0" strokeWidth={2} />
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
+/* ----------------------------------------------------------------- Day view */
 
 function DayView({
   day,
@@ -326,10 +379,10 @@ function DayView({
   }
 
   const groups: Array<{ kind: EventKind | "available"; title: string; rows: MachineRow[] }> = [
-    { kind: "reservation", title: "Reserviert", rows: [] },
-    { kind: "borrowed", title: "Ausgeliehen", rows: [] },
-    { kind: "maintenance", title: "In Wartung", rows: [] },
     { kind: "defect", title: "Defekt", rows: [] },
+    { kind: "maintenance", title: "In Wartung", rows: [] },
+    { kind: "borrowed", title: "Ausgeliehen", rows: [] },
+    { kind: "reservation", title: "Reserviert", rows: [] },
     { kind: "available", title: "Verfügbar", rows: [] },
   ];
 
@@ -349,22 +402,20 @@ function DayView({
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">{dayFmt.format(day)}</p>
+      <p className="text-sm capitalize text-muted-foreground">{dayFmt.format(day)}</p>
       {visible.map((g) => (
-        <section key={g.kind}>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+        <section key={g.kind} className="overflow-hidden rounded-2xl border border-border bg-card">
+          <header className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-5 py-3">
             <span
               className={cn(
                 "h-2.5 w-2.5 rounded-full",
-                g.kind === "available"
-                  ? "bg-status-available"
-                  : KIND_STYLES[g.kind as EventKind].dot,
+                g.kind === "available" ? "bg-status-available" : KIND_STYLES[g.kind as EventKind].dot,
               )}
             />
-            {g.title}
-            <span className="text-xs font-normal text-muted-foreground">({g.rows.length})</span>
-          </h3>
-          <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <h3 className="text-sm font-semibold text-foreground">{g.title}</h3>
+            <span className="text-xs text-muted-foreground">({g.rows.length})</span>
+          </header>
+          <ul className="divide-y divide-border/60">
             {g.rows.map((m) => {
               const ev = (byMachine.get(m.id) ?? [])[0];
               return (
@@ -372,30 +423,28 @@ function DayView({
                   <Link
                     to="/maschinen/$machineId"
                     params={{ machineId: m.id }}
-                    className="block rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/4"
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-accent/40"
                   >
-                    <p className="truncate text-sm font-medium text-foreground">{m.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {m.asset_code} · {textOrDash(m.site?.name)}
-                    </p>
-                    {ev?.detail ? (
-                      <p
-                        className={cn(
-                          "mt-2 truncate rounded-md px-2 py-1 text-xs",
-                          STATUS_TINT[
-                            ev.kind === "reservation"
-                              ? "reserved"
-                              : ev.kind === "borrowed"
-                                ? "borrowed"
-                                : ev.kind === "maintenance"
-                                  ? "maintenance"
-                                  : "defect"
-                          ],
-                        )}
-                      >
-                        {ev.detail}
-                      </p>
-                    ) : null}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-foreground">
+                        {m.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {m.asset_code} · {textOrDash(m.site?.name)}
+                      </span>
+                    </span>
+                    {ev ? (
+                      <EventBar
+                        event={ev}
+                        label={ev.detail || KIND_STYLES[ev.kind].label}
+                        className="max-w-[60%]"
+                      />
+                    ) : (
+                      <span className="flex items-center gap-1.5 rounded-lg bg-status-available/15 px-2 py-1 text-[11px] font-medium text-status-available">
+                        <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
+                        Verfügbar
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
@@ -420,18 +469,14 @@ function WeekView({
 }) {
   const days = Array.from({ length: 5 }, (_, i) => addDays(start, i));
   const today = startOfDay(new Date()).getTime();
+  const todayIndex = days.findIndex((d) => d.getTime() === today);
 
-  const rows = machines
-    .map((m) => ({
-      machine: m,
-      events: events.filter(
-        (e) =>
-          e.machineId === m.id &&
-          e.start <= days[4]!.getTime() &&
-          e.end >= days[0]!.getTime(),
-      ),
-    }))
-    .filter((r) => r.events.length > 0 || machines.length <= 60);
+  const rows = machines.map((m) => ({
+    machine: m,
+    events: events.filter(
+      (e) => e.machineId === m.id && e.start <= days[4]!.getTime() && e.end >= days[0]!.getTime(),
+    ),
+  }));
 
   if (rows.length === 0) {
     return <EmptyState title="Keine Geräte in dieser Woche." />;
@@ -439,30 +484,46 @@ function WeekView({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-      <div className="min-w-[680px]">
-        <div className="grid grid-cols-[200px_repeat(5,minmax(0,1fr))] border-b border-border bg-primary/5">
-          <div className="px-4 py-3 text-xs font-medium text-muted-foreground">Maschine</div>
-          {days.map((d) => (
+      <div className="min-w-[720px]">
+        <div className="sticky top-0 z-10 grid grid-cols-[210px_repeat(5,minmax(0,1fr))] gap-2 border-b border-border/70 bg-muted/40 px-3 py-3 backdrop-blur">
+          <div className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Maschine
+          </div>
+          {days.map((d, i) => (
             <div
               key={d.toISOString()}
               className={cn(
-                "px-2 py-3 text-center text-xs font-medium",
-                d.getTime() === today ? "bg-primary/12 text-primary" : "text-muted-foreground",
+                "rounded-lg px-2 py-1.5 text-center",
+                i === todayIndex ? "bg-primary/12 ring-1 ring-inset ring-primary/40" : "",
               )}
             >
-              <span className="block">{WEEKDAYS[(d.getDay() + 6) % 7]}</span>
-              <span className="block text-sm text-foreground">{d.getDate()}</span>
+              <span
+                className={cn(
+                  "block text-[11px] font-medium uppercase tracking-wide",
+                  i === todayIndex ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {WEEKDAYS[(d.getDay() + 6) % 7]}
+              </span>
+              <span
+                className={cn(
+                  "block text-sm font-semibold",
+                  i === todayIndex ? "text-primary" : "text-foreground",
+                )}
+              >
+                {d.getDate()}
+              </span>
             </div>
           ))}
         </div>
 
-        <div className="divide-y divide-border">
+        <div className="space-y-1 p-3">
           {rows.map(({ machine, events: rowEvents }) => (
             <div
               key={machine.id}
-              className="grid grid-cols-[200px_repeat(5,minmax(0,1fr))] transition-colors hover:bg-accent/30"
+              className="grid grid-cols-[210px_repeat(5,minmax(0,1fr))] items-center gap-2 rounded-xl px-0 py-1 transition-colors hover:bg-accent/30"
             >
-              <div className="min-w-0 px-4 py-2.5">
+              <div className="min-w-0 px-2">
                 <Link
                   to="/maschinen/$machineId"
                   params={{ machineId: machine.id }}
@@ -475,37 +536,36 @@ function WeekView({
                 </span>
               </div>
 
-              <div className="relative col-span-5 grid grid-cols-5 gap-px py-2">
-                {days.map((d) => (
+              <div className="relative col-span-5 grid grid-cols-5 gap-2">
+                {days.map((d, i) => (
                   <div
                     key={d.toISOString()}
                     className={cn(
-                      "min-h-11 rounded-sm",
-                      d.getTime() === today ? "bg-primary/6" : "bg-transparent",
+                      "min-h-12 rounded-lg",
+                      i === todayIndex
+                        ? "bg-primary/6 ring-1 ring-inset ring-primary/20"
+                        : isWeekend(d)
+                          ? "bg-muted/40"
+                          : "bg-muted/25",
                     )}
                   />
                 ))}
 
-                <div className="pointer-events-none absolute inset-x-0 inset-y-2 grid grid-cols-5 gap-px">
+                <div className="pointer-events-none absolute inset-0 grid grid-cols-5 content-center gap-2 py-1.5">
                   {rowEvents.map((e) => {
-                    const from = Math.max(
-                      0,
-                      Math.round((e.start - days[0]!.getTime()) / DAY),
-                    );
+                    const from = Math.max(0, Math.round((e.start - days[0]!.getTime()) / DAY));
                     const to = Math.min(4, Math.round((e.end - days[0]!.getTime()) / DAY));
                     const span = Math.max(1, to - from + 1);
                     return (
                       <div
                         key={e.id}
-                        title={`${KIND_STYLES[e.kind].label}: ${e.title}${e.detail ? " – " + e.detail : ""}`}
                         style={{ gridColumn: `${from + 1} / span ${span}` }}
-                        className={cn(
-                          "truncate self-center rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                          KIND_STYLES[e.kind].block,
-                        )}
+                        className="pointer-events-auto min-w-0 self-center"
                       >
-                        {KIND_STYLES[e.kind].label}
-                        {e.detail ? ` · ${e.detail}` : ""}
+                        <EventBar
+                          event={e}
+                          label={`${KIND_STYLES[e.kind].label}${e.detail ? ` · ${e.detail}` : ""}`}
+                        />
                       </div>
                     );
                   })}
@@ -538,66 +598,101 @@ function MonthView({
     Array.from({ length: 5 }, (_, day) => addDays(gridStart, week * 7 + day)),
   ).flat();
   const today = startOfDay(new Date()).getTime();
+  const [detailDay, setDetailDay] = useState<Date | null>(null);
+
+  const detailEvents = detailDay
+    ? events.filter((e) => e.start <= detailDay.getTime() && e.end >= detailDay.getTime())
+    : [];
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
-      <div className="grid grid-cols-5 gap-1 pb-1 text-center text-xs font-medium text-muted-foreground">
-        {WEEKDAYS.map((d) => (
-          <span key={d} className="py-1">
+    <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+      <div className="grid grid-cols-5 gap-2 pb-2 text-center">
+        {WEEKDAYS.map((d, i) => (
+          <span
+            key={d}
+            className="py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            title={WEEKDAYS_LONG[i]}
+          >
             {d}
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-5 gap-2">
         {days.map((d) => {
           const time = d.getTime();
           const dayEvents = events.filter((e) => e.start <= time && e.end >= time);
           const inMonth = d.getMonth() === cursor.getMonth();
           const isToday = time === today;
           return (
-            <button
+            <div
               key={d.toISOString()}
-              type="button"
-              onClick={() => onPickDay(d)}
               className={cn(
-                "flex min-h-24 flex-col gap-1 rounded-lg border p-1.5 text-left transition-colors",
+                "flex min-h-28 flex-col gap-1.5 rounded-xl border p-2 text-left transition-colors sm:min-h-32",
                 isToday
-                  ? "border-primary bg-primary/8"
-                  : "border-transparent hover:border-border hover:bg-accent/40",
+                  ? "border-primary/60 bg-primary/8 shadow-[0_0_0_1px_var(--color-primary)]/10"
+                  : "border-border/50 bg-background/60 hover:border-border hover:bg-accent/30",
                 inMonth ? "" : "opacity-45",
               )}
             >
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  isToday ? "text-primary" : "text-foreground",
-                )}
-              >
-                {d.getDate()}
-              </span>
-              {dayEvents.slice(0, 3).map((e) => (
-                <span
-                  key={e.id}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onPickDay(d)}
                   className={cn(
-                    "truncate rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
-                    KIND_STYLES[e.kind].block,
+                    "rounded-md px-1 text-xs font-semibold transition-colors hover:text-primary",
+                    isToday ? "text-primary" : "text-foreground",
                   )}
                 >
-                  {machineById.get(e.machineId)?.name ?? e.title}
-                </span>
+                  {d.getDate()}
+                </button>
+                {isToday ? (
+                  <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
+                    Heute
+                  </span>
+                ) : null}
+              </div>
+
+              {dayEvents.slice(0, 2).map((e) => (
+                <EventBar
+                  key={e.id}
+                  event={e}
+                  label={machineById.get(e.machineId)?.name ?? e.title}
+                />
               ))}
-              {dayEvents.length > 3 ? (
-                <span className="px-1 text-[10px] font-medium text-muted-foreground">
-                  + {dayEvents.length - 3} weitere
-                </span>
+              {dayEvents.length > 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setDetailDay(d)}
+                  className="rounded-md px-1 text-left text-[11px] font-medium text-muted-foreground hover:text-primary"
+                >
+                  + {dayEvents.length - 2} weitere
+                </button>
               ) : null}
-            </button>
+            </div>
           );
         })}
       </div>
-      <p className="mt-2 px-1 text-xs text-muted-foreground">
-        Tippe auf einen Tag für die Tagesansicht. Stand: {formatDate(new Date().toISOString())}
-      </p>
+
+      <Dialog open={detailDay !== null} onOpenChange={(open) => !open && setDetailDay(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="capitalize">
+              {detailDay ? dayFmt.format(detailDay) : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <ul className="space-y-2">
+            {detailEvents.map((e) => (
+              <li key={e.id}>
+                <EventBar
+                  event={e}
+                  label={`${machineById.get(e.machineId)?.name ?? e.title} · ${KIND_STYLES[e.kind].label}`}
+                  className="text-xs"
+                />
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
