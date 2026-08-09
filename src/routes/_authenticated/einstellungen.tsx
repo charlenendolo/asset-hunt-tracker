@@ -1,15 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { QrCode } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChangePasswordForm } from "@/components/change-password";
 import { Pill } from "@/components/status-badge";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
+import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/einstellungen")({
   head: () => ({
