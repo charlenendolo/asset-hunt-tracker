@@ -371,7 +371,33 @@ function ManagerDashboard() {
             loading={counts.isLoading}
           />
         ))}
+        <Link
+          to="/maschinen"
+          search={{ status: "overdue" }}
+          className="relative overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97]"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold tracking-wide">Überfällig</p>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-destructive/15">
+              <TriangleAlert className="h-4 w-4" strokeWidth={2} />
+            </span>
+          </div>
+          {overdue.isLoading ? (
+            <Skeleton className="mt-2 h-8 w-16 opacity-40" />
+          ) : (
+            <p className="mt-2 text-2xl font-semibold tracking-tight">
+              {formatNumber(overdueMachines.length)}
+            </p>
+          )}
+        </Link>
       </div>
+
+      <OverdueSection
+        machines={overdueMachines}
+        nextReservation={overdue.data?.nextReservation ?? {}}
+        loading={overdue.isLoading}
+      />
+
 
       <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
         Was braucht heute Aufmerksamkeit?
