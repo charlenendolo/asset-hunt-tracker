@@ -63,10 +63,10 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           to={item.to}
           onClick={onNavigate}
           className={cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             isActive(item.to)
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+              ? "bg-primary/10 text-primary before:absolute before:top-1.5 before:bottom-1.5 before:-left-3 before:w-1 before:rounded-r-full before:bg-primary"
+              : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
           )}
         >
           <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -152,6 +152,9 @@ export function AppShell({
           <Logo />
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-4">
+          <p className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Betrieb
+          </p>
           <NavLinks />
         </div>
         <UserBlock />
@@ -211,7 +214,7 @@ export function AppShell({
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
         <div className="grid grid-cols-5">
           {MOBILE_NAV.map((item) => (
             <Link
@@ -219,7 +222,9 @@ export function AppShell({
               to={item.to}
               className={cn(
                 "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors",
-                isActive(item.to) ? "text-primary" : "text-muted-foreground",
+                isActive(item.to)
+                  ? "bg-primary/8 text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <item.icon className="h-5 w-5" strokeWidth={1.75} />
