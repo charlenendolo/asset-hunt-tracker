@@ -112,7 +112,15 @@ export function machinesQuery(filters: MachineFilters) {
         if (ids.length === 0) return { rows: [], count: 0 };
         q = q.in("current_site_id", ids);
       }
-      if (filters.status) q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
+      if (filters.status === OVERDUE_FILTER) {
+        // Abgeleiteter Zustand: ausgeliehen + Rückgabefrist überschritten.
+        q = q
+          .in("status", machineStatusDbValues("borrowed"))
+          .not("expected_return_at", "is", null)
+          .lt("expected_return_at", new Date().toISOString());
+      } else if (filters.status) {
+        q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
+      }
 
       const [column, direction] = filters.sort.split(":");
       q = q.order(column ?? "name", { ascending: direction !== "desc" });
