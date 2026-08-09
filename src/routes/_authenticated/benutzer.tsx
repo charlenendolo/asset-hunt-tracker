@@ -11,6 +11,7 @@ import { formatDate, textOrDash } from "@/lib/format";
 import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
 import { useIdentity } from "@/hooks/use-identity";
 import { listAccountEmails } from "@/lib/users.functions";
+import { listPinAccess } from "@/lib/pin-auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
