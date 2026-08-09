@@ -3,6 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Search, Container, ChevronLeft, ChevronRight, Plus, ImageOff } from "lucide-react";
 
+import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
@@ -78,6 +79,7 @@ function MachinesPage() {
   const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
 
   const rows = machines.data?.rows ?? [];
+  const photoUrls = usePrimaryPhotos(rows.map((m) => m.id));
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilters = !!(search || categoryId || siteId || locationType || status);
@@ -208,7 +210,7 @@ function MachinesPage() {
                         params={{ machineId: m.id }}
                         className="flex items-center gap-3"
                       >
-                        <Thumb name={m.name} />
+                        <Thumb name={m.name} src={photoUrls[m.id]} />
                         <span className="min-w-0">
                           <span className="block truncate font-medium text-foreground">
                             {m.name}
@@ -244,7 +246,7 @@ function MachinesPage() {
                   params={{ machineId: m.id }}
                   className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
                 >
-                  <Thumb name={m.name} />
+                  <Thumb name={m.name} src={photoUrls[m.id]} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{m.name}</p>
                     <p className="truncate text-xs text-muted-foreground">
@@ -286,7 +288,17 @@ function MachinesPage() {
   );
 }
 
-function Thumb({ name }: { name: string }) {
+function Thumb({ name, src }: { name: string; src?: string }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        loading="lazy"
+        className="h-10 w-10 shrink-0 rounded-md border border-border object-cover"
+      />
+    );
+  }
   return (
     <span
       aria-label={name}

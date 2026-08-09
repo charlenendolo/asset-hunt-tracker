@@ -6,6 +6,7 @@ import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
+import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { myMachinesQuery } from "@/lib/queries";
 import { formatExpectedReturn, textOrDash } from "@/lib/format";
 
@@ -16,6 +17,7 @@ import { formatExpectedReturn, textOrDash } from "@/lib/format";
 export function MyMachines({ heading = true }: { heading?: boolean }) {
   const identity = useIdentity();
   const machines = useQuery(myMachinesQuery(identity.userId));
+  const photoUrls = usePrimaryPhotos((machines.data ?? []).map((m) => m.id));
 
   return (
     <section>
@@ -51,9 +53,18 @@ export function MyMachines({ heading = true }: { heading?: boolean }) {
                 params={{ machineId: m.id }}
                 className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:bg-accent/40"
               >
-                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-                  <ImageOff className="h-6 w-6" strokeWidth={1.5} />
-                </div>
+                {photoUrls[m.id] ? (
+                  <img
+                    src={photoUrls[m.id]}
+                    alt={m.name}
+                    loading="lazy"
+                    className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                    <ImageOff className="h-6 w-6" strokeWidth={1.5} />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p className="truncate text-base font-medium text-foreground">{m.name}</p>
