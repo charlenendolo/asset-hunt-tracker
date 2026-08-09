@@ -204,7 +204,10 @@ function MachineDetailPage() {
               <Field label="Verantwortlich" value={textOrDash(m.responsible?.full_name)} />
               <Field
                 label="Voraussichtlich benötigt bis"
-                value={formatExpectedReturn(m.expected_return_at) ?? "–"}
+                value={
+                  formatExpectedReturn(m.expected_return_at) ??
+                  (machineStatusKey(m.status) === "borrowed" ? "Keine Rückgabe geplant" : "–")
+                }
               />
 
               <Field label="Anschaffungsdatum" value={formatDate(m.purchase_date)} />
