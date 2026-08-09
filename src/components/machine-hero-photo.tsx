@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ImageOff, X } from "lucide-react";
+import { ImageOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
