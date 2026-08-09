@@ -15,7 +15,7 @@ const MANAGE_ROLES = ["admin", "site_manager", "manager", "bauleiter"];
 const MAX_PHOTOS = 8;
 const SIGNED_URL_TTL = 60 * 60;
 
-const thumbPathFor = (path: string) => path.replace(/\.webp$/, "_thumb.webp");
+const thumbPathFor = (path: string) => path.replace(/(\.[a-z0-9]+)$/i, "_thumb$1");
 
 type SignedEntry = { path: string | null; signedUrl: string | null };
 
@@ -35,14 +35,6 @@ async function requireManager(context: { supabase: any; userId: string }) {
     throw new Error("Du darfst keine Fotos verwalten.");
   }
   return row;
-}
-
-function decodeDataUrl(value: string) {
-  const base64 = value.includes(",") ? value.slice(value.indexOf(",") + 1) : value;
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }
 
 export const listMachinePhotos = createServerFn({ method: "POST" })
@@ -111,14 +103,19 @@ export const primaryPhotoUrls = createServerFn({ method: "POST" })
     return result;
   });
 
-export const uploadMachinePhoto = createServerFn({ method: "POST" })
+/**
+ * Schritt 1: Der Server prüft Rolle und Limit, bestimmt den Zielpfad und
+ * erzeugt kurzlebige Signed Upload URLs. Das Bild selbst lädt der Browser
+ * direkt in den privaten Bucket — es läuft kein Bild-Payload durch die
+ * Serverfunktion.
+ */
+export const createPhotoUploadTicket = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
         machineId: z.string().uuid(),
-        image: z.string().min(100).max(1_600_000),
-        thumbnail: z.string().min(50).max(600_000),
+        extension: z.enum(["webp", "jpg"]).default("webp"),
       })
       .parse(data),
   )
@@ -134,29 +131,61 @@ export const uploadMachinePhoto = createServerFn({ method: "POST" })
       throw new Error(`Maximal ${MAX_PHOTOS} Fotos je Maschine.`);
     }
 
-    const id = crypto.randomUUID();
-    const path = `${data.machineId}/${id}.webp`;
+    const path = `${data.machineId}/${crypto.randomUUID()}.${data.extension}`;
+    const thumbPath = thumbPathFor(path);
 
-    const main = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, decodeDataUrl(data.image), { contentType: "image/webp", upsert: true });
-    if (main.error) throw new Error("Foto konnte nicht hochgeladen werden.");
+    const main = await supabaseAdmin.storage.from(BUCKET).createSignedUploadUrl(path);
+    const thumb = await supabaseAdmin.storage.from(BUCKET).createSignedUploadUrl(thumbPath);
+    if (main.error || thumb.error || !main.data || !thumb.data) {
+      throw new Error("Upload konnte nicht vorbereitet werden.");
+    }
 
-    await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(thumbPathFor(path), decodeDataUrl(data.thumbnail), {
-        contentType: "image/webp",
-        upsert: true,
-      });
+    return {
+      bucket: BUCKET,
+      path,
+      token: main.data.token,
+      thumbPath,
+      thumbToken: thumb.data.token,
+    };
+  });
+
+/** Schritt 2: Nach erfolgreichem Storage-Upload den Datensatz anlegen. */
+export const confirmMachinePhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        machineId: z.string().uuid(),
+        path: z.string().min(10).max(300),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await requireManager(context as { supabase: any; userId: string });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Pfad muss serverseitig zur Maschine gehören.
+    if (!data.path.startsWith(`${data.machineId}/`)) {
+      throw new Error("Ungültiger Upload-Pfad.");
+    }
+
+    const { count } = await supabaseAdmin
+      .from("machine_photos")
+      .select("id", { count: "exact", head: true })
+      .eq("machine_id", data.machineId);
+    if ((count ?? 0) >= MAX_PHOTOS) {
+      await supabaseAdmin.storage.from(BUCKET).remove([data.path, thumbPathFor(data.path)]);
+      throw new Error(`Maximal ${MAX_PHOTOS} Fotos je Maschine.`);
+    }
 
     const { error } = await supabaseAdmin.from("machine_photos").insert({
       machine_id: data.machineId,
-      storage_path: path,
+      storage_path: data.path,
       is_primary: (count ?? 0) === 0,
       uploaded_by: context.userId,
     });
     if (error) {
-      await supabaseAdmin.storage.from(BUCKET).remove([path, thumbPathFor(path)]);
+      await supabaseAdmin.storage.from(BUCKET).remove([data.path, thumbPathFor(data.path)]);
       throw new Error("Foto konnte nicht gespeichert werden.");
     }
 
