@@ -153,7 +153,7 @@ export function machineRelationsQuery(id: string) {
           supabase
             .from("reservations")
             .select(
-              "id, start_at, end_at, status, notes, site:sites(id, name), reserved:profiles(id, full_name)",
+              "id, start_at, end_at, status, notes, reserved_by, site:sites(id, name), reserved:profiles(id, full_name)",
             )
             .eq("machine_id", id)
             .order("start_at", { ascending: false })
@@ -228,7 +228,7 @@ export const allReservationsQuery = queryOptions({
     const { data, error } = await supabase
       .from("reservations")
       .select(
-        "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+        "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
       )
       .order("start_at", { ascending: false })
       .limit(100);
@@ -351,7 +351,7 @@ export function myMachinesQuery(userId: string | null) {
 
 /** Reservations owned by the signed-in user (reservations.reserved_by). */
 export const MY_RESERVATION_SELECT =
-  "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code, status, category:machine_categories(id, name)), site:sites(id, name)";
+  "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code, status, category:machine_categories(id, name)), site:sites(id, name)";
 
 export function myReservationsQuery(userId: string | null) {
   return queryOptions({
@@ -386,7 +386,7 @@ export function scopedReservationsQuery(userId: string | null, canSeeAll: boolea
       let q = supabase
         .from("reservations")
         .select(
-          "id, start_at, end_at, status, notes, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
+          "id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
         )
         .order("start_at", { ascending: false })
         .limit(300);
