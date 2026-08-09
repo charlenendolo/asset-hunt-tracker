@@ -21,6 +21,12 @@ export const Route = createFileRoute("/_authenticated/einstellungen")({
   component: SettingsPage,
 });
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrator",
+  site_manager: "Bauleiter",
+  user: "Mitarbeiter",
+};
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0">
