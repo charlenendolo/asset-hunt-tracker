@@ -6,13 +6,13 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Repenning Geräteportal – Maschinen- und Geräteverwaltung" },
+      { title: "Repenning Geräteportal – Maschinen & Geräte" },
       {
         name: "description",
         content:
           "Repenning Geräteportal: interne Plattform zur Verwaltung von Maschinen, Geräten, Standorten und Reservierungen.",
       },
-      { property: "og:title", content: "Repenning Geräteportal – Maschinen- und Geräteverwaltung" },
+      { property: "og:title", content: "Repenning Geräteportal – Maschinen & Geräte" },
       {
         property: "og:description",
         content:

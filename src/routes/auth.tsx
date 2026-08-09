@@ -28,12 +28,12 @@ export const Route = createFileRoute("/auth")({
       { title: "Anmelden – Repenning Geräteportal" },
       {
         name: "description",
-        content: "Anmeldung zur Repenning Geräteportal Geräte- und Maschinenverwaltung.",
+        content: "Anmeldung zum Repenning Geräteportal für Maschinen und Geräte.",
       },
       { property: "og:title", content: "Anmelden – Repenning Geräteportal" },
       {
         property: "og:description",
-        content: "Anmeldung zur Repenning Geräteportal Geräte- und Maschinenverwaltung.",
+        content: "Anmeldung zum Repenning Geräteportal für Maschinen und Geräte.",
       },
       { name: "robots", content: "noindex" },
     ],
