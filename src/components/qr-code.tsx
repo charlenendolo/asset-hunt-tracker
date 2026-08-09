@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+
+import logoAsset from "@/assets/repenning-logo.png.asset.json";
+
 import { Printer, QrCode as QrIcon, Maximize2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
