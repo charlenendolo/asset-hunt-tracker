@@ -288,7 +288,7 @@ function MachinesPage() {
   );
 }
 
-function Thumb({ name, src }: { name: string; src?: string }) {
+function Thumb({ name, src }: { name: string; src?: string | undefined }) {
   if (src) {
     return (
       <img
