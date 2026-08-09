@@ -88,7 +88,7 @@ function printLabel(machine: Machine, qrDataUrl: string, url: string) {
   .hint { font-size: 7.5pt; margin-top: 2mm; color: #475467; }
 </style></head><body>
 <div class="label">
-  <div class="brand">AssetHunt</div>
+  <div class="brand">Repenning Geräteportal</div>
   <img class="qr" src="${qrDataUrl}" alt="QR-Code" />
   <div class="name">${machine.name.replace(/[<>&]/g, "")}</div>
   <div class="code">${machine.asset_code.replace(/[<>&]/g, "")}</div>

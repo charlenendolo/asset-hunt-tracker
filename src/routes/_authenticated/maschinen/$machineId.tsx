@@ -50,12 +50,12 @@ import {
 export const Route = createFileRoute("/_authenticated/maschinen/$machineId")({
   head: () => ({
     meta: [
-      { title: "Gerätedetails – AssetHunt" },
+      { title: "Gerätedetails – Repenning Geräteportal" },
       {
         name: "description",
         content: "Digitaler Gerätepass mit Status, Zubehör, Bewegungen, Defekten und Wartungen.",
       },
-      { property: "og:title", content: "Gerätedetails – AssetHunt" },
+      { property: "og:title", content: "Gerätedetails – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Digitaler Gerätepass mit Status, Zubehör, Bewegungen, Defekten und Wartungen.",

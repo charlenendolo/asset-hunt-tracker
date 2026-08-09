@@ -8,7 +8,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
         <span className="block h-3 w-3 rotate-45 rounded-[3px] border-2 border-primary-foreground" />
       </span>
       {!compact ? (
-        <span className="text-[15px] font-medium tracking-tight text-foreground">AssetHunt</span>
+        <span className="text-[15px] font-medium tracking-tight text-foreground">Repenning Geräteportal</span>
       ) : null}
     </div>
   );

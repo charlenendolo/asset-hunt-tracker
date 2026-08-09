@@ -14,10 +14,10 @@ import { textOrDash } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/einstellungen")({
   head: () => ({
     meta: [
-      { title: "Einstellungen – AssetHunt" },
-      { name: "description", content: "Konto, Rolle und Systemangaben von AssetHunt." },
-      { property: "og:title", content: "Einstellungen – AssetHunt" },
-      { property: "og:description", content: "Konto, Rolle und Systemangaben von AssetHunt." },
+      { title: "Einstellungen – Repenning Geräteportal" },
+      { name: "description", content: "Konto, Rolle und Systemangaben von Repenning Geräteportal." },
+      { property: "og:title", content: "Einstellungen – Repenning Geräteportal" },
+      { property: "og:description", content: "Konto, Rolle und Systemangaben von Repenning Geräteportal." },
     ],
   }),
   component: SettingsPage,
@@ -110,14 +110,14 @@ function SettingsPage() {
         <section className="rounded-xl border border-border bg-card p-5">
           <h2 className="mb-1 text-sm font-medium text-foreground">Darstellung</h2>
           <p className="mb-3 text-sm text-muted-foreground">
-            Wähle, wie AssetHunt auf diesem Gerät angezeigt wird.
+            Wähle, wie Repenning Geräteportal auf diesem Gerät angezeigt wird.
           </p>
           <ThemeSwitch />
         </section>
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-foreground">System</h2>
-          <Row label="Anwendung" value="AssetHunt" />
+          <Row label="Anwendung" value="Repenning Geräteportal" />
           <Row label="Sprache" value="Deutsch (DE)" />
           <Row label="Datenquelle" value="Supabase" />
         </section>

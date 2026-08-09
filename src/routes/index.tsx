@@ -6,17 +6,17 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "AssetHunt – Maschinen- und Geräteverwaltung" },
+      { title: "Repenning Geräteportal – Maschinen- und Geräteverwaltung" },
       {
         name: "description",
         content:
-          "AssetHunt: interne Plattform zur Verwaltung von Maschinen, Geräten, Standorten und Reservierungen.",
+          "Repenning Geräteportal: interne Plattform zur Verwaltung von Maschinen, Geräten, Standorten und Reservierungen.",
       },
-      { property: "og:title", content: "AssetHunt – Maschinen- und Geräteverwaltung" },
+      { property: "og:title", content: "Repenning Geräteportal – Maschinen- und Geräteverwaltung" },
       {
         property: "og:description",
         content:
-          "AssetHunt: interne Plattform zur Verwaltung von Maschinen, Geräten, Standorten und Reservierungen.",
+          "Repenning Geräteportal: interne Plattform zur Verwaltung von Maschinen, Geräten, Standorten und Reservierungen.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

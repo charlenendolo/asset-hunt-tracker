@@ -25,15 +25,15 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Anmelden – AssetHunt" },
+      { title: "Anmelden – Repenning Geräteportal" },
       {
         name: "description",
-        content: "Anmeldung zur AssetHunt Geräte- und Maschinenverwaltung.",
+        content: "Anmeldung zur Repenning Geräteportal Geräte- und Maschinenverwaltung.",
       },
-      { property: "og:title", content: "Anmelden – AssetHunt" },
+      { property: "og:title", content: "Anmelden – Repenning Geräteportal" },
       {
         property: "og:description",
-        content: "Anmeldung zur AssetHunt Geräte- und Maschinenverwaltung.",
+        content: "Anmeldung zur Repenning Geräteportal Geräte- und Maschinenverwaltung.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -143,7 +143,7 @@ function AuthPage() {
           </Tabs>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          AssetHunt · Interne Geräte- und Maschinenverwaltung
+          Repenning Geräteportal · Interne Geräte- und Maschinenverwaltung
         </p>
       </div>
     </div>

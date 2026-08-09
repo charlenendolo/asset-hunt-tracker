@@ -29,12 +29,12 @@ export const Route = createFileRoute("/maschine/$machineId")({
   },
   head: () => ({
     meta: [
-      { title: "Gerät scannen – AssetHunt" },
+      { title: "Gerät scannen – Repenning Geräteportal" },
       {
         name: "description",
         content: "Gerät per QR-Code öffnen, ausleihen oder zurückgeben.",
       },
-      { property: "og:title", content: "Gerät scannen – AssetHunt" },
+      { property: "og:title", content: "Gerät scannen – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Gerät per QR-Code öffnen, ausleihen oder zurückgeben.",

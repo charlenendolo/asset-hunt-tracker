@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/defekte")({
   head: () => ({
     meta: [
-      { title: "Defekte – AssetHunt" },
+      { title: "Defekte – Repenning Geräteportal" },
       {
         name: "description",
         content: "Offene und abgeschlossene Gerätedefekte mit Schweregrad und Bearbeitungsstand.",
       },
-      { property: "og:title", content: "Defekte – AssetHunt" },
+      { property: "og:title", content: "Defekte – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Offene und abgeschlossene Gerätedefekte mit Schweregrad und Bearbeitungsstand.",

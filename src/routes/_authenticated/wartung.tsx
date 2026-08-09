@@ -13,9 +13,9 @@ import { MAINTENANCE_STATUS_LABELS, labelFor } from "@/lib/status";
 export const Route = createFileRoute("/_authenticated/wartung")({
   head: () => ({
     meta: [
-      { title: "Wartung – AssetHunt" },
+      { title: "Wartung – Repenning Geräteportal" },
       { name: "description", content: "Geplante und abgeschlossene Wartungen der Geräte." },
-      { property: "og:title", content: "Wartung – AssetHunt" },
+      { property: "og:title", content: "Wartung – Repenning Geräteportal" },
       { property: "og:description", content: "Geplante und abgeschlossene Wartungen der Geräte." },
     ],
   }),

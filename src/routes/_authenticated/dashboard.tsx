@@ -41,12 +41,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard – AssetHunt" },
+      { title: "Dashboard – Repenning Geräteportal" },
       {
         name: "description",
         content: "Tagesübersicht über Geräte, Reservierungen, Defekte und fällige Wartungen.",
       },
-      { property: "og:title", content: "Dashboard – AssetHunt" },
+      { property: "og:title", content: "Dashboard – Repenning Geräteportal" },
       {
         property: "og:description",
         content: "Tagesübersicht über Geräte, Reservierungen, Defekte und fällige Wartungen.",
@@ -213,7 +213,7 @@ function UserDashboard() {
   return (
     <AppShell title="Meine Übersicht" description="Deine Geräte auf einen Blick">
       <Hero
-        greeting="AssetHunt"
+        greeting="Repenning Geräteportal"
         headline={identity.displayName ? `Hallo ${identity.displayName}` : "Hallo"}
         subline="Hier findest du alles, was dir aktuell zugewiesen ist."
       />
@@ -308,7 +308,7 @@ function ManagerDashboard() {
   return (
     <AppShell title="Dashboard" description="Was braucht heute Aufmerksamkeit?">
       <Hero
-        greeting="AssetHunt"
+        greeting="Repenning Geräteportal"
         headline={greeting}
         subline={
           isAdmin
