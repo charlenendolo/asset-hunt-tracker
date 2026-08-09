@@ -13,6 +13,7 @@ import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
 import { formatDateTime, formatExpectedReturn, textOrDash } from "@/lib/format";
 import { MOVEMENT_TYPE_LABELS, labelFor } from "@/lib/status";
 import { useIdentity } from "@/hooks/use-identity";
+import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 
 export const Route = createFileRoute("/maschine/$machineId")({
   // Client-only gate: QR scans often arrive logged out. We keep the scanned
@@ -55,6 +56,7 @@ function QrMachinePage() {
   const { machineId } = Route.useParams();
   const identity = useIdentity();
   const machine = useQuery(machineDetailQuery(machineId));
+  const photoUrls = usePrimaryPhotos(machine.data ? [machine.data.id] : []);
   const relations = useQuery(machineRelationsQuery(machineId));
 
   return (
@@ -83,12 +85,20 @@ function QrMachinePage() {
       ) : (
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="grid aspect-[4/3] w-full place-items-center bg-muted text-muted-foreground">
-              <div className="flex flex-col items-center gap-2">
-                <ImageOff className="h-7 w-7" strokeWidth={1.5} />
-                <p className="text-xs">Kein Foto hinterlegt</p>
+            {photoUrls[machine.data.id] ? (
+              <img
+                src={photoUrls[machine.data.id]}
+                alt={machine.data.name}
+                className="aspect-[4/3] w-full object-cover"
+              />
+            ) : (
+              <div className="grid aspect-[4/3] w-full place-items-center bg-muted text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <ImageOff className="h-7 w-7" strokeWidth={1.5} />
+                  <p className="text-xs">Kein Foto hinterlegt</p>
+                </div>
               </div>
-            </div>
+            )}
             <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
