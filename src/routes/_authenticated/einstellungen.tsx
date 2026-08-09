@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { AppShell } from "@/components/app-shell";
 import { Pill } from "@/components/status-badge";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { categoriesQuery } from "@/lib/queries";
