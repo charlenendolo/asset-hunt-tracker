@@ -56,7 +56,7 @@ function QrMachinePage() {
   const { machineId } = Route.useParams();
   const identity = useIdentity();
   const machine = useQuery(machineDetailQuery(machineId));
-  const photoUrls = usePrimaryPhotos(machine.data ? [machine.data.id] : []);
+  const photoUrls = usePrimaryPhotos(machine.data ? [machine.data.id] : [], "full");
   const relations = useQuery(machineRelationsQuery(machineId));
 
   return (
