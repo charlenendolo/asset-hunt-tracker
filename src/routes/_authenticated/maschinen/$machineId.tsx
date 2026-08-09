@@ -12,6 +12,10 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { MachineActions } from "@/components/machine-actions";
+import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialogs";
+import { ReassignResponsibleButton } from "@/components/reassign-responsible";
+import { CancelReservationButton } from "@/components/cancel-reservation";
+import { useIdentity } from "@/hooks/use-identity";
 import { MachinePhotos } from "@/components/machine-photos";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
@@ -27,6 +31,7 @@ import {
   textOrDash,
 } from "@/lib/format";
 import {
+  machineStatusKey,
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
   DEFECT_STATUS_LABELS,
@@ -107,6 +112,7 @@ function FuturePlaceholder({
 
 function MachineDetailPage() {
   const { machineId } = Route.useParams();
+  const identity = useIdentity();
   const machine = useQuery(machineDetailQuery(machineId));
   const relations = useQuery(machineRelationsQuery(machineId));
 
@@ -144,6 +150,10 @@ function MachineDetailPage() {
   }
 
   const rel = relations.data;
+  const hasStatusWithoutDefect =
+    machineStatusKey(m.status) === "defect" &&
+    !!rel &&
+    rel.defects.every((d) => d.status === "resolved");
 
   return (
     <AppShell title={m.name} description={m.asset_code}>
@@ -246,24 +256,58 @@ function MachineDetailPage() {
                         {textOrDash(r.site?.name)} · {textOrDash(r.reserved?.full_name)}
                       </p>
                     </div>
-                    <Pill>{labelFor(RESERVATION_STATUS_LABELS, r.status)}</Pill>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Pill
+                        tone={
+                          (r.status ?? "").toLowerCase() === "cancelled" ? "danger" : "neutral"
+                        }
+                      >
+                        {labelFor(RESERVATION_STATUS_LABELS, r.status)}
+                      </Pill>
+                      <CancelReservationButton
+                        reservation={{ id: r.id, status: r.status, reserved_by: r.reserved_by, machine: { name: m.name } }}
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                      />
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           </Section>
 
-          <Section title="Defekte">
+          <Section
+            title="Defekte"
+            aside={
+              <ReportDefectButton
+                machineId={m.id}
+                machineName={m.name}
+                siteId={m.current_site_id}
+                className="h-9"
+              />
+            }
+          >
+            {hasStatusWithoutDefect ? (
+              <div className="mb-3 rounded-lg border border-status-reserved/30 bg-status-reserved/8 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">
+                  Status defekt, aber kein Defektvorgang vorhanden.
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Es wird nichts automatisch erzeugt. Erfasse den Vorgang bewusst über „Defekt
+                  melden“.
+                </p>
+              </div>
+            ) : null}
             {relations.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (rel?.defects.length ?? 0) === 0 ? (
-              <EmptyState className="border-0 py-8" title="Keine offenen Defekte." />
+              <EmptyState className="border-0 py-8" title="Keine Defekte erfasst." />
             ) : (
               <ul className="divide-y divide-border">
                 {rel!.defects.map((d) => (
                   <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
+                      <p className="text-sm font-medium whitespace-pre-line text-foreground">
                         {d.description}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -271,7 +315,18 @@ function MachineDetailPage() {
                         {labelFor(DEFECT_STATUS_LABELS, d.status)}
                       </p>
                     </div>
-                    <Pill tone="danger">{labelFor(DEFECT_SEVERITY_LABELS, d.severity)}</Pill>
+                    <span className="flex shrink-0 flex-col items-end gap-2">
+                      <Pill tone={d.status === "resolved" ? "success" : "danger"}>
+                        {labelFor(DEFECT_SEVERITY_LABELS, d.severity)}
+                      </Pill>
+                      {d.status !== "resolved" ? (
+                        <CloseDefectButton
+                          defectId={d.id}
+                          machineName={m.name}
+                          className="h-8 px-2 text-xs"
+                        />
+                      ) : null}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -317,6 +372,17 @@ function MachineDetailPage() {
                 responsible_user_id: m.responsible_user_id,
               }}
             />
+            {identity.isAdmin ? (
+              <ReassignResponsibleButton
+                className="mt-3 w-full"
+                machine={{
+                  id: m.id,
+                  name: m.name,
+                  responsible_user_id: m.responsible_user_id,
+                  responsible: m.responsible,
+                }}
+              />
+            ) : null}
             <ReserveMachineButton
               className="mt-3 w-full"
               machine={{
