@@ -28,6 +28,7 @@ import { useIdentity } from "@/hooks/use-identity";
 import { sitesQuery } from "@/lib/queries";
 import { createSite } from "@/lib/sites.functions";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER, type SiteType } from "@/lib/site-types";
+import { SiteTypeIcon } from "@/components/site-type-icon";
 import { cn } from "@/lib/utils";
 
 type SiteRow = {
@@ -92,10 +93,13 @@ export function SiteCombobox({
             aria-expanded={open}
             className={cn("w-full justify-between font-normal", className)}
           >
-            <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            <span className={cn("flex min-w-0 items-center gap-2", !selected && "text-muted-foreground")}>
+              {selected ? <SiteTypeIcon type={selected.location_type} withTitle={false} /> : null}
+              <span className="truncate">
               {selected
                 ? `${selected.name} · ${SITE_TYPE_LABELS[selected.location_type as SiteType] ?? "Standort"}`
                 : emptyLabel}
+              </span>
             </span>
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -131,6 +135,7 @@ export function SiteCombobox({
                       <Check
                         className={cn("h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")}
                       />
+                      <SiteTypeIcon type={s.location_type} withTitle={false} />
                       <span className="truncate">{s.name}</span>
                       {s.site_number ? (
                         <span className="ml-auto text-xs text-muted-foreground">

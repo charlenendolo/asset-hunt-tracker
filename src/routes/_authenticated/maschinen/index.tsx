@@ -17,6 +17,7 @@ import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
+import { SiteTypeIcon } from "@/components/site-type-icon";
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   head: () => ({
@@ -228,7 +229,12 @@ function MachinesPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       {textOrDash(m.category?.name)}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{textOrDash(m.site?.name)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        {m.site ? <SiteTypeIcon type={m.site.location_type} withTitle={false} /> : null}
+                        {textOrDash(m.site?.name)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {textOrDash(m.responsible?.full_name)}
                     </td>
@@ -251,7 +257,11 @@ function MachinesPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{m.name}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {m.asset_code} · {textOrDash(m.site?.name)}
+                      {m.asset_code} ·{" "}
+                      <span className="inline-flex items-center gap-1 align-middle">
+                        {m.site ? <SiteTypeIcon type={m.site.location_type} className="h-3.5 w-3.5" withTitle={false} /> : null}
+                        {textOrDash(m.site?.name)}
+                      </span>
                     </p>
                   </div>
                   <StatusBadge status={m.status} />
