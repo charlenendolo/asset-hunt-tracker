@@ -5,6 +5,7 @@ const SIZES = {
   sm: "h-6",
   md: "h-8",
   lg: "h-14",
+  fill: "h-auto w-full max-w-[150px]",
 } as const;
 
 /**
@@ -37,7 +38,7 @@ export function Logo({
       <img
         src={logoAsset.url}
         alt="Repenning Geräteportal"
-        className={cn("w-auto max-w-full object-contain", height)}
+        className={cn("object-contain", size === "fill" ? "" : "w-auto max-w-full", height)}
       />
     </span>
   );
