@@ -236,6 +236,24 @@ function MachinesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                  {canSelect ? (
+                    <th className="w-10 px-4 py-3">
+                      <Checkbox
+                        checked={allVisibleSelected}
+                        aria-label="Alle sichtbaren Geräte auswählen"
+                        onCheckedChange={(checked) =>
+                          setSelected((prev) => {
+                            const next = { ...prev };
+                            for (const m of rows) {
+                              if (checked) next[m.id] = true;
+                              else delete next[m.id];
+                            }
+                            return next;
+                          })
+                        }
+                      />
+                    </th>
+                  ) : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Gerät</th>
                   <th className="px-4 py-3">Gerätenummer</th>
@@ -247,9 +265,19 @@ function MachinesPage() {
               <tbody className="divide-y divide-border">
                 {rows.map((m) => (
                   <tr key={m.id} className="transition-colors hover:bg-accent/40">
+                    {canSelect ? (
+                      <td className="px-4 py-3">
+                        <Checkbox
+                          checked={!!selected[m.id]}
+                          aria-label={`${m.name} auswählen`}
+                          onCheckedChange={(checked) => toggle(m.id, checked === true)}
+                        />
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3">
                       <StatusBadge status={m.status} />
                     </td>
+
                     <td className="px-4 py-3">
                       <Link
                         to="/maschinen/$machineId"
