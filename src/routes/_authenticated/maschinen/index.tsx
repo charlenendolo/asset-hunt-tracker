@@ -350,6 +350,9 @@ function MachinesPage() {
                         {textOrDash(m.site?.name)}
                       </span>
                     </p>
+                    {isOverdue(m) ? (
+                      <OverdueBadge expectedReturnAt={m.expected_return_at} className="mt-1.5" />
+                    ) : null}
                   </div>
                   <StatusBadge status={m.status} />
                 </Link>
