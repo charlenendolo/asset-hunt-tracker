@@ -355,6 +355,7 @@ function ManagerDashboard() {
           label="Geräte gesamt"
           value={counts.data?.total ?? 0}
           loading={counts.isLoading}
+          icon={Container}
           accent
         />
         {MACHINE_STATUS_ORDER.map((key) => (
@@ -362,7 +363,8 @@ function ManagerDashboard() {
             key={key}
             label={MACHINE_STATUS_LABELS[key]}
             value={byStatus(key)}
-            tone={STATUS_DOT[key]}
+            toneKey={key}
+            icon={KPI_ICONS[key]}
             loading={counts.isLoading}
           />
         ))}
