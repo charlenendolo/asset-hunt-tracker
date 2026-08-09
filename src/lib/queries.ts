@@ -489,3 +489,53 @@ export function plannerQuery(userId: string | null, canSeeAll: boolean) {
     },
   });
 }
+
+/**
+ * Überfällige Geräte (abgeleitet, kein gespeicherter Status): ausgeliehen und
+ * expected_return_at in der Vergangenheit. Sichtbarkeit folgt der bestehenden
+ * Logik — Mitarbeiter sehen nur die Geräte, für die sie verantwortlich sind.
+ * Zusätzlich wird je Gerät die nächste anstehende Reservierung ermittelt.
+ */
+export function overdueMachinesQuery(userId: string | null, canSeeAll: boolean) {
+  return queryOptions({
+    queryKey: ["machines", "overdue", canSeeAll ? "all" : userId],
+    enabled: canSeeAll || !!userId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const nowIso = new Date().toISOString();
+      let q = supabase
+        .from("machines")
+        .select(MACHINE_LIST_SELECT)
+        .eq("active", true)
+        .in("status", machineStatusDbValues("borrowed"))
+        .not("expected_return_at", "is", null)
+        .lt("expected_return_at", nowIso)
+        .order("expected_return_at", { ascending: true })
+        .limit(200);
+      if (!canSeeAll) q = q.eq("responsible_user_id", userId!);
+
+      const { data, error } = await q;
+      if (error) throw error;
+      const machines = data ?? [];
+      if (machines.length === 0) return { machines, nextReservation: {} as Record<string, string> };
+
+      const { data: reservations } = await supabase
+        .from("reservations")
+        .select("machine_id, start_at")
+        .in(
+          "machine_id",
+          machines.map((m) => m.id),
+        )
+        .neq("status", "cancelled")
+        .gte("start_at", nowIso)
+        .order("start_at", { ascending: true })
+        .limit(500);
+
+      const nextReservation: Record<string, string> = {};
+      for (const r of reservations ?? []) {
+        if (r.machine_id && !nextReservation[r.machine_id]) nextReservation[r.machine_id] = r.start_at;
+      }
+      return { machines, nextReservation };
+    },
+  });
+}
