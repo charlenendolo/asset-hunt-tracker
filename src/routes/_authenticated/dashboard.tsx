@@ -24,7 +24,11 @@ import {
   maintenanceQuery,
   recentMovementsQuery,
   myReservationsQuery,
+  overdueMachinesQuery,
 } from "@/lib/queries";
+import { OverdueBadge } from "@/components/overdue-badge";
+import { overdueLabel } from "@/lib/overdue";
+import { formatExpectedReturn } from "@/lib/format";
 
 import {
   MACHINE_STATUS_LABELS,
