@@ -1,174 +1,98 @@
-# PIN-Login: Mitarbeiter auswählen + PIN
+# AssetHunt – Operationaler Ausbau
 
-Zweiter, zusätzlicher Anmeldeweg. Der bestehende E-Mail/Passwort-Login bleibt unverändert, es entsteht kein zweiter Benutzeraccount, `auth.uid()` bleibt identisch mit `profiles.id`.
+Analyse ist erfolgt: Reservierungen, Defekte, Fotos, QR und Standorte lassen sich fast vollständig
+mit dem bestehenden Schema umsetzen. Nur der Foto-Upload braucht eine Freigabe.
 
-## 1. Neues Datenmodell (minimal)
+## Was ohne Schemaänderung geht
 
-Eine neue Tabelle: `public.employee_logins`. Eine Zeile = dieser bestehende Benutzer darf sich zusätzlich per PIN anmelden.
+- `reservations.start_at/end_at` bleiben `timestamptz` — Werte werden auf Tagesgrenzen normalisiert
+  (Start 00:00, Ende 23:59:59 lokal). Keine Migration nötig.
+- `defects` hat bereits `status`, `resolved_at`, `resolved_by` — Abschluss-Workflow direkt möglich.
+- `sites.location_type` ist vorhanden und im UI bereits verdrahtet.
+- `machine_photos` (storage_path, is_primary) existiert.
 
-| Feld | Typ | Zweck |
-|---|---|---|
-| `user_id` | uuid PK → `profiles.id` | die bestehende Identität |
-| `pin_hash` | text | PBKDF2-Hash, nie Klartext |
-| `pin_salt` | text | zufälliger Salt pro Nutzer |
-| `pin_set_at` | timestamptz | wann zuletzt gesetzt |
-| `pin_must_change` | boolean | nach Start-PIN/Reset `true` |
-| `failed_attempts` | int | Zähler seit letzter Sperre/letztem Erfolg |
-| `lock_count` | int | Anzahl aufeinanderfolgender Sperren → Sperrdauer |
-| `locked_until` | timestamptz null | temporäre Sperre |
-| `last_success_at` | timestamptz null | Basis für das Abklingen von `lock_count` |
-| `enabled` | boolean | PIN-Zugang aktiv/deaktiviert |
-| `select_ref` | uuid unique | opake Auswahl-ID für den Client |
-| `created_at` / `updated_at` | timestamptz | Standard |
+## 1. Reservierungen (höchste Priorität)
 
-Bewusst **nicht** enthalten: `last_name`, `first_name`, `last_name_norm`, `norm_name()`, Nachnamen-Suche, Lookup-Token, `PIN_LOOKUP_TOKEN_SECRET`, Duplicate-Logik. Namen kommen aus `profiles.full_name`.
+- Formular nur noch `Von` / `Bis` als Datumsfelder, Anzeige überall ohne Uhrzeit.
+- Serverseitig direkt vor dem Speichern:
+  - Statussperre: `defective`/`defect` → „Dieses Gerät ist aktuell defekt …“,
+    `maintenance` → „… in Wartung …“, `retired` → „… nicht mehr verfügbar.“
+  - Tagesgenaue Überschneidungsprüfung inkl. Anzeige des belegten Zeitraums.
+  - Aktuell ausgeliehen: Reservierung ab einem Tag nach `expected_return_at` erlaubt;
+    ohne `expected_return_at` Hinweis „Aktuell ausgeliehen – zukünftige Verfügbarkeit unklar.“
+- Status: Enum-Wert `confirmed` bleibt unverändert, UI-Label wird **„Eingeplant“**
+  (statt „Bestätigt“, das eine Genehmigung suggeriert).
 
-`auth_email` wird **nicht** gespeichert: die E-Mail liegt bereits in `auth.users` und wird serverseitig über `supabaseAdmin.auth.admin.getUserById(user_id)` gelesen. Keine Redundanz, keine zweite Benutzerverwaltung.
+## 2. Defekt abschließen
 
-Der Client sieht nur `select_ref` + Anzeigename — nie `user_id`, nie E-Mail, nie Rolle.
+- Button „Defekt abschließen“ im Gerätepass für admin und site_manager.
+- Dialog: offener Defekt auswählen, Reparatur-/Prüfkommentar (Pflicht).
+- Server: `status='resolved'`, `resolved_at`, `resolved_by`, Kommentar an Beschreibung angehängt;
+  Maschine auf `available`, wenn kein weiterer offener Defekt und keine Wartung/Ausleihe.
 
-## 2. Unverändert
+## 3. Kalender → Ressourcen-Timeline
 
-`profiles`, `machines`, `movements`, `reservations`, `defects`, `maintenance`, `sites`, `accessories`, `machine_photos`, `machine_categories` — keine Spalten, Enums, Trigger oder RLS-Änderungen. `is_admin()`, `handle_new_user()`, `useIdentity()`, Checkout/Return/Reservierungen bleiben wie sie sind.
+Primäransicht wird eine maschinenorientierte Wochen-Timeline (Zeile = Maschine, Spalte = Tag)
+statt Monatsraster — für „welches Gerät ist wann belegt“ deutlich schneller lesbar.
 
-## 3. `listPinEmployees()`
+- Ganztagesblöcke, keine Uhrzeiten, Maschinenname prominent, Gerätenummer sekundär.
+- Farbcodierung: Reservierung (grün), Ausleihe (blau/neutral), Wartung (amber), Defekt (rot).
+- Heute hervorgehoben, Woche vor/zurück, „Heute“-Sprung.
+- Mobil: horizontal scrollbare Tagesspalten mit fixierter Maschinenspalte.
+- Keine Kalender-Bibliothek, reines CSS-Grid.
 
-Öffentliche Server-Funktion (kein Auth), read-only, für die Login-Seite.
+## 4. Standorte
 
-- Läuft serverseitig mit dem Service-Role-Client (Tabelle ist für `anon`/`authenticated` komplett gesperrt).
-- Join `employee_logins` × `profiles`, gefiltert auf `enabled = true` und `profiles.active = true`.
-- Rückgabe ausschließlich: `[{ ref: select_ref, name: full_name }]`, alphabetisch sortiert.
-- Bei exakt gleichem Anzeigenamen wird ein neutraler Zusatz aus vorhandenen Daten ergänzt (`Name (2)` als reine Ordnungszahl) — keine E-Mail, keine Rolle, keine ID.
-- Serverseitiges Caching/Limit, damit die Liste nicht als Scraping-Endpunkt missbraucht wird.
+Bereits umgesetzt (Combobox, Gruppierung, „+ Neuen Standort hinzufügen“, Filter).
+Wird nur noch auf die neuen Formulare (Maschine anlegen/bearbeiten, Inventur) ausgerollt.
 
-## 4. `pinLogin({ ref, pin })`
+## 5. QR-Codes
 
-Öffentliche Server-Funktion, Ablauf:
+Neue Route `/qr-codes` für admin und site_manager: Liste mit Name, Gerätenummer, Status, QR,
+Mehrfachauswahl und Druckansicht (Etikett: AssetHunt, QR, Gerätenummer, Name).
+Ziel-URL bleibt `/maschine/{machineId}`.
 
-1. `ref` (uuid) validieren, Zeile über `select_ref` laden. Unbekannt → generischer Fehler.
-2. `enabled` und `profiles.active` prüfen.
-3. `locked_until > now()` → generischer Fehler.
-4. PIN gegen `pin_hash` prüfen (konstantzeitiger Vergleich).
-5. Fehlschlag: `failed_attempts + 1`. Bei 5 → `lock_count + 1` und `locked_until = now() + dauer(lock_count)`, `failed_attempts` zurück auf 0. `lock_count` bleibt erhalten und ist die Sperrhistorie.
-6. Erfolg: `failed_attempts = 0`, `locked_until = null`, `last_success_at = now()`, `lock_count` wird um 1 reduziert (nicht unter 0). Session erzeugen (Abschnitt 5).
-7. Rückgabe bei Erfolg: `{ ok: true, session, mustChangePin }`. Jeder Fehlerfall liefert exakt „Anmeldung nicht möglich." — keine Unterscheidung zwischen unbekannt, gesperrt, deaktiviert oder falscher PIN.
+## 6. Maschinenverwaltung
 
-### Progressive Sperre
+„Maschine hinzufügen“ und „Bearbeiten“ über Server-Funktionen (Rollenprüfung serverseitig),
+nur bestehende Spalten. Pflicht: Gerätenummer, Bezeichnung. Standort über die Combobox.
 
-| `lock_count` nach Erhöhung | Sperrdauer |
-|---|---|
-| 1 | 15 Minuten |
-| 2 | 30 Minuten |
-| 3 und mehr | 60 Minuten (Obergrenze) |
+## 7. Fotos — Freigabe nötig
 
-Abklingen, damit ein legitimer Mitarbeiter nicht dauerhaft bestraft wird:
-- Jeder erfolgreiche Login senkt `lock_count` um 1.
-- Zusätzlich verfällt `lock_count` vollständig, wenn seit dem Ende der letzten Sperre 24 Stunden ohne neue Sperre vergangen sind (serverseitig beim nächsten Login-Versuch ausgewertet, kein Cron nötig).
-- Ein Admin-`resetPin` oder `unlockPin` setzt `failed_attempts`, `locked_until` und `lock_count` zurück.
+Es existiert noch kein Storage-Bucket. Vorschlag:
 
-Die Meldung bleibt in jedem Fall „Anmeldung nicht möglich." — die Sperrdauer wird dem Client nicht mitgeteilt.
+- Bucket `machine-photos`, **privat**, Zugriff über signierte URLs.
+- Policies auf `storage.objects` (Migration, wird vorher gezeigt):
+  - `authenticated` darf Objekte im Bucket lesen,
+  - `authenticated` darf hochladen,
+  - löschen nur admin/site_manager.
 
-Zusätzlich eine IP-basierte Kurzzeit-Drossel serverseitig, damit ein Angreifer nicht parallel über viele `ref`s streut.
+Upload im Gerätepass (Kamera auf Mobil + Datei), mehrere Fotos, primäres Bild setzbar.
 
-## 5. Wie die Supabase-Session entsteht — vollständig serverseitig
+## 8. Inventurmodus
 
-Kein eigenes JWT-Signieren. Der komplette Token-Austausch läuft im Server-Handler; der Browser sieht weder `hashed_token` noch Magic-Link-Daten.
+Mobiler Erfassungsflow `/inventur`: Gerätenummer + Bezeichnung Pflicht, restliche Felder direkt
+darunter, Foto optional, nach dem Speichern großer CTA „Nächste Maschine erfassen“
+mit übernommenem Standort. Keine neue Rolle.
 
-1. Server: E-Mail des Nutzers via `supabaseAdmin.auth.admin.getUserById(user_id)` — die E-Mail bleibt serverseitig.
-2. Server: `supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email })` → `properties.hashed_token`. Es wird keine E-Mail versendet.
-3. Server: frischer Publishable-Client (kein persistSession) ruft `verifyOtp({ type: 'magiclink', token_hash })` auf. Das Token ist damit sofort im selben Request verbraucht.
-4. Server gibt an den Client ausschließlich zurück: `{ access_token, refresh_token, expires_at, mustChangePin }`.
-5. Client: `supabase.auth.setSession({ access_token, refresh_token })` → reguläre Session in `localStorage`, identisch zum E-Mail-Login.
+## 9. PIN-Login
 
-**Technisch verifiziert** gegen das verbundene Projekt mit supabase-js 2.112: `generateLink` liefert `hashed_token`, das serverseitige `verifyOtp` gibt eine vollständige Session mit Access- und Refresh-Token zurück, und `user.id` entspricht exakt der bestehenden Identität. Der Flow funktioniert — keine Improvisation nötig.
+`listPinEmployees()` wird durch `searchPinEmployees({ query })` ersetzt (serverseitig, min. 2 Zeichen,
+max. 10 Treffer, nur Vor-/Nachname). Hashing-, Sperr- und Session-Logik bleibt unangetastet.
 
-Danach gilt: `auth.uid() = profiles.id`, RLS unverändert, `requireSupabaseAuth` und der Bearer-Attacher funktionieren ohne Änderung. Logout = `supabase.auth.signOut()`; Refresh übernimmt der Client automatisch.
+## 10–13. Meine Geräte, Checkout/Rückgabe, Dashboard, Rollen
 
-## 6. PIN-Verwaltung durch Admin
+Bestehende Logik bleibt; nach Checkout/Rückgabe werden die relevanten Queries invalidiert,
+sodass „Meine Geräte“ sofort aktualisiert. Dashboard erhält eine Sektion
+„Was braucht heute Aufmerksamkeit?“ und feinere Jungle-Green-Akzente.
 
-Im bestehenden Benutzerbereich, alle Aktionen als Server-Funktionen mit `requireSupabaseAuth` + serverseitiger `is_admin()`-Prüfung über den *eigenen* Client des Aufrufers, erst danach Service-Role:
+## 14. Abschluss
 
-- `enablePinAccess(userId)` → Zeile anlegen, Start-PIN (6 Ziffern, kryptografisch zufällig, keine Trivialfolgen) erzeugen, `pin_must_change = true`. Der Klartext wird **genau einmal** in der Antwort zurückgegeben und nur im Dialog angezeigt.
-- `resetPin(userId)` → neue Start-PIN, `pin_must_change = true`, Sperre und Zähler zurückgesetzt.
-- `disablePinAccess(userId)` → `enabled = false`.
-- `unlockPin(userId)` → `locked_until = null`, `failed_attempts = 0`, `lock_count = 0`.
-- `changeOwnPin({ oldPin, newPin })` unter `requireSupabaseAuth` für den Mitarbeiter selbst; setzt `pin_must_change = false`.
+Typecheck, Produktions-Build, Prüfung der Auth-, PIN-, Checkout-, Reservierungs- und
+Kalender-Flows, danach Pilot-Test-Checkliste. Keine Domain-/DNS-Änderung.
 
-Es gibt keinen Endpunkt, der einen bestehenden PIN oder `pin_hash` ausliefert.
+## Freizugeben
 
-## 7. Secrets
-
-- `PIN_PEPPER` — serverseitiger Zusatzschlüssel, der in die Hash-Berechnung einfließt. Wird generiert (64 Zeichen), nie angezeigt, nur in Server-Funktionen gelesen.
-- Bereits vorhanden und ausreichend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_PUBLISHABLE_KEY`.
-- Kein `PIN_LOOKUP_TOKEN_SECRET` mehr.
-
-## 8. RLS & Grants für `employee_logins`
-
-- `ENABLE ROW LEVEL SECURITY`, **keine** Policy für `anon` oder `authenticated`.
-- `REVOKE ALL ... FROM anon, authenticated;` explizit, zusätzlich `GRANT ALL ... TO service_role;` — sonst keine Grants.
-- Zugriff ausschließlich über Server-Funktionen. Damit ist `pin_hash` über die Data API grundsätzlich nicht erreichbar.
-
-## 9. Sicherheitsrisiken und Gegenmaßnahmen
-
-| Risiko | Maßnahme |
-|---|---|
-| 6-stellige PIN = nur 1 Mio. Kombinationen | Sperre nach 5 Fehlversuchen, progressiv 15/30/60 Min über `lock_count`, serverseitige Drossel, Trivial-PINs ausgeschlossen |
-| Offline-Angriff bei DB-Leak | PBKDF2-SHA256 mit hoher Iterationszahl, Salt pro Nutzer **und** serverseitigem Pepper, der nicht in der DB liegt |
-| Mitarbeiterliste ist öffentlich | Bewusst akzeptiert; nur Anzeigename + opake `select_ref`, kein Rückschluss auf `user_id`, E-Mail oder Rolle |
-| Missbrauch des Magic-Link-Tokens | Token verlässt den Server nie; es wird im selben Handler erzeugt und sofort eingelöst |
-| Start-PIN bleibt dauerhaft in Benutzung | `pin_must_change = true` erzwingt den Wechsel vor der ersten Nutzung |
-| Enumeration von Konten | Einheitliche Fehlermeldung „Anmeldung nicht möglich." und konstante Antwortzeit |
-| Service-Role-Leak | `client.server` wird nur innerhalb der Handler geladen, nie im Modul-Scope einer `.functions.ts` |
-
-Bewusst offen: Ein 6-stelliger PIN bleibt schwächer als ein Passwort. Für Baustellen-Geräte ist das der gewollte Kompromiss, abgesichert über Sperre und Pepper.
-
-## 10. Geplante Migration (nur Anzeige, wird nicht ausgeführt)
-
-```sql
-create table public.employee_logins (
-  user_id uuid primary key references public.profiles(id) on delete cascade,
-  select_ref uuid not null unique default gen_random_uuid(),
-  pin_hash text not null,
-  pin_salt text not null,
-  pin_set_at timestamptz not null default now(),
-  pin_must_change boolean not null default true,
-  failed_attempts integer not null default 0,
-  lock_count integer not null default 0,
-  locked_until timestamptz,
-  last_success_at timestamptz,
-  enabled boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
--- Nur der Server darf diese Tabelle sehen. Kein anon, kein authenticated.
-revoke all on public.employee_logins from anon, authenticated;
-grant all on public.employee_logins to service_role;
-
-alter table public.employee_logins enable row level security;
--- Absichtlich keine Policy: alle Zugriffe laufen über service_role in Server-Funktionen.
-
-create trigger employee_logins_set_updated_at
-  before update on public.employee_logins
-  for each row execute function public.set_updated_at();
-```
-
-## 11. Erzwungener PIN-Wechsel
-
-Bei `enablePinAccess` und `resetPin` erzeugt der Server einen zufälligen 6-stelligen Start-PIN (einmalige Anzeige) und setzt `pin_must_change = true`.
-
-Beim ersten erfolgreichen PIN-Login liefert `pinLogin` `mustChangePin: true`. Die App zeigt dann einen nicht abbrechbaren Schritt „Neuen PIN festlegen"; erst nach erfolgreichem `changeOwnPin` ist die Anwendung nutzbar (Navigation und Aktionen bleiben bis dahin gesperrt).
-
-Abgelehnte PINs (einfache Regel, keine Passwortkomplexität):
-- alle Ziffern gleich (`000000`, `111111`, …)
-- aufsteigende Folge (`123456`, `234567`, …)
-- absteigende Folge (`654321`, `987654`, …)
-- der aktuelle bzw. der Start-PIN selbst
-
-Fehlermeldung: „Bitte wähle einen weniger vorhersehbaren PIN." Die Prüfung läuft serverseitig in `changeOwnPin` und zusätzlich bei der Generierung des Start-PINs.
-
-## 11a. UI
-
-Login-Seite bekommt zwei Tabs: „Büro / Admin" (E-Mail + Passwort, unverändert) und „Mitarbeiter" (suchbare Combobox mit `Vorname Nachname` + 6-stelliges PIN-Feld, CTA „Anmelden"). Nach Login mit `pin_must_change = true` erscheint einmalig der Dialog „PIN ändern".
-
-Die Komfortfunktion „zuletzt gewählte Person vorausgewählt" wird in Version 1 **nicht** implementiert, um den ersten Wurf schlank zu halten; die Combobox ist so gebaut, dass sie später ohne Umbau ergänzt werden kann.
+Nur eine Änderung: der Storage-Bucket `machine-photos` samt Policies (Punkt 7).
+Alles andere kommt ohne Schema-, RLS- oder Enum-Änderung aus.
+Ohne diese Freigabe setze ich Punkt 7 nicht um und liefere den Rest.
