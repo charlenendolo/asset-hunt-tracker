@@ -74,6 +74,9 @@ function MachinesPage() {
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Record<string, true>>({});
+  const [labelDialog, setLabelDialog] = useState(false);
+  const identity = useIdentity();
 
   const filters = useMemo(
     () => ({ search, categoryId, siteId, locationType, status, sort, page, pageSize: PAGE_SIZE }),
@@ -88,6 +91,26 @@ function MachinesPage() {
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilters = !!(search || categoryId || siteId || locationType || status);
+
+  const canSelect = identity.canManage;
+  const selectedIds = Object.keys(selected);
+  const selectedMachines = useMemo(
+    () =>
+      rows
+        .filter((m) => selected[m.id])
+        .map((m) => ({ id: m.id, name: m.name, asset_code: m.asset_code })),
+    [rows, selected],
+  );
+  const allVisibleSelected = rows.length > 0 && rows.every((m) => selected[m.id]);
+
+  function toggle(id: string, checked: boolean) {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (checked) next[id] = true;
+      else delete next[id];
+      return next;
+    });
+  }
 
   function reset<T>(setter: (v: T) => void) {
     return (v: T) => {
@@ -107,6 +130,23 @@ function MachinesPage() {
         description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
         actions={<AddMachineButton className="h-10 font-medium" />}
       />
+
+      {canSelect && selectedIds.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+          <p className="text-sm font-medium text-foreground">
+            {selectedIds.length} Maschine{selectedIds.length === 1 ? "" : "n"} ausgewählt
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSelected({})}>
+              Auswahl leeren
+            </Button>
+            <Button size="sm" onClick={() => setLabelDialog(true)}>
+              <Printer className="mr-2 h-4 w-4" /> {selectedIds.length} Etiketten drucken
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
 
       <div className="mb-4 grid gap-2 rounded-xl border border-border bg-card/60 p-2 sm:grid-cols-2 xl:grid-cols-6">
 
