@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ImageOff, PackageOpen } from "lucide-react";
+import { ImageOff, PackageOpen, TriangleAlert } from "lucide-react";
+
+import { isOverdue, overdueLabel } from "@/lib/overdue";
 
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
