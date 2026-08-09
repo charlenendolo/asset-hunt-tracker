@@ -26,7 +26,14 @@ const returnSchema = z.object({
   // must match DB check constraint movements_condition_check
   condition: z.enum(["good", "damaged", "incomplete"]).nullable().optional(),
   comment: z.string().max(2000).nullable().optional(),
+  // Mitarbeiter bestätigen die Rückgabe mit ihrem bestehenden 4-stelligen PIN.
+  pin: z
+    .string()
+    .regex(/^\d{4}$/)
+    .nullable()
+    .optional(),
 });
+
 
 const AVAILABLE = ["available", "verfuegbar", "verfügbar", "frei"];
 const CHECKED_OUT = ["checked_out", "borrowed", "ausgeliehen", "in_use"];
