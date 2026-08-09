@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
 import { createReservation } from "@/lib/reservations.functions";
-import { sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
 
 function localInput(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
