@@ -55,24 +55,24 @@
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.9834 0.0025 165);
-  --foreground: oklch(0.2435 0 0);
+  --background: oklch(0.9665 0.0025 220);
+  --foreground: oklch(0.2145 0.005 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2435 0 0);
+  --card-foreground: oklch(0.2145 0.005 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2435 0 0);
+  --popover-foreground: oklch(0.2145 0.005 250);
   --primary: oklch(0.3866 0.0651 165.5);
   --primary-foreground: oklch(0.99 0.003 165);
-  --secondary: oklch(0.9613 0.006 165);
-  --secondary-foreground: oklch(0.3866 0.0651 165.5);
-  --muted: oklch(0.9613 0.006 165);
-  --muted-foreground: oklch(0.551 0.0234 264.36);
-  --accent: oklch(0.9515 0.0135 165.5);
-  --accent-foreground: oklch(0.3866 0.0651 165.5);
+  --secondary: oklch(0.3215 0.008 250);
+  --secondary-foreground: oklch(0.975 0.002 250);
+  --muted: oklch(0.9455 0.0035 250);
+  --muted-foreground: oklch(0.4685 0.012 255);
+  --accent: oklch(0.9285 0.005 250);
+  --accent-foreground: oklch(0.2645 0.008 250);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9313 0.0055 175);
-  --input: oklch(0.9313 0.0055 175);
+  --border: oklch(0.8815 0.005 250);
+  --input: oklch(0.8615 0.006 250);
   --ring: oklch(0.3866 0.0651 165.5);
   --status-available: oklch(0.53 0.12 155);
   --status-reserved: oklch(0.64 0.14 78);
@@ -84,13 +84,13 @@
   --chart-3: oklch(0.53 0.14 250);
   --chart-4: oklch(0.64 0.14 78);
   --chart-5: oklch(0.52 0.16 300);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.2435 0 0);
+  --sidebar: oklch(0.9775 0.0025 250);
+  --sidebar-foreground: oklch(0.2145 0.005 250);
   --sidebar-primary: oklch(0.3866 0.0651 165.5);
   --sidebar-primary-foreground: oklch(0.99 0.003 165);
-  --sidebar-accent: oklch(0.9515 0.0135 165.5);
-  --sidebar-accent-foreground: oklch(0.3866 0.0651 165.5);
-  --sidebar-border: oklch(0.9313 0.0055 175);
+  --sidebar-accent: oklch(0.9155 0.005 250);
+  --sidebar-accent-foreground: oklch(0.2445 0.008 250);
+  --sidebar-border: oklch(0.8695 0.005 250);
   --sidebar-ring: oklch(0.3866 0.0651 165.5);
 }
 
@@ -152,4 +152,15 @@
     font-weight: 300;
     letter-spacing: -0.01em;
   }
+}
+
+@layer base {
+  /* Ruhige, dunklere Grauflächen für datenintensive Ansichten. */
+  th {
+    color: var(--color-accent-foreground);
+  }
+}
+
+@utility surface-muted {
+  background-color: color-mix(in oklab, var(--color-muted) 70%, transparent);
 }
