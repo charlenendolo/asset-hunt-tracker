@@ -95,6 +95,7 @@ function UsersPage() {
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Rolle</th>
                   {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
+                  {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Angelegt</th>
                   {isAdmin ? <th className="px-4 py-3 text-right">Verwaltung</th> : null}
@@ -118,8 +119,13 @@ function UsersPage() {
                         {emailById.get(p.id) ? (
                           emailById.get(p.id)
                         ) : (
-                          <Pill tone="neutral">PIN-Login</Pill>
+                          <span className="text-muted-foreground">–</span>
                         )}
+                      </td>
+                    ) : null}
+                    {isAdmin ? (
+                      <td className="px-4 py-3">
+                        <Pill tone={accessLabel(p.id).tone}>{accessLabel(p.id).text}</Pill>
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
@@ -133,6 +139,8 @@ function UsersPage() {
                         <div className="flex flex-col items-end gap-2">
                           <UserRowActions
                             user={{ id: p.id, role: p.role ?? "user", active: p.active ?? true }}
+                            email={emailById.get(p.id) ?? null}
+                            pinEnabled={pinById.get(p.id) ?? false}
                           />
                           <PinAccessActions userId={p.id} />
                         </div>
