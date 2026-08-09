@@ -24,7 +24,11 @@ import {
   maintenanceQuery,
   recentMovementsQuery,
   myReservationsQuery,
+  overdueMachinesQuery,
 } from "@/lib/queries";
+import { OverdueBadge } from "@/components/overdue-badge";
+import { overdueLabel } from "@/lib/overdue";
+import { formatExpectedReturn } from "@/lib/format";
 
 import {
   MACHINE_STATUS_LABELS,
@@ -287,6 +291,11 @@ function ManagerDashboard() {
   const defects = useQuery(openDefectsQuery);
   const maintenance = useQuery(maintenanceQuery);
   const movements = useQuery({ ...recentMovementsQuery, enabled: isAdmin });
+  const managerIdentity = useIdentity();
+  const overdue = useQuery(
+    overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage),
+  );
+  const overdueMachines = overdue.data?.machines ?? [];
 
   const byStatus = (key: string) => {
     const c = counts.data?.counts ?? {};
@@ -367,7 +376,33 @@ function ManagerDashboard() {
             loading={counts.isLoading}
           />
         ))}
+        <Link
+          to="/maschinen"
+          search={{ status: "overdue" }}
+          className="relative overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97]"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold tracking-wide">Überfällig</p>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-destructive/15">
+              <TriangleAlert className="h-4 w-4" strokeWidth={2} />
+            </span>
+          </div>
+          {overdue.isLoading ? (
+            <Skeleton className="mt-2 h-8 w-16 opacity-40" />
+          ) : (
+            <p className="mt-2 text-2xl font-semibold tracking-tight">
+              {formatNumber(overdueMachines.length)}
+            </p>
+          )}
+        </Link>
       </div>
+
+      <OverdueSection
+        machines={overdueMachines}
+        nextReservation={overdue.data?.nextReservation ?? {}}
+        loading={overdue.isLoading}
+      />
+
 
       <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
         Was braucht heute Aufmerksamkeit?
@@ -545,5 +580,74 @@ function ListSkeleton() {
         <Skeleton key={i} className="h-10 w-full" />
       ))}
     </div>
+  );
+}
+
+/**
+ * Kompakte Liste der abgeleitet überfälligen Geräte (ausgeliehen +
+ * Rückgabefrist überschritten). Kein gespeicherter Status, rein berechnet.
+ */
+function OverdueSection({
+  machines,
+  nextReservation,
+  loading,
+}: {
+  machines: Array<{
+    id: string;
+    name: string;
+    asset_code: string;
+    expected_return_at?: string | null;
+    site?: { name: string } | null;
+    responsible?: { full_name: string | null } | null;
+  }>;
+  nextReservation: Record<string, string>;
+  loading?: boolean;
+}) {
+  return (
+    <section id="ueberfaellig" className="mt-8">
+      <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        Überfällige Geräte
+      </h2>
+      {loading ? (
+        <ListSkeleton />
+      ) : machines.length === 0 ? (
+        <EmptyState
+          icon={<CircleCheck className="h-6 w-6" strokeWidth={1.5} />}
+          title="Keine überfälligen Geräte."
+        />
+      ) : (
+        <ul className="divide-y divide-destructive/20 overflow-hidden rounded-xl border border-destructive/30 bg-destructive/5">
+          {machines.map((m) => (
+            <li key={m.id} className="px-4 py-3">
+              <Link
+                to="/maschinen/$machineId"
+                params={{ machineId: m.id }}
+                className="flex flex-wrap items-start justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {m.name} <span className="text-muted-foreground">· {m.asset_code}</span>
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    Verantwortlich: {m.responsible?.full_name ?? "–"} · Standort:{" "}
+                    {m.site?.name ?? "–"}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    Rückgabe erwartet: {formatExpectedReturn(m.expected_return_at) ?? "–"}
+                    {nextReservation[m.id]
+                      ? ` · nächste Reservierung ab ${formatDate(nextReservation[m.id])}`
+                      : ""}
+                  </p>
+                </div>
+                <span className="flex flex-col items-end gap-1">
+                  <OverdueBadge expectedReturnAt={m.expected_return_at} variant="full" />
+                  <span className="sr-only">{overdueLabel(m.expected_return_at)}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

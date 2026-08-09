@@ -25,6 +25,8 @@ import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { StatusBadge, Pill } from "@/components/status-badge";
+import { OverdueNotice } from "@/components/overdue-badge";
+import { isOverdue } from "@/lib/overdue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
 import {
@@ -173,6 +175,12 @@ function MachineDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
+          {isOverdue(m) ? (
+            <OverdueNotice
+              expectedReturnAt={m.expected_return_at}
+              message={`Rückgabe war für den ${formatExpectedReturn(m.expected_return_at)} vorgesehen. Bitte Rückgabe veranlassen.`}
+            />
+          ) : null}
           <section className="overflow-hidden rounded-xl border border-border bg-card">
             <MachineHeroPhoto src={photoUrls[m.id]} alt={m.name} />
 
@@ -196,7 +204,10 @@ function MachineDetailPage() {
               <Field label="Verantwortlich" value={textOrDash(m.responsible?.full_name)} />
               <Field
                 label="Voraussichtlich benötigt bis"
-                value={formatExpectedReturn(m.expected_return_at) ?? "–"}
+                value={
+                  formatExpectedReturn(m.expected_return_at) ??
+                  (machineStatusKey(m.status) === "borrowed" ? "Keine Rückgabe geplant" : "–")
+                }
               />
 
               <Field label="Anschaffungsdatum" value={formatDate(m.purchase_date)} />

@@ -16,7 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog } from "@/components/label-print";
 import { useIdentity } from "@/hooks/use-identity";
-import { categoriesQuery, machinesQuery } from "@/lib/queries";
+import { categoriesQuery, machinesQuery, OVERDUE_FILTER } from "@/lib/queries";
+import { OverdueBadge } from "@/components/overdue-badge";
+import { isOverdue } from "@/lib/overdue";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
@@ -24,6 +26,9 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    status: typeof search["status"] === "string" ? (search["status"] as string) : "",
+  }),
   head: () => ({
     meta: [
       { title: "Maschinen & Geräte – Repenning Geräteportal" },
@@ -71,7 +76,8 @@ function MachinesPage() {
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
   const [locationType, setLocationType] = useState("");
-  const [status, setStatus] = useState("");
+  const initialStatus = Route.useSearch().status;
+  const [status, setStatus] = useState(initialStatus);
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, true>>({});
@@ -198,6 +204,7 @@ function MachinesPage() {
               {MACHINE_STATUS_LABELS[k]}
             </option>
           ))}
+          <option value={OVERDUE_FILTER}>Überfällig</option>
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>
@@ -275,7 +282,12 @@ function MachinesPage() {
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
-                      <StatusBadge status={m.status} />
+                      <div className="flex flex-col items-start gap-1">
+                        <StatusBadge status={m.status} />
+                        {isOverdue(m) ? (
+                          <OverdueBadge expectedReturnAt={m.expected_return_at} />
+                        ) : null}
+                      </div>
                     </td>
 
                     <td className="px-4 py-3">
@@ -342,6 +354,9 @@ function MachinesPage() {
                         {textOrDash(m.site?.name)}
                       </span>
                     </p>
+                    {isOverdue(m) ? (
+                      <OverdueBadge expectedReturnAt={m.expected_return_at} className="mt-1.5" />
+                    ) : null}
                   </div>
                   <StatusBadge status={m.status} />
                 </Link>
