@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
-import { categoriesQuery, machinesQuery, sitesQuery } from "@/lib/queries";
+import { SiteCombobox } from "@/components/site-combobox";
+import { categoriesQuery, machinesQuery } from "@/lib/queries";
+import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
 
