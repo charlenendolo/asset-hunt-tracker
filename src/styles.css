@@ -94,6 +94,22 @@
   --status-borrowed: oklch(0.53 0.14 250);
   --status-maintenance: oklch(0.52 0.16 300);
   --status-defect: oklch(0.55 0.2 27);
+  /* KPI-Statuskarten: vollflächige, leicht entsättigte Statusfarben */
+  --kpi-available-surface: oklch(0.885 0.062 155);
+  --kpi-available-border: oklch(0.79 0.085 155);
+  --kpi-available-ink: oklch(0.36 0.085 155);
+  --kpi-reserved-surface: oklch(0.905 0.075 85);
+  --kpi-reserved-border: oklch(0.82 0.105 82);
+  --kpi-reserved-ink: oklch(0.4 0.09 70);
+  --kpi-borrowed-surface: oklch(0.895 0.055 250);
+  --kpi-borrowed-border: oklch(0.8 0.075 250);
+  --kpi-borrowed-ink: oklch(0.38 0.1 255);
+  --kpi-maintenance-surface: oklch(0.9 0.055 300);
+  --kpi-maintenance-border: oklch(0.81 0.075 300);
+  --kpi-maintenance-ink: oklch(0.39 0.11 300);
+  --kpi-defect-surface: oklch(0.905 0.048 20);
+  --kpi-defect-border: oklch(0.82 0.075 22);
+  --kpi-defect-ink: oklch(0.41 0.13 27);
   --chart-1: oklch(0.3866 0.0651 165.5);
   --chart-2: oklch(0.53 0.12 155);
   --chart-3: oklch(0.53 0.14 250);
