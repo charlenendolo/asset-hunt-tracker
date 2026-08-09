@@ -17,6 +17,16 @@ const SIGNED_URL_TTL = 60 * 60;
 
 const thumbPathFor = (path: string) => path.replace(/\.webp$/, "_thumb.webp");
 
+type SignedEntry = { path: string | null; signedUrl: string | null };
+
+function signedUrlMap(entries: SignedEntry[] | null) {
+  const map = new Map<string, string>();
+  for (const entry of entries ?? []) {
+    if (entry.path && entry.signedUrl) map.set(entry.path, entry.signedUrl);
+  }
+  return map;
+}
+
 async function requireManager(context: { supabase: any; userId: string }) {
   const { data: profile } = await context.supabase.rpc("current_profile");
   const row = Array.isArray(profile) ? profile[0] : profile;
@@ -57,11 +67,7 @@ export const listMachinePhotos = createServerFn({ method: "POST" })
     const { data: signed } = await context.supabase.storage
       .from(BUCKET)
       .createSignedUrls(paths, SIGNED_URL_TTL);
-    const urls = new Map<string, string>(
-      (signed ?? [])
-        .filter((s: { signedUrl: string | null }) => s.signedUrl)
-        .map((s: { path: string | null; signedUrl: string }) => [s.path ?? "", s.signedUrl]),
-    );
+    const urls = signedUrlMap(signed);
 
     return photos.map((p: { id: string; storage_path: string; is_primary: boolean }) => ({
       id: p.id,
@@ -95,11 +101,7 @@ export const primaryPhotoUrls = createServerFn({ method: "POST" })
         photos.map((p: { storage_path: string }) => thumbPathFor(p.storage_path)),
         SIGNED_URL_TTL,
       );
-    const urls = new Map<string, string>(
-      (signed ?? [])
-        .filter((s: { signedUrl: string | null }) => s.signedUrl)
-        .map((s: { path: string | null; signedUrl: string }) => [s.path ?? "", s.signedUrl]),
-    );
+    const urls = signedUrlMap(signed);
 
     const result: Record<string, string> = {};
     for (const p of photos as { machine_id: string; storage_path: string }[]) {
