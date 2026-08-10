@@ -312,7 +312,7 @@ function ManagerDashboard() {
     (m) => m.status !== "completed" && m.status !== "cancelled",
   );
 
-  const greeting = profile?.full_name ? `Guten Tag, ${profile.full_name}` : "Guten Tag";
+  const greeting = profile?.full_name ? `Guten Tag ${profile.full_name}` : "Guten Tag";
 
   return (
     <AppShell title="Dashboard" description="Was braucht heute Aufmerksamkeit?">
