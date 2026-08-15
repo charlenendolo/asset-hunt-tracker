@@ -33,6 +33,7 @@ import { formatExpectedReturn } from "@/lib/format";
 import {
   MACHINE_STATUS_LABELS,
   MACHINE_STATUS_ORDER,
+  MACHINE_STATUS_DB_VALUES,
   machineStatusKey,
   labelFor,
   DEFECT_SEVERITY_LABELS,
@@ -166,7 +167,7 @@ function KpiCard({
   accent?: boolean | undefined;
   icon?: typeof Container | undefined;
   to?: string | undefined;
-  search?: Record<string, string> | undefined;
+  search?: Record<string, string>;
 }) {
   const tone = accent
     ? "border-primary bg-primary text-primary-foreground shadow-sm hover:brightness-110"
@@ -198,11 +199,11 @@ function KpiCard({
     </>
   );
 
-  const className = `relative block overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone}`;
+  const className = `relative block overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone} cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99] active:brightness-[0.96]`;
 
   if (to) {
     return (
-      <Link to={to} search={search} className={className}>
+      <Link to={to} {...(search ? { search } : {})} className={className}>
         {content}
       </Link>
     );
@@ -379,6 +380,7 @@ function ManagerDashboard() {
           loading={counts.isLoading}
           icon={Container}
           accent
+          to="/maschinen"
         />
         {MACHINE_STATUS_ORDER.map((key) => (
           <KpiCard
@@ -388,12 +390,14 @@ function ManagerDashboard() {
             toneKey={key}
             icon={KPI_ICONS[key]}
             loading={counts.isLoading}
+            to="/maschinen"
+            search={{ status: MACHINE_STATUS_DB_VALUES[key]! }}
           />
         ))}
         <Link
           to="/maschinen"
           search={{ status: "overdue" }}
-          className="relative overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97]"
+          className="relative block overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99] active:brightness-[0.96]"
         >
           <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-semibold tracking-wide">Überfällig</p>
