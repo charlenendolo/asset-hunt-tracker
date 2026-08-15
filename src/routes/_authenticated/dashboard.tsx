@@ -198,7 +198,7 @@ function KpiCard({
     </>
   );
 
-  const className = `relative block overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone}`;
+  const className = `relative block overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone} cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99] active:brightness-[0.96]`;
 
   if (to) {
     return (
