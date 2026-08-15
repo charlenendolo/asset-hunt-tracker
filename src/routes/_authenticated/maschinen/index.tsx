@@ -77,7 +77,7 @@ function MachinesPage() {
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
   const [locationType, setLocationType] = useState("");
-  const initialStatus = Route.useSearch().status;
+  const initialStatus = Route.useSearch().status ?? "";
   const [status, setStatus] = useState(initialStatus);
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
@@ -86,7 +86,16 @@ function MachinesPage() {
   const identity = useIdentity();
 
   const filters = useMemo(
-    () => ({ search, categoryId, siteId, locationType, status, sort, page, pageSize: PAGE_SIZE }),
+    () => ({
+      search,
+      categoryId,
+      siteId,
+      locationType,
+      status: status || "",
+      sort,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
     [search, categoryId, siteId, locationType, status, sort, page],
   );
 
