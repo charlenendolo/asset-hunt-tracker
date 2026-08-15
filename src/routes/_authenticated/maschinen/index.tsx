@@ -151,15 +151,32 @@ function MachinesPage() {
 
   return (
     <AppShell
-      title="Maschinen & Geräte"
+      title="Geräte"
       description={total > 0 ? `${formatNumber(total)} Einträge` : undefined}
     >
       <PageHeader
         icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
-        title="Maschinen & Geräte"
+        title="Geräteportal"
         description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
         actions={<AddMachineButton className="h-10 font-medium" />}
       />
+
+      {activeSite ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+            Standort: {activeSite.name}
+            <button
+              type="button"
+              aria-label="Standortfilter entfernen"
+              onClick={() => reset(setSiteId)("")}
+              className="rounded-full p-0.5 transition-colors hover:bg-primary/15"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        </div>
+      ) : null}
+
 
       {canSelect && selectedIds.length > 0 ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
