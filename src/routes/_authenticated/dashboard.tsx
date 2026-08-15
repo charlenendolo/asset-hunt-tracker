@@ -422,10 +422,7 @@ function ManagerDashboard() {
       />
 
 
-      <h2 className="mb-3 mt-8 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-        Was braucht heute Aufmerksamkeit?
-      </h2>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <Card
           title="Anstehende Reservierungen"
           icon={CalendarClock}
