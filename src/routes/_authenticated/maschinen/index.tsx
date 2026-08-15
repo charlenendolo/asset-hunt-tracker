@@ -84,6 +84,12 @@ function MachinesPage() {
   const [locationType, setLocationType] = useState("");
   const [status, setStatus] = useState(urlSearch.status ?? "");
 
+  const [sort, setSort] = useState("name:asc");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Record<string, true>>({});
+  const [labelDialog, setLabelDialog] = useState(false);
+  const identity = useIdentity();
+
   // Zurück/Vorwärts im Browser bzw. Klick auf eine Standortkarte übernehmen.
   const urlStatus = urlSearch.status ?? "";
   const urlSiteId = urlSearch.siteId ?? "";
@@ -92,11 +98,6 @@ function MachinesPage() {
     setSiteId(urlSiteId);
     setPage(1);
   }, [urlStatus, urlSiteId]);
-  const [sort, setSort] = useState("name:asc");
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Record<string, true>>({});
-  const [labelDialog, setLabelDialog] = useState(false);
-  const identity = useIdentity();
 
   const filters = useMemo(
     () => ({
