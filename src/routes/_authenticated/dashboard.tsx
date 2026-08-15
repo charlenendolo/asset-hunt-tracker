@@ -33,6 +33,7 @@ import { formatExpectedReturn } from "@/lib/format";
 import {
   MACHINE_STATUS_LABELS,
   MACHINE_STATUS_ORDER,
+  MACHINE_STATUS_DB_VALUES,
   machineStatusKey,
   labelFor,
   DEFECT_SEVERITY_LABELS,
