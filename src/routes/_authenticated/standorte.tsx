@@ -102,19 +102,8 @@ function SitesPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((s) => {
-            const Card = identity.canManage ? Link : "div";
-            return (
-            <li key={s.id}>
-              <Card
-                {...(identity.canManage
-                  ? { to: "/maschinen" as const, search: { siteId: s.id } }
-                  : {})}
-                className={`block rounded-xl border border-border bg-card p-5 ${
-                  identity.canManage
-                    ? "cursor-pointer transition-[filter,background-color] hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]"
-                    : ""
-                }`}
-              >
+            const body = (
+              <>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-2.5">
                   <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-muted/50">
@@ -142,8 +131,23 @@ function SitesPage() {
                 {formatNumber(counts.data?.[s.id] ?? 0)}{" "}
                 <span className="font-normal text-muted-foreground">Geräte vor Ort</span>
               </p>
-              </Card>
-            </li>
+              </>
+            );
+            const cardClass =
+              "block rounded-xl border border-border bg-card p-5" +
+              (identity.canManage
+                ? " cursor-pointer transition-colors hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]"
+                : "");
+            return (
+              <li key={s.id}>
+                {identity.canManage ? (
+                  <Link to="/maschinen" search={{ siteId: s.id }} className={cardClass}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={cardClass}>{body}</div>
+                )}
+              </li>
             );
           })}
         </ul>
