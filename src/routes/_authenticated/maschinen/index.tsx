@@ -77,12 +77,21 @@ function Select({
 }
 
 function MachinesPage() {
+  const urlSearch = Route.useSearch();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [siteId, setSiteId] = useState("");
+  const [siteId, setSiteId] = useState(urlSearch.siteId ?? "");
   const [locationType, setLocationType] = useState("");
-  const initialStatus = Route.useSearch().status ?? "";
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(urlSearch.status ?? "");
+
+  // Zurück/Vorwärts im Browser bzw. Klick auf eine Standortkarte übernehmen.
+  const urlStatus = urlSearch.status ?? "";
+  const urlSiteId = urlSearch.siteId ?? "";
+  useEffect(() => {
+    setStatus(urlStatus);
+    setSiteId(urlSiteId);
+    setPage(1);
+  }, [urlStatus, urlSiteId]);
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, true>>({});
