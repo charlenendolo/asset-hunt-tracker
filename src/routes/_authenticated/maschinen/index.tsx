@@ -36,15 +36,15 @@ export const Route = createFileRoute("/_authenticated/maschinen/")({
   },
   head: () => ({
     meta: [
-      { title: "Maschinen & Geräte – Repenning Geräteportal" },
+      { title: "Geräte" },
       {
         name: "description",
-        content: "Übersicht aller Maschinen und Geräte mit Status, Standort und Verantwortlichen.",
+        content: "Übersicht aller Geräte mit Status, Standort und Verantwortlichen.",
       },
-      { property: "og:title", content: "Maschinen & Geräte – Repenning Geräteportal" },
+      { property: "og:title", content: "Geräte – Repenning Geräteportal" },
       {
         property: "og:description",
-        content: "Übersicht aller Maschinen und Geräte mit Status, Standort und Verantwortlichen.",
+        content: "Übersicht aller Geräte mit Status, Standort und Verantwortlichen.",
       },
     ],
   }),
