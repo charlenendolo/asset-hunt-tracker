@@ -28,7 +28,11 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   validateSearch: (search: Record<string, unknown>) => {
     const status = typeof search["status"] === "string" ? search["status"] : "";
-    return status ? { status } : {};
+    const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+    return {
+      ...(status ? { status } : {}),
+      ...(siteId ? { siteId } : {}),
+    };
   },
   head: () => ({
     meta: [
