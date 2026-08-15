@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer, X } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog } from "@/components/label-print";
 import { useIdentity } from "@/hooks/use-identity";
-import { categoriesQuery, machinesQuery, OVERDUE_FILTER } from "@/lib/queries";
+import { categoriesQuery, machinesQuery, sitesQuery, OVERDUE_FILTER } from "@/lib/queries";
 import { OverdueBadge } from "@/components/overdue-badge";
 import { isOverdue } from "@/lib/overdue";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
@@ -28,7 +28,11 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   validateSearch: (search: Record<string, unknown>) => {
     const status = typeof search["status"] === "string" ? search["status"] : "";
-    return status ? { status } : {};
+    const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+    return {
+      ...(status ? { status } : {}),
+      ...(siteId ? { siteId } : {}),
+    };
   },
   head: () => ({
     meta: [
@@ -73,17 +77,27 @@ function Select({
 }
 
 function MachinesPage() {
+  const urlSearch = Route.useSearch();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [siteId, setSiteId] = useState("");
+  const [siteId, setSiteId] = useState(urlSearch.siteId ?? "");
   const [locationType, setLocationType] = useState("");
-  const initialStatus = Route.useSearch().status ?? "";
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(urlSearch.status ?? "");
+
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
+
+  // Zurück/Vorwärts im Browser bzw. Klick auf eine Standortkarte übernehmen.
+  const urlStatus = urlSearch.status ?? "";
+  const urlSiteId = urlSearch.siteId ?? "";
+  useEffect(() => {
+    setStatus(urlStatus);
+    setSiteId(urlSiteId);
+    setPage(1);
+  }, [urlStatus, urlSiteId]);
 
   const filters = useMemo(
     () => ({
@@ -100,6 +114,8 @@ function MachinesPage() {
   );
 
   const categories = useQuery(categoriesQuery);
+  const sites = useQuery(sitesQuery);
+  const activeSite = siteId ? ((sites.data ?? []).find((s) => s.id === siteId) ?? null) : null;
   const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
 
   const rows = machines.data?.rows ?? [];
@@ -137,15 +153,32 @@ function MachinesPage() {
 
   return (
     <AppShell
-      title="Maschinen & Geräte"
+      title="Geräte"
       description={total > 0 ? `${formatNumber(total)} Einträge` : undefined}
     >
       <PageHeader
         icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
-        title="Maschinen & Geräte"
+        title="Geräteportal"
         description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
         actions={<AddMachineButton className="h-10 font-medium" />}
       />
+
+      {activeSite ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+            Standort: {activeSite.name}
+            <button
+              type="button"
+              aria-label="Standortfilter entfernen"
+              onClick={() => reset(setSiteId)("")}
+              className="rounded-full p-0.5 transition-colors hover:bg-primary/15"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        </div>
+      ) : null}
+
 
       {canSelect && selectedIds.length > 0 ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
