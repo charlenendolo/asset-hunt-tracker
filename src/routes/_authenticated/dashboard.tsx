@@ -166,7 +166,7 @@ function KpiCard({
   accent?: boolean | undefined;
   icon?: typeof Container | undefined;
   to?: string | undefined;
-  search?: Record<string, string> | undefined;
+  search?: Record<string, string>;
 }) {
   const tone = accent
     ? "border-primary bg-primary text-primary-foreground shadow-sm hover:brightness-110"
@@ -202,7 +202,7 @@ function KpiCard({
 
   if (to) {
     return (
-      <Link to={to} search={search} className={className}>
+      <Link to={to} {...(search ? { search } : {})} className={className}>
         {content}
       </Link>
     );
