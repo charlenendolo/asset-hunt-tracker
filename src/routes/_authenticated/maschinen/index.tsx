@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
