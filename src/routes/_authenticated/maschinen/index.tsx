@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer } from "lucide-react";
+import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer, X } from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog } from "@/components/label-print";
 import { useIdentity } from "@/hooks/use-identity";
-import { categoriesQuery, machinesQuery, OVERDUE_FILTER } from "@/lib/queries";
+import { categoriesQuery, machinesQuery, sitesQuery, OVERDUE_FILTER } from "@/lib/queries";
 import { OverdueBadge } from "@/components/overdue-badge";
 import { isOverdue } from "@/lib/overdue";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
@@ -114,6 +114,8 @@ function MachinesPage() {
   );
 
   const categories = useQuery(categoriesQuery);
+  const sites = useQuery(sitesQuery);
+  const activeSite = siteId ? ((sites.data ?? []).find((s) => s.id === siteId) ?? null) : null;
   const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
 
   const rows = machines.data?.rows ?? [];
