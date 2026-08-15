@@ -156,6 +156,8 @@ function KpiCard({
   loading,
   accent,
   icon: Icon,
+  to,
+  search,
 }: {
   label: string;
   value: number;
@@ -163,15 +165,15 @@ function KpiCard({
   loading?: boolean | undefined;
   accent?: boolean | undefined;
   icon?: typeof Container | undefined;
+  to?: string | undefined;
+  search?: Record<string, string> | undefined;
 }) {
   const tone = accent
     ? "border-primary bg-primary text-primary-foreground shadow-sm hover:brightness-110"
     : (toneKey && KPI_TONES[toneKey]) || "border-border bg-card text-foreground hover:bg-accent/40";
 
-  return (
-    <div
-      className={`relative overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone}`}
-    >
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-semibold tracking-wide opacity-80">{label}</p>
         {Icon ? (
@@ -193,8 +195,20 @@ function KpiCard({
           {formatNumber(value)}
         </p>
       )}
-    </div>
+    </>
   );
+
+  const className = `relative block overflow-hidden rounded-xl border px-4 py-4 transition-[filter,background-color,box-shadow] ${tone}`;
+
+  if (to) {
+    return (
+      <Link to={to} search={search} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }
 
 function DashboardPage() {

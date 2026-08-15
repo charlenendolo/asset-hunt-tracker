@@ -26,9 +26,10 @@ import { SiteTypeIcon } from "@/components/site-type-icon";
 
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    status: typeof search["status"] === "string" ? (search["status"] as string) : "",
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const status = typeof search["status"] === "string" ? search["status"] : "";
+    return status ? { status } : {};
+  },
   head: () => ({
     meta: [
       { title: "Maschinen & Geräte – Repenning Geräteportal" },
@@ -76,7 +77,7 @@ function MachinesPage() {
   const [categoryId, setCategoryId] = useState("");
   const [siteId, setSiteId] = useState("");
   const [locationType, setLocationType] = useState("");
-  const initialStatus = Route.useSearch().status;
+  const initialStatus = Route.useSearch().status ?? "";
   const [status, setStatus] = useState(initialStatus);
   const [sort, setSort] = useState("name:asc");
   const [page, setPage] = useState(1);
@@ -85,7 +86,16 @@ function MachinesPage() {
   const identity = useIdentity();
 
   const filters = useMemo(
-    () => ({ search, categoryId, siteId, locationType, status, sort, page, pageSize: PAGE_SIZE }),
+    () => ({
+      search,
+      categoryId,
+      siteId,
+      locationType,
+      status: status || "",
+      sort,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
     [search, categoryId, siteId, locationType, status, sort, page],
   );
 
