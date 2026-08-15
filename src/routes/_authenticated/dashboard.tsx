@@ -379,6 +379,7 @@ function ManagerDashboard() {
           loading={counts.isLoading}
           icon={Container}
           accent
+          to="/maschinen"
         />
         {MACHINE_STATUS_ORDER.map((key) => (
           <KpiCard
@@ -388,12 +389,14 @@ function ManagerDashboard() {
             toneKey={key}
             icon={KPI_ICONS[key]}
             loading={counts.isLoading}
+            to="/maschinen"
+            search={{ status: MACHINE_STATUS_DB_VALUES[key] }}
           />
         ))}
         <Link
           to="/maschinen"
           search={{ status: "overdue" }}
-          className="relative overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97]"
+          className="relative block overflow-hidden rounded-xl border border-destructive/40 bg-destructive/12 px-4 py-4 text-destructive transition-[filter,background-color] hover:brightness-[0.97] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99] active:brightness-[0.96]"
         >
           <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-semibold tracking-wide">Überfällig</p>
