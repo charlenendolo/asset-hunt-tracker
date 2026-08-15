@@ -32,7 +32,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/maschinen", label: "Maschinen & Geräte", icon: Container },
+  { to: "/maschinen", label: "Geräte", icon: Container },
   { to: "/reservierungen", label: "Reservierungen", icon: CalendarClock },
   { to: "/kalender", label: "Kalender", icon: CalendarDays },
   { to: "/standorte", label: "Standorte", icon: MapPin },
