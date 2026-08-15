@@ -391,7 +391,7 @@ function ManagerDashboard() {
             icon={KPI_ICONS[key]}
             loading={counts.isLoading}
             to="/maschinen"
-            search={{ status: MACHINE_STATUS_DB_VALUES[key] }}
+            search={{ status: MACHINE_STATUS_DB_VALUES[key]! }}
           />
         ))}
         <Link
