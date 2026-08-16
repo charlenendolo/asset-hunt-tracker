@@ -272,7 +272,7 @@ function MachinesPage() {
 
       {machines.isError ? (
         <ErrorState message={(machines.error as Error)?.message} />
-      ) : machines.isLoading ? (
+      ) : isLoadingList ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full" />
@@ -282,14 +282,18 @@ function MachinesPage() {
         <EmptyState
           icon={<Container className="h-7 w-7" strokeWidth={1.5} />}
           title={
-            hasFilters
-              ? "Keine Treffer für die aktuelle Filterung."
-              : "Noch keine Maschinen & Geräte vorhanden."
+            mineActive
+              ? "Du hast aktuell keine Geräte ausgeliehen."
+              : hasFilters
+                ? "Keine Treffer für die aktuelle Filterung."
+                : "Noch keine Maschinen & Geräte vorhanden."
           }
           description={
-            hasFilters
-              ? "Passe Suche oder Filter an."
-              : "Füge das erste Gerät hinzu oder importiere eine bestehende Geräteliste."
+            mineActive
+              ? "Scanne den QR-Code an einem Gerät, um es dir zuzuweisen."
+              : hasFilters
+                ? "Passe Suche oder Filter an."
+                : "Füge das erste Gerät hinzu oder importiere eine bestehende Geräteliste."
           }
         />
       ) : (
