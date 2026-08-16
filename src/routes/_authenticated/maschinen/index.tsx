@@ -29,9 +29,12 @@ export const Route = createFileRoute("/_authenticated/maschinen/")({
   validateSearch: (search: Record<string, unknown>) => {
     const status = typeof search["status"] === "string" ? search["status"] : "";
     const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+    // Nur ein Boolean-Flag: die Identität kommt immer aus der Session, nie aus der URL.
+    const mine = search["mine"] === true || search["mine"] === "true";
     return {
       ...(status ? { status } : {}),
       ...(siteId ? { siteId } : {}),
+      ...(mine ? { mine: true as const } : {}),
     };
   },
   head: () => ({
