@@ -171,10 +171,22 @@ function MachinesPage() {
     >
       <PageHeader
         icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
-        title="Geräteportal"
-        description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
+        title={mineActive ? "Meine Geräte" : "Geräteportal"}
+        description={
+          mineActive
+            ? "Geräte, die dir aktuell zugewiesen sind."
+            : "Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
+        }
         actions={<AddMachineButton className="h-10 font-medium" />}
       />
+
+      {mineActive ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+            Nur meine Geräte
+          </span>
+        </div>
+      ) : null}
 
       {activeSite ? (
         <div className="mb-3 flex flex-wrap items-center gap-2">
