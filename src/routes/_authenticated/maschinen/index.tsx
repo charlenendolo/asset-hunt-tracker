@@ -102,6 +102,10 @@ function MachinesPage() {
     setPage(1);
   }, [urlStatus, urlSiteId]);
 
+  // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
+  const mineActive = urlSearch.mine === true;
+  const mineUserId = mineActive ? identity.userId : null;
+
   const filters = useMemo(
     () => ({
       search,
@@ -112,20 +116,26 @@ function MachinesPage() {
       sort,
       page,
       pageSize: PAGE_SIZE,
+      ...(mineUserId ? { responsibleUserId: mineUserId } : {}),
     }),
-    [search, categoryId, siteId, locationType, status, sort, page],
+    [search, categoryId, siteId, locationType, status, sort, page, mineUserId],
   );
 
   const categories = useQuery(categoriesQuery);
   const sites = useQuery(sitesQuery);
   const activeSite = siteId ? ((sites.data ?? []).find((s) => s.id === siteId) ?? null) : null;
-  const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
+  const machines = useQuery({
+    ...machinesQuery(filters),
+    enabled: !mineActive || !!mineUserId,
+    placeholderData: keepPreviousData,
+  });
 
   const rows = machines.data?.rows ?? [];
   const photoUrls = usePrimaryPhotos(rows.map((m) => m.id));
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilters = !!(search || categoryId || siteId || locationType || status);
+  const hasFilters = !!(search || categoryId || siteId || locationType || status || mineActive);
+  const isLoadingList = machines.isLoading || (mineActive && !mineUserId);
 
   const canSelect = identity.isAdmin;
   const selectedIds = Object.keys(selected);
