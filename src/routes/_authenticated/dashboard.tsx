@@ -276,6 +276,7 @@ function UserDashboard() {
           </div>
           <Link
             to="/maschinen"
+            search={{ mine: true }}
             className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             <span className="flex items-center gap-3">
