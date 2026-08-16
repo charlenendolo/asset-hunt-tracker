@@ -81,6 +81,8 @@ export type MachineFilters = {
   sort: string;
   page: number;
   pageSize: number;
+  /** Nur Geräte in der Obhut dieser Person (machines.responsible_user_id). */
+  responsibleUserId?: string;
 };
 
 export const MACHINE_LIST_SELECT =
