@@ -29,9 +29,12 @@ export const Route = createFileRoute("/_authenticated/maschinen/")({
   validateSearch: (search: Record<string, unknown>) => {
     const status = typeof search["status"] === "string" ? search["status"] : "";
     const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+    // Nur ein Boolean-Flag: die Identität kommt immer aus der Session, nie aus der URL.
+    const mine = search["mine"] === true || search["mine"] === "true";
     return {
       ...(status ? { status } : {}),
       ...(siteId ? { siteId } : {}),
+      ...(mine ? { mine: true as const } : {}),
     };
   },
   head: () => ({
@@ -99,6 +102,10 @@ function MachinesPage() {
     setPage(1);
   }, [urlStatus, urlSiteId]);
 
+  // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
+  const mineActive = urlSearch.mine === true;
+  const mineUserId = mineActive ? identity.userId : null;
+
   const filters = useMemo(
     () => ({
       search,
@@ -109,20 +116,26 @@ function MachinesPage() {
       sort,
       page,
       pageSize: PAGE_SIZE,
+      ...(mineUserId ? { responsibleUserId: mineUserId } : {}),
     }),
-    [search, categoryId, siteId, locationType, status, sort, page],
+    [search, categoryId, siteId, locationType, status, sort, page, mineUserId],
   );
 
   const categories = useQuery(categoriesQuery);
   const sites = useQuery(sitesQuery);
   const activeSite = siteId ? ((sites.data ?? []).find((s) => s.id === siteId) ?? null) : null;
-  const machines = useQuery({ ...machinesQuery(filters), placeholderData: keepPreviousData });
+  const machines = useQuery({
+    ...machinesQuery(filters),
+    enabled: !mineActive || !!mineUserId,
+    placeholderData: keepPreviousData,
+  });
 
   const rows = machines.data?.rows ?? [];
   const photoUrls = usePrimaryPhotos(rows.map((m) => m.id));
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilters = !!(search || categoryId || siteId || locationType || status);
+  const hasFilters = !!(search || categoryId || siteId || locationType || status || mineActive);
+  const isLoadingList = machines.isLoading || (mineActive && !mineUserId);
 
   const canSelect = identity.isAdmin;
   const selectedIds = Object.keys(selected);
@@ -158,10 +171,22 @@ function MachinesPage() {
     >
       <PageHeader
         icon={<Container className="h-5 w-5" strokeWidth={1.75} />}
-        title="Geräteportal"
-        description="Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
+        title={mineActive ? "Meine Geräte" : "Geräteportal"}
+        description={
+          mineActive
+            ? "Geräte, die dir aktuell zugewiesen sind."
+            : "Gesamter Gerätebestand mit Status, Standort und Verantwortlichkeit."
+        }
         actions={<AddMachineButton className="h-10 font-medium" />}
       />
+
+      {mineActive ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+            Nur meine Geräte
+          </span>
+        </div>
+      ) : null}
 
       {activeSite ? (
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -259,7 +284,7 @@ function MachinesPage() {
 
       {machines.isError ? (
         <ErrorState message={(machines.error as Error)?.message} />
-      ) : machines.isLoading ? (
+      ) : isLoadingList ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full" />
@@ -269,14 +294,18 @@ function MachinesPage() {
         <EmptyState
           icon={<Container className="h-7 w-7" strokeWidth={1.5} />}
           title={
-            hasFilters
-              ? "Keine Treffer für die aktuelle Filterung."
-              : "Noch keine Maschinen & Geräte vorhanden."
+            mineActive
+              ? "Du hast aktuell keine Geräte ausgeliehen."
+              : hasFilters
+                ? "Keine Treffer für die aktuelle Filterung."
+                : "Noch keine Maschinen & Geräte vorhanden."
           }
           description={
-            hasFilters
-              ? "Passe Suche oder Filter an."
-              : "Füge das erste Gerät hinzu oder importiere eine bestehende Geräteliste."
+            mineActive
+              ? "Scanne den QR-Code an einem Gerät, um es dir zuzuweisen."
+              : hasFilters
+                ? "Passe Suche oder Filter an."
+                : "Füge das erste Gerät hinzu oder importiere eine bestehende Geräteliste."
           }
         />
       ) : (

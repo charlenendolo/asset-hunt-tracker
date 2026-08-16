@@ -81,6 +81,8 @@ export type MachineFilters = {
   sort: string;
   page: number;
   pageSize: number;
+  /** Nur Geräte in der Obhut dieser Person (machines.responsible_user_id). */
+  responsibleUserId?: string;
 };
 
 export const MACHINE_LIST_SELECT =
@@ -96,6 +98,9 @@ export function machinesQuery(filters: MachineFilters) {
         .select(MACHINE_LIST_SELECT, { count: "exact" })
         .eq("active", true);
 
+      if (filters.responsibleUserId) {
+        q = q.eq("responsible_user_id", filters.responsibleUserId);
+      }
       if (filters.search.trim()) {
         const term = `%${filters.search.trim()}%`;
         q = q.or(
