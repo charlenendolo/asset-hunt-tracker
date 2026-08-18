@@ -8,6 +8,7 @@ import { EmptyState, ErrorState } from "@/components/empty-state";
 import { CreateSiteDialog, EditSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
