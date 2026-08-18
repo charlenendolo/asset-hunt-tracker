@@ -143,8 +143,12 @@ function SitesPage() {
       ) : visible.length === 0 ? (
         <EmptyState
           icon={<MapPin className="h-7 w-7" strokeWidth={1.5} />}
-          title="Keine Standorte für diese Auswahl."
-          description="Lege einen neuen Standort an oder wähle einen anderen Typ."
+          title={term ? "Keine Standorte gefunden." : "Keine Standorte für diese Auswahl."}
+          description={
+            term
+              ? "Passe deinen Suchbegriff an oder setze die Suche zurück."
+              : "Lege einen neuen Standort an oder wähle einen anderen Typ."
+          }
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
