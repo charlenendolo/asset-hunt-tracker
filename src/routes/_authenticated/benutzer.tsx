@@ -42,7 +42,9 @@ function UsersPage() {
   const identity = useIdentity();
   const isAdmin = identity.role === "admin";
   const profiles = useQuery(profilesQuery);
-  const rows = profiles.data ?? [];
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const fetchEmails = useServerFn(listAccountEmails);
   const emails = useQuery({
     queryKey: ["account-emails"],
@@ -59,6 +61,16 @@ function UsersPage() {
     queryFn: async () => fetchPinAccess(),
   });
   const pinById = new Map((pinAccess.data ?? []).map((p) => [p.user_id, p.enabled]));
+
+  const q = search.trim().toLowerCase();
+  const rows = (profiles.data ?? []).filter((p) => {
+    if (roleFilter !== "all" && (p.role ?? "user") !== roleFilter) return false;
+    if (statusFilter === "active" && !p.active) return false;
+    if (statusFilter === "inactive" && p.active) return false;
+    if (!q) return true;
+    const mail = (emailById.get(p.id) ?? "").toLowerCase();
+    return (p.full_name ?? "").toLowerCase().includes(q) || mail.includes(q);
+  });
 
   function accessLabel(id: string) {
     const hasEmail = !!emailById.get(id);
