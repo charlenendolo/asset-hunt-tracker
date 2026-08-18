@@ -91,6 +91,38 @@ function UsersPage() {
       description="Rollen und Zugriff im Team"
       actions={isAdmin ? <CreateUserDialog /> : undefined}
     >
+      {isAdmin ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Input
+            className="h-10 w-full sm:max-w-xs"
+            placeholder="Name oder E-Mail suchen"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Benutzer suchen"
+          />
+          <select
+            aria-label="Nach Rolle filtern"
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">Alle Rollen</option>
+            <option value="admin">Administrator</option>
+            <option value="site_manager">Bauleiter</option>
+            <option value="user">Mitarbeiter</option>
+          </select>
+          <select
+            aria-label="Nach Status filtern"
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Alle Status</option>
+            <option value="active">Aktiv</option>
+            <option value="inactive">Deaktiviert</option>
+          </select>
+        </div>
+      ) : null}
       {profiles.isError ? (
         <ErrorState message={(profiles.error as Error)?.message} />
       ) : profiles.isLoading ? (
