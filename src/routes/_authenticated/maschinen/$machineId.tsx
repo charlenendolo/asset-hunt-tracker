@@ -388,6 +388,13 @@ function MachineDetailPage() {
               </ul>
             )}
           </Section>
+
+          {identity.isAdmin ? (
+            <Section title="Verlauf">
+              <MachineHistory machineId={m.id} />
+            </Section>
+          ) : null}
+
         </div>
 
         <div className="space-y-4">
