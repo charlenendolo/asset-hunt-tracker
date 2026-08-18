@@ -118,10 +118,24 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
                 required
               />
             </div>
-            <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
-              {PASSWORD_RULES.map((r) => (
-                <li key={r}>{r}</li>
+            <ul className="space-y-0.5 text-xs">
+              {passwordChecks(pw).map((r) => (
+                <li
+                  key={r.label}
+                  className={r.ok ? "text-primary" : "text-muted-foreground"}
+                  aria-checked={r.ok}
+                  role="checkbox"
+                >
+                  {r.ok ? "✓" : "•"} {r.label}
+                </li>
               ))}
+              <li
+                className={
+                  confirm.length > 0 && pw === confirm ? "text-primary" : "text-muted-foreground"
+                }
+              >
+                {confirm.length > 0 && pw === confirm ? "✓" : "•"} Passwörter stimmen überein
+              </li>
             </ul>
             <DialogFooter>
               <Button type="submit" disabled={temp.isPending}>
