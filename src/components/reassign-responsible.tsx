@@ -133,58 +133,67 @@ function ReassignDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="person-search">Person suchen</Label>
-            <Input
-              id="person-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Name eingeben"
-              className="h-11"
-            />
+            <Label htmlFor="person-select">Verantwortliche Person</Label>
+            <Popover open={open} onOpenChange={setOpen} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="person-select"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="h-11 w-full justify-between font-normal"
+                >
+                  <span className="truncate">{selectedName}</span>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Person suchen …" />
+                  <CommandList>
+                    <CommandEmpty>Keine Treffer.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="Verantwortlichkeit entfernen"
+                        onSelect={() => {
+                          setSelected(null);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selected === null ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        Verantwortlichkeit entfernen
+                      </CommandItem>
+                      {people.map((p) => (
+                        <CommandItem
+                          key={p.id}
+                          value={`${p.full_name ?? "Ohne Namen"} ${p.id}`}
+                          onSelect={() => {
+                            setSelected(p.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selected === p.id ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">{p.full_name ?? "Ohne Namen"}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
-          <div
-            role="listbox"
-            aria-label="Verantwortliche Person"
-            className="max-h-56 overflow-y-auto rounded-md border border-border"
-          >
-            <button
-              type="button"
-              role="option"
-              aria-selected={selected === null}
-              onClick={() => setSelected(null)}
-              className={cn(
-                "flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                selected === null
-                  ? "bg-primary/15 font-semibold text-primary"
-                  : "hover:bg-accent/50",
-              )}
-            >
-              Verantwortlichkeit entfernen
-              {selected === null ? <Check className="h-4 w-4 shrink-0" /> : null}
-            </button>
-            {people.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="option"
-                aria-selected={selected === p.id}
-                onClick={() => setSelected(p.id)}
-                className={cn(
-                  "flex w-full items-center justify-between gap-2 border-t border-border px-3 py-2.5 text-left text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                  selected === p.id
-                    ? "bg-primary/15 font-semibold text-primary"
-                    : "hover:bg-accent/50",
-                )}
-              >
-                {p.full_name ?? "Ohne Namen"}
-                {selected === p.id ? <Check className="h-4 w-4 shrink-0" /> : null}
-              </button>
-            ))}
-            {people.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-muted-foreground">Keine Treffer.</p>
-            ) : null}
-          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="reassign-comment">Grund / Kommentar (optional)</Label>
