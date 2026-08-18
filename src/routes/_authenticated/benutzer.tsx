@@ -156,6 +156,18 @@ function UsersPage() {
                             pinEnabled={pinById.get(p.id) ?? false}
                           />
                           <PinAccessActions userId={p.id} />
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <EditUserDialog
+                              user={{
+                                id: p.id,
+                                full_name: p.full_name,
+                                role: p.role ?? "user",
+                                active: p.active ?? true,
+                              }}
+                              email={emailById.get(p.id) ?? null}
+                            />
+                            <DeleteUserDialog user={{ id: p.id, full_name: p.full_name }} />
+                          </div>
                         </div>
                       </td>
                     ) : null}
