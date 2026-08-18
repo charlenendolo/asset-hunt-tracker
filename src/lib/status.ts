@@ -1,10 +1,12 @@
 export type StatusKey =
   | "available"
+  | "assigned"
   | "reserved"
   | "borrowed"
   | "maintenance"
   | "defect"
   | "unknown";
+
 
 const MACHINE_STATUS_ALIASES: Record<string, StatusKey> = {
   available: "available",
