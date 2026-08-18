@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Loader2, UserCog } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, UserCog } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,13 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
 import { profilesQuery } from "@/lib/queries";
 import { reassignMachineResponsibility } from "@/lib/machines.functions";
 import { cn } from "@/lib/utils";
+
 
 /**
  * Administrative Korrektur der Verantwortlichkeit.
