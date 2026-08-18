@@ -83,16 +83,16 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
       </Button>
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         <KeyRound className="mr-2 h-4 w-4" strokeWidth={1.75} />
-        Temporäres Passwort
+        Passwort ändern
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Temporäres Passwort setzen</DialogTitle>
+            <DialogTitle>Passwort ändern</DialogTitle>
             <DialogDescription>
-              Gib das Passwort persönlich weiter. Es wird nirgends gespeichert und lässt sich später
-              nicht mehr anzeigen.
+              Das neue Passwort ersetzt das bisherige und wird nirgends gespeichert oder angezeigt.
+              Alle aktiven Sitzungen dieser Person werden beendet.
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-3" onSubmit={submitTemp}>
