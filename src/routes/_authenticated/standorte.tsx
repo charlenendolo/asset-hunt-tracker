@@ -76,6 +76,33 @@ function SitesPage() {
         ) : null
       }
     >
+      <div className="mb-3 max-w-sm">
+        <label htmlFor="site-search" className="sr-only">
+          Standorte suchen
+        </label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="site-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Standorte suchen…"
+            className="h-10 pl-9 pr-9"
+          />
+          {search ? (
+            <button
+              type="button"
+              aria-label="Suche zurücksetzen"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
