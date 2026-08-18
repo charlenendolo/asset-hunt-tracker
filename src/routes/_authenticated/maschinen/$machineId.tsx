@@ -21,6 +21,7 @@ import { MachinePhotos } from "@/components/machine-photos";
 import { MachineHeroPhoto } from "@/components/machine-hero-photo";
 
 import { MachineAccessories } from "@/components/machine-accessories";
+import { MachineHistory } from "@/components/machine-history";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
 import { EmptyState, ErrorState } from "@/components/empty-state";
@@ -388,6 +389,13 @@ function MachineDetailPage() {
               </ul>
             )}
           </Section>
+
+          {identity.isAdmin ? (
+            <Section title="Verlauf">
+              <MachineHistory machineId={m.id} />
+            </Section>
+          ) : null}
+
         </div>
 
         <div className="space-y-4">
