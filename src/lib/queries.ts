@@ -127,9 +127,22 @@ export function machinesQuery(filters: MachineFilters) {
           .in("status", machineStatusDbValues("borrowed"))
           .not("expected_return_at", "is", null)
           .lt("expected_return_at", new Date().toISOString());
+      } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
+        // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
+        const assignedSiteIds = await fetchAssignedSiteIds();
+        q = q.in("status", machineStatusDbValues("available")).is("responsible_user_id", null);
+        if (filters.status === ASSIGNED_FILTER) {
+          if (assignedSiteIds.length === 0) return { rows: [], count: 0 };
+          q = q.in("current_site_id", assignedSiteIds);
+        } else if (assignedSiteIds.length > 0) {
+          q = q.or(
+            `current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`,
+          );
+        }
       } else if (filters.status) {
         q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
       }
+
 
       const [column, direction] = filters.sort.split(":");
       q = q.order(column ?? "name", { ascending: direction !== "desc" });
