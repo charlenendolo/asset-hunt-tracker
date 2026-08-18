@@ -401,6 +401,8 @@ function MachineDetailPage() {
                 status: m.status,
                 current_site_id: m.current_site_id,
                 responsible_user_id: m.responsible_user_id,
+                site: m.site ? { location_type: m.site.location_type } : null,
+
               }}
             />
             {identity.isAdmin ? (
