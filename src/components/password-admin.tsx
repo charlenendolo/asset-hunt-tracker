@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appBaseUrl } from "@/lib/app-url";
 import { sendPasswordReset, setTemporaryPassword } from "@/lib/password.functions";
-import { PASSWORD_RULES, checkPassword } from "@/lib/password-policy";
+import { checkPassword, passwordChecks } from "@/lib/password-policy";
 
 /**
  * Admin-Aktionen für Zugänge mit E-Mail/Passwort.
