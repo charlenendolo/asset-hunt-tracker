@@ -30,6 +30,7 @@ const MACHINE_STATUS_ALIASES: Record<string, StatusKey> = {
 
 export const MACHINE_STATUS_LABELS: Record<StatusKey, string> = {
   available: "Verfügbar",
+  assigned: "Zugewiesen",
   reserved: "Reserviert",
   borrowed: "Ausgeliehen",
   maintenance: "Wartung",
@@ -39,11 +40,43 @@ export const MACHINE_STATUS_LABELS: Record<StatusKey, string> = {
 
 export const MACHINE_STATUS_ORDER: StatusKey[] = [
   "available",
+  "assigned",
   "reserved",
   "borrowed",
   "maintenance",
   "defect",
 ];
+
+/**
+ * „Zugewiesen" ist ein abgeleiteter Zustand — kein Datenbankstatus.
+ * Ein verfügbares Gerät, das an einer Baustelle oder in einem Fahrzeug steht,
+ * gilt als dort zugewiesen und kann nicht erneut ausgeliehen werden.
+ */
+export const ASSIGNED_SITE_TYPES = ["baustelle", "fahrzeug"] as const;
+
+export function isAssignedSiteType(locationType?: string | null): boolean {
+  if (!locationType) return false;
+  return (ASSIGNED_SITE_TYPES as readonly string[]).includes(locationType.toLowerCase());
+}
+
+export type AssignableLike = {
+  status?: string | null;
+  responsible_user_id?: string | null;
+  site?: { location_type?: string | null } | null;
+};
+
+/** Effektiver Status inkl. abgeleitetem „Zugewiesen". */
+export function effectiveStatusKey(machine: AssignableLike): StatusKey {
+  const key = machineStatusKey(machine.status);
+  if (key !== "available") return key;
+  if (machine.responsible_user_id) return key;
+  return isAssignedSiteType(machine.site?.location_type ?? null) ? "assigned" : key;
+}
+
+export function effectiveStatusLabel(machine: AssignableLike): string {
+  return MACHINE_STATUS_LABELS[effectiveStatusKey(machine)];
+}
+
 
 /** Raw DB values we filter by, keyed by our normalised status key. */
 export const MACHINE_STATUS_DB_VALUES: Record<string, string> = {
