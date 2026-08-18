@@ -131,5 +131,15 @@ export const setTemporaryPassword = createServerFn({ method: "POST" })
       console.error("[password] temp password failed", error.message);
       throw new Error("Passwort konnte nicht gesetzt werden.");
     }
-    return { ok: true };
+
+    // Pflicht: nach dem Zurücksetzen sind alle bestehenden Sitzungen ungültig.
+    const { revokeAllSessions } = await import("./auth-admin.server");
+    const sessionsRevoked = await revokeAllSessions(data.userId);
+    console.info("[audit] password reset by admin", {
+      by: context.userId,
+      target: data.userId,
+      sessionsRevoked,
+      at: new Date().toISOString(),
+    });
+    return { ok: true, sessionsRevoked };
   });

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
@@ -9,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
 import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
+import { DeleteUserDialog, EditUserDialog } from "@/components/user-manage";
+import { Input } from "@/components/ui/input";
 import { useIdentity } from "@/hooks/use-identity";
 import { listAccountEmails } from "@/lib/users.functions";
 import { listPinAccess } from "@/lib/pin-auth.functions";
@@ -42,7 +45,9 @@ function UsersPage() {
   const identity = useIdentity();
   const isAdmin = identity.role === "admin";
   const profiles = useQuery(profilesQuery);
-  const rows = profiles.data ?? [];
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const fetchEmails = useServerFn(listAccountEmails);
   const emails = useQuery({
     queryKey: ["account-emails"],
@@ -60,6 +65,16 @@ function UsersPage() {
   });
   const pinById = new Map((pinAccess.data ?? []).map((p) => [p.user_id, p.enabled]));
 
+  const q = search.trim().toLowerCase();
+  const rows = (profiles.data ?? []).filter((p) => {
+    if (roleFilter !== "all" && (p.role ?? "user") !== roleFilter) return false;
+    if (statusFilter === "active" && !p.active) return false;
+    if (statusFilter === "inactive" && p.active) return false;
+    if (!q) return true;
+    const mail = (emailById.get(p.id) ?? "").toLowerCase();
+    return (p.full_name ?? "").toLowerCase().includes(q) || mail.includes(q);
+  });
+
   function accessLabel(id: string) {
     const hasEmail = !!emailById.get(id);
     const pin = pinById.get(id);
@@ -76,6 +91,38 @@ function UsersPage() {
       description="Rollen und Zugriff im Team"
       actions={isAdmin ? <CreateUserDialog /> : undefined}
     >
+      {isAdmin ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Input
+            className="h-10 w-full sm:max-w-xs"
+            placeholder="Name oder E-Mail suchen"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Benutzer suchen"
+          />
+          <select
+            aria-label="Nach Rolle filtern"
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">Alle Rollen</option>
+            <option value="admin">Administrator</option>
+            <option value="site_manager">Bauleiter</option>
+            <option value="user">Mitarbeiter</option>
+          </select>
+          <select
+            aria-label="Nach Status filtern"
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Alle Status</option>
+            <option value="active">Aktiv</option>
+            <option value="inactive">Deaktiviert</option>
+          </select>
+        </div>
+      ) : null}
       {profiles.isError ? (
         <ErrorState message={(profiles.error as Error)?.message} />
       ) : profiles.isLoading ? (
@@ -143,6 +190,18 @@ function UsersPage() {
                             pinEnabled={pinById.get(p.id) ?? false}
                           />
                           <PinAccessActions userId={p.id} />
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <EditUserDialog
+                              user={{
+                                id: p.id,
+                                full_name: p.full_name,
+                                role: p.role ?? "user",
+                                active: p.active ?? true,
+                              }}
+                              email={emailById.get(p.id) ?? null}
+                            />
+                            <DeleteUserDialog user={{ id: p.id, full_name: p.full_name }} />
+                          </div>
                         </div>
                       </td>
                     ) : null}

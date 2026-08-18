@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appBaseUrl } from "@/lib/app-url";
 import { sendPasswordReset, setTemporaryPassword } from "@/lib/password.functions";
-import { PASSWORD_RULES, checkPassword } from "@/lib/password-policy";
+import { checkPassword, passwordChecks } from "@/lib/password-policy";
 
 /**
  * Admin-Aktionen für Zugänge mit E-Mail/Passwort.
@@ -45,7 +45,7 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
       setPw("");
       setConfirm("");
       setOpen(false);
-      toast.success("Temporäres Passwort wurde gesetzt.");
+      toast.success("Passwort geändert. Alle aktiven Sitzungen wurden beendet.");
     },
     onError: (e: Error) => toast.error(e.message || "Passwort konnte nicht gesetzt werden."),
   });
@@ -83,16 +83,16 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
       </Button>
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         <KeyRound className="mr-2 h-4 w-4" strokeWidth={1.75} />
-        Temporäres Passwort
+        Passwort ändern
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Temporäres Passwort setzen</DialogTitle>
+            <DialogTitle>Passwort ändern</DialogTitle>
             <DialogDescription>
-              Gib das Passwort persönlich weiter. Es wird nirgends gespeichert und lässt sich später
-              nicht mehr anzeigen.
+              Das neue Passwort ersetzt das bisherige und wird nirgends gespeichert oder angezeigt.
+              Alle aktiven Sitzungen dieser Person werden beendet.
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-3" onSubmit={submitTemp}>
@@ -118,10 +118,24 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
                 required
               />
             </div>
-            <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
-              {PASSWORD_RULES.map((r) => (
-                <li key={r}>{r}</li>
+            <ul className="space-y-0.5 text-xs">
+              {passwordChecks(pw).map((r) => (
+                <li
+                  key={r.label}
+                  className={r.ok ? "text-primary" : "text-muted-foreground"}
+                  aria-checked={r.ok}
+                  role="checkbox"
+                >
+                  {r.ok ? "✓" : "•"} {r.label}
+                </li>
               ))}
+              <li
+                className={
+                  confirm.length > 0 && pw === confirm ? "text-primary" : "text-muted-foreground"
+                }
+              >
+                {confirm.length > 0 && pw === confirm ? "✓" : "•"} Passwörter stimmen überein
+              </li>
             </ul>
             <DialogFooter>
               <Button type="submit" disabled={temp.isPending}>

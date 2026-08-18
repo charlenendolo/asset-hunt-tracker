@@ -118,6 +118,8 @@ const updateSchema = z.object({
   userId: z.string().uuid(),
   role: z.enum(ROLES).optional(),
   active: z.boolean().optional(),
+  fullName: z.string().trim().min(2).max(120).optional(),
+  email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
 });
 
 export const updateEmployeeAccount = createServerFn({ method: "POST" })
@@ -130,14 +132,13 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const patch: { role?: string; active?: boolean } = {};
+    const patch: { role?: string; active?: boolean; full_name?: string } = {};
     if (data.role) patch.role = data.role;
     if (typeof data.active === "boolean") patch.active = data.active;
-    if (Object.keys(patch).length === 0) return { ok: true };
+    if (data.fullName) patch.full_name = data.fullName;
 
     // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
-    const losesAdmin =
-      (data.role && data.role !== "admin") || data.active === false;
+    const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
     if (losesAdmin) {
       const { data: target } = await supabaseAdmin
         .from("profiles")
@@ -151,12 +152,36 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
           .eq("role", "admin")
           .eq("active", true);
         if ((count ?? 0) <= 1) {
+          throw new Error("Mindestens ein aktiver Administrator muss bestehen bleiben.");
+        }
+      }
+    }
+
+    // E-Mail bleibt zwischen Auth und Anwendung konsistent: die Adresse lebt
+    // ausschließlich in Supabase Auth, das Profil speichert keine Kopie.
+    if (typeof data.email === "string") {
+      const nextEmail = data.email.trim().toLowerCase();
+      if (nextEmail && isSyntheticEmail(nextEmail)) {
+        throw new Error("Bitte eine echte geschäftliche E-Mail-Adresse verwenden.");
+      }
+      const { data: current } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+      const currentEmail = (current?.user?.email ?? "").toLowerCase();
+      if (nextEmail && nextEmail !== currentEmail) {
+        const { error: mailError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+          email: nextEmail,
+          email_confirm: true,
+        });
+        if (mailError) {
           throw new Error(
-            "Das ist der letzte aktive Administrator. Lege zuerst einen weiteren Administrator an.",
+            mailError.message?.includes("already")
+              ? "Diese E-Mail wird bereits von einem anderen Zugang verwendet."
+              : "E-Mail konnte nicht geändert werden.",
           );
         }
       }
     }
+
+    if (Object.keys(patch).length === 0) return { ok: true, sessionsRevoked: false };
 
     const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.userId);
     if (error) {
@@ -164,14 +189,167 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
         userId: data.userId,
         patch,
         message: error.message,
-        details: error.details,
-        hint: error.hint,
         code: error.code,
       });
       throw new Error("Änderung konnte nicht gespeichert werden: " + error.message);
     }
-    return { ok: true };
+
+    // Deaktivierung und Rollenwechsel dürfen nicht durch eine noch offene
+    // Sitzung ausgehebelt werden: alle Sitzungen werden beendet.
+    let sessionsRevoked = false;
+    if (data.active === false || (data.role && data.userId !== context.userId)) {
+      const { revokeAllSessions } = await import("./auth-admin.server");
+      sessionsRevoked = await revokeAllSessions(data.userId);
+    }
+    console.info("[audit] user updated", {
+      by: context.userId,
+      target: data.userId,
+      fields: Object.keys(patch),
+      emailChanged: typeof data.email === "string",
+      sessionsRevoked,
+      at: new Date().toISOString(),
+    });
+    return { ok: true, sessionsRevoked };
   });
+
+/** Prüft vor dem Löschen: Geräte in Obhut und aktive Reservierungen. */
+export const getDeletionCheck = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ userId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machines } = await supabaseAdmin
+      .from("machines")
+      .select("id, name, asset_code")
+      .eq("responsible_user_id", data.userId);
+
+    const { data: reservations } = await supabaseAdmin
+      .from("reservations")
+      .select("id, start_at, end_at, machine_id, machines(name)")
+      .eq("reserved_by", data.userId)
+      .eq("status", "confirmed")
+      .gte("end_at", new Date().toISOString());
+
+    return {
+      isSelf: data.userId === context.userId,
+      machines: (machines ?? []).map((m) => ({
+        id: m.id,
+        label: `${m.name}${m.asset_code ? ` (${m.asset_code})` : ""}`,
+      })),
+      reservations: (reservations ?? []).map((r) => ({
+        id: r.id,
+        label: (r.machines as { name?: string } | null)?.name ?? "Gerät",
+        start_at: r.start_at,
+        end_at: r.end_at,
+      })),
+    };
+  });
+
+/**
+ * „Benutzer löschen“ = sicheres Archivieren.
+ * Historie (Bewegungen, Defekte, Reservierungen) bleibt vollständig erhalten,
+ * der Zugang wird jedoch endgültig unbrauchbar: Profil inaktiv, PIN aus,
+ * E-Mail auf eine interne Archivadresse, Passwort zufällig, Sitzungen beendet.
+ */
+export const deleteEmployeeAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ userId: z.string().uuid(), cancelReservations: z.boolean().optional() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never);
+    if (data.userId === context.userId) {
+      throw new Error("Du kannst deinen eigenen Zugang nicht löschen.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: target } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name, role, active")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!target) throw new Error("Benutzer wurde nicht gefunden.");
+
+    if (target.role === "admin" && target.active) {
+      const { count } = await supabaseAdmin
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "admin")
+        .eq("active", true);
+      if ((count ?? 0) <= 1) {
+        throw new Error("Mindestens ein aktiver Administrator muss bestehen bleiben.");
+      }
+    }
+
+    const { data: machines } = await supabaseAdmin
+      .from("machines")
+      .select("id, name, asset_code")
+      .eq("responsible_user_id", data.userId);
+    if ((machines ?? []).length > 0) {
+      const list = (machines ?? []).map((m) => m.name).join(", ");
+      throw new Error(
+        `Diese Person hat noch ${machines!.length} Gerät(e) ausgeliehen: ${list}. Bitte zuerst zurückgeben oder die Zuordnung klären.`,
+      );
+    }
+
+    const { data: reservations } = await supabaseAdmin
+      .from("reservations")
+      .select("id")
+      .eq("reserved_by", data.userId)
+      .eq("status", "confirmed")
+      .gte("end_at", new Date().toISOString());
+    if ((reservations ?? []).length > 0) {
+      if (!data.cancelReservations) {
+        throw new Error(
+          `Diese Person hat noch ${reservations!.length} aktive Reservierung(en). Bitte zuerst stornieren.`,
+        );
+      }
+      await supabaseAdmin
+        .from("reservations")
+        .update({ status: "cancelled" })
+        .in(
+          "id",
+          (reservations ?? []).map((r) => r.id),
+        );
+    }
+
+    // Zugang unbrauchbar machen — der Datensatz bleibt für die Historie erhalten.
+    const { randomLockPassword, revokeAllSessions } = await import("./auth-admin.server");
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      email: `deleted+${data.userId}@assethunt.internal`,
+      email_confirm: true,
+      password: randomLockPassword(),
+      ban_duration: "876000h",
+    });
+    if (authError) {
+      console.error("[users] archive auth failed", authError.message);
+      throw new Error("Zugang konnte nicht entfernt werden.");
+    }
+
+    await supabaseAdmin
+      .from("employee_logins")
+      .update({ enabled: false, locked_until: null, failed_attempts: 0 })
+      .eq("user_id", data.userId);
+
+    const name = (target.full_name ?? "Benutzer").replace(/^\(gelöscht\)\s*/, "");
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ active: false, full_name: `(gelöscht) ${name}` })
+      .eq("id", data.userId);
+    if (profileError) throw new Error("Profil konnte nicht archiviert werden.");
+
+    const sessionsRevoked = await revokeAllSessions(data.userId);
+    console.info("[audit] user deleted (archived)", {
+      by: context.userId,
+      target: data.userId,
+      sessionsRevoked,
+      at: new Date().toISOString(),
+    });
+    return { ok: true, sessionsRevoked };
+  });
+
 
 /**
  * Profile directory. Role and active status are privileged columns

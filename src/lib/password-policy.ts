@@ -6,7 +6,19 @@ export const PASSWORD_RULES = [
   "Mindestens ein Großbuchstabe",
   "Mindestens ein Kleinbuchstabe",
   "Mindestens eine Ziffer",
+  "Mindestens ein Sonderzeichen",
 ] as const;
+
+/** Einzelprüfungen für die Live-Anzeige im Dialog. */
+export function passwordChecks(value: string) {
+  return [
+    { label: PASSWORD_RULES[0], ok: value.length >= PASSWORD_MIN },
+    { label: PASSWORD_RULES[1], ok: /[A-ZÄÖÜ]/.test(value) },
+    { label: PASSWORD_RULES[2], ok: /[a-zäöüß]/.test(value) },
+    { label: PASSWORD_RULES[3], ok: /[0-9]/.test(value) },
+    { label: PASSWORD_RULES[4], ok: /[^A-Za-zÄÖÜäöüß0-9]/.test(value) },
+  ];
+}
 
 /** Gibt null zurück, wenn das Passwort gültig ist, sonst einen Hinweistext. */
 export function checkPassword(value: string): string | null {
@@ -14,6 +26,9 @@ export function checkPassword(value: string): string | null {
   if (!/[A-ZÄÖÜ]/.test(value)) return "Das Passwort braucht mindestens einen Großbuchstaben.";
   if (!/[a-zäöüß]/.test(value)) return "Das Passwort braucht mindestens einen Kleinbuchstaben.";
   if (!/[0-9]/.test(value)) return "Das Passwort braucht mindestens eine Ziffer.";
+  if (!/[^A-Za-zÄÖÜäöüß0-9]/.test(value)) {
+    return "Das Passwort braucht mindestens ein Sonderzeichen.";
+  }
   return null;
 }
 
