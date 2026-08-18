@@ -20,7 +20,8 @@ import { useIdentity } from "@/hooks/use-identity";
 import { checkoutMachine, returnMachine } from "@/lib/machine-actions.functions";
 import { SiteCombobox } from "@/components/site-combobox";
 import { machineRelationsQuery } from "@/lib/queries";
-import { machineStatusKey } from "@/lib/status";
+import { effectiveStatusKey } from "@/lib/status";
+import { ReportDefectButton } from "@/components/defect-dialogs";
 
 type MachineLike = {
   id: string;
@@ -29,6 +30,8 @@ type MachineLike = {
   status: string | null;
   current_site_id: string | null;
   responsible_user_id: string | null;
+  /** Standorttyp — nötig für den abgeleiteten Status „Zugewiesen". */
+  site?: { location_type?: string | null } | null;
 };
 
 const CONDITIONS = [
@@ -57,7 +60,7 @@ export function MachineActions({
   const identity = useIdentity();
   const [open, setOpen] = useState<"checkout" | "return" | null>(null);
 
-  const statusKey = machineStatusKey(machine.status);
+  const statusKey = effectiveStatusKey(machine);
   const isResponsible = !!identity.userId && machine.responsible_user_id === identity.userId;
 
   if (identity.isLoading) return null;
@@ -70,10 +73,26 @@ export function MachineActions({
         </Button>
       ) : null}
 
-      {statusKey === "borrowed" && (isResponsible || identity.canManage) ? (
+      {statusKey === "assigned" ? (
+        <p className="rounded-lg border border-status-reserved/25 bg-status-reserved/8 px-4 py-3 text-sm text-status-reserved">
+          Dieses Gerät ist einem Standort zugewiesen und steht dort im Einsatz.
+        </p>
+      ) : null}
+
+      {(statusKey === "borrowed" || (statusKey === "defect" && machine.responsible_user_id)) &&
+      (isResponsible || identity.canManage) ? (
         <Button className="h-12 w-full text-base" onClick={() => setOpen("return")}>
           <RotateCcw className="mr-2 h-4 w-4" /> Gerät zurückgeben
         </Button>
+      ) : null}
+
+      {statusKey === "borrowed" && isResponsible && !identity.canManage ? (
+        <ReportDefectButton
+          machineId={machine.id}
+          machineName={machine.name}
+          siteId={machine.current_site_id}
+          className="h-12 w-full text-base"
+        />
       ) : null}
 
       {statusKey === "borrowed" && !isResponsible && !identity.canManage ? (
@@ -91,6 +110,9 @@ export function MachineActions({
       {statusKey === "defect" ? (
         <p className="rounded-lg border border-status-defect/25 bg-status-defect/8 px-4 py-3 text-sm text-status-defect">
           Gerät ist als defekt gemeldet.
+          {machine.responsible_user_id && isResponsible
+            ? " Du kannst es trotzdem zurückgeben — der Defekt bleibt bestehen."
+            : ""}
         </p>
       ) : null}
 
