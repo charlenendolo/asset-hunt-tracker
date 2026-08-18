@@ -45,7 +45,7 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
       setPw("");
       setConfirm("");
       setOpen(false);
-      toast.success("Temporäres Passwort wurde gesetzt.");
+      toast.success("Passwort geändert. Alle aktiven Sitzungen wurden beendet.");
     },
     onError: (e: Error) => toast.error(e.message || "Passwort konnte nicht gesetzt werden."),
   });
