@@ -49,10 +49,19 @@ function SitesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editSite, setEditSite] = useState<SiteRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  const visible = (sites.data ?? []).filter(
-    (s) => !typeFilter || s.location_type === typeFilter,
-  );
+  const term = search.trim().toLowerCase();
+  const visible = (sites.data ?? [])
+    .filter((s) => !typeFilter || s.location_type === typeFilter)
+    .filter((s) => {
+      if (!term) return true;
+      // Suche über alle vorhandenen identifizierenden Textfelder
+      // (Name, Nummer/Kennzeichen, Adresse, Typbezeichnung).
+      return [s.name, s.site_number, s.address, siteTypeLabel(s.location_type)]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term));
+    });
 
   return (
     <AppShell
