@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapPin, Pencil, Plus } from "lucide-react";
+import { MapPin, Pencil, Plus, Search, X } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { CreateSiteDialog, EditSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentity } from "@/hooks/use-identity";
 import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
@@ -49,10 +50,19 @@ function SitesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editSite, setEditSite] = useState<SiteRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  const visible = (sites.data ?? []).filter(
-    (s) => !typeFilter || s.location_type === typeFilter,
-  );
+  const term = search.trim().toLowerCase();
+  const visible = (sites.data ?? [])
+    .filter((s) => !typeFilter || s.location_type === typeFilter)
+    .filter((s) => {
+      if (!term) return true;
+      // Suche über alle vorhandenen identifizierenden Textfelder
+      // (Name, Nummer/Kennzeichen, Adresse, Typbezeichnung).
+      return [s.name, s.site_number, s.address, siteTypeLabel(s.location_type)]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term));
+    });
 
   return (
     <AppShell
@@ -67,6 +77,33 @@ function SitesPage() {
         ) : null
       }
     >
+      <div className="mb-3 max-w-sm">
+        <label htmlFor="site-search" className="sr-only">
+          Standorte suchen
+        </label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="site-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Standorte suchen…"
+            className="h-10 pl-9 pr-9"
+          />
+          {search ? (
+            <button
+              type="button"
+              aria-label="Suche zurücksetzen"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
@@ -106,8 +143,12 @@ function SitesPage() {
       ) : visible.length === 0 ? (
         <EmptyState
           icon={<MapPin className="h-7 w-7" strokeWidth={1.5} />}
-          title="Keine Standorte für diese Auswahl."
-          description="Lege einen neuen Standort an oder wähle einen anderen Typ."
+          title={term ? "Keine Standorte gefunden." : "Keine Standorte für diese Auswahl."}
+          description={
+            term
+              ? "Passe deinen Suchbegriff an oder setze die Suche zurück."
+              : "Lege einen neuen Standort an oder wähle einen anderen Typ."
+          }
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

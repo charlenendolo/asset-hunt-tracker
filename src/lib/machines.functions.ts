@@ -173,10 +173,34 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
       for (const p of profiles ?? []) names.set(p.id, p.full_name ?? "Unbekannt");
     }
 
+    // Obhut und Status sind eine Einheit: wer ein Gerät hält, hat es
+    // ausgeliehen. Defekt/Wartung bleiben als übergeordnete Zustände bestehen.
+    const currentStatus = (machine.status ?? "").toLowerCase();
+    const locked = currentStatus === "maintenance" || currentStatus === "defective";
+    let nextStatus = currentStatus;
+    if (!locked) {
+      if (data.responsibleUserId) {
+        nextStatus = "checked_out";
+      } else {
+        // Obhut endet: offene Defekte sperren weiterhin, sonst wieder verfügbar
+        // (der abgeleitete Zustand „Zugewiesen" ergibt sich aus dem Standorttyp).
+        const { count: openDefects } = await supabaseAdmin
+          .from("defects")
+          .select("id", { count: "exact", head: true })
+          .eq("machine_id", machine.id)
+          .neq("status", "resolved");
+        nextStatus = (openDefects ?? 0) > 0 ? "defective" : "available";
+      }
+    }
+
     // Optimistischer Abgleich gegen den zuvor gelesenen Stand.
     let updateQuery = supabaseAdmin
       .from("machines")
-      .update({ responsible_user_id: data.responsibleUserId })
+      .update({
+        responsible_user_id: data.responsibleUserId,
+        status: nextStatus,
+        ...(data.responsibleUserId ? {} : { expected_return_at: null }),
+      })
       .eq("id", machine.id);
     updateQuery = previousId
       ? updateQuery.eq("responsible_user_id", previousId)
@@ -204,7 +228,7 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
     if (movementError) {
       await supabaseAdmin
         .from("machines")
-        .update({ responsible_user_id: previousId })
+        .update({ responsible_user_id: previousId, status: machine.status })
         .eq("id", machine.id);
       throw new Error("Änderung konnte nicht protokolliert werden. Vorgang abgebrochen.");
     }

@@ -315,8 +315,10 @@ function ManagerDashboard() {
 
   const byStatus = (key: string) => {
     const c = counts.data?.counts ?? {};
+    // „assigned" ist ein abgeleiteter Schlüssel und hat kein DB-Alias —
+    // deshalb zusätzlich direkt vergleichen.
     return Object.entries(c).reduce(
-      (sum, [raw, n]) => (machineStatusKey(raw) === key ? sum + n : sum),
+      (sum, [raw, n]) => (raw === key || machineStatusKey(raw) === key ? sum + n : sum),
       0,
     );
   };
