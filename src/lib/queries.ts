@@ -184,15 +184,20 @@ export function machineStatusCountsQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("machines")
-        .select("status")
+        .select("status, responsible_user_id, site:sites(location_type)")
         .eq("active", true)
         .limit(5000);
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
-        const key = row.status ?? "unknown";
+        const assigned =
+          machineStatusKey(row.status) === "available" &&
+          !row.responsible_user_id &&
+          isAssignedSiteType(row.site?.location_type ?? null);
+        const key = assigned ? "assigned" : (row.status ?? "unknown");
         counts[key] = (counts[key] ?? 0) + 1;
       }
+
       return { total: data?.length ?? 0, counts };
     },
   });
