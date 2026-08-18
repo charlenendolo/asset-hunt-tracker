@@ -480,12 +480,23 @@ export function scopedReservationsQuery(userId: string | null, canSeeAll: boolea
 }
 
 /**
- * Datenbasis für den Kalender/Planer: aktive Geräte plus alle belegenden
- * Vorgänge. Reine Leseabfragen auf bestehende Tabellen.
+ * Datenbasis für den Kalender: ausschließlich geplante Termine —
+ * Reservierungen, anstehende Wartungen und anstehende Prüfungen.
+ * Betriebshistorie (Ausleihen, Rückgaben, Defekte, Standortwechsel) gehört in
+ * den Geräteverlauf und wird hier bewusst nicht geladen.
+ *
+ * Die Abfrage ist auf den sichtbaren Zeitraum begrenzt (kein Vollabzug) und
+ * nutzt die bestehenden RLS-geschützten Tabellen: Mitarbeiter sehen wie bisher
+ * nur ihre eigenen Reservierungen.
  */
-export function plannerQuery(userId: string | null, canSeeAll: boolean) {
+export function calendarQuery(
+  userId: string | null,
+  canSeeAll: boolean,
+  fromISODate: string,
+  toISODate: string,
+) {
   return queryOptions({
-    queryKey: ["planner", canSeeAll ? "all" : userId],
+    queryKey: ["calendar", canSeeAll ? "all" : userId, fromISODate, toISODate],
     enabled: canSeeAll || !!userId,
     staleTime: 30 * 1000,
     queryFn: async () => {
@@ -495,44 +506,49 @@ export function plannerQuery(userId: string | null, canSeeAll: boolean) {
           "id, machine_id, start_at, end_at, status, notes, reserved_by, machine:machines(id, name, asset_code), site:sites(id, name), reserved:profiles(id, full_name)",
         )
         .neq("status", "cancelled")
+        // Überlappung mit dem sichtbaren Zeitraum
+        .lte("start_at", `${toISODate}T23:59:59.999Z`)
+        .gte("end_at", `${fromISODate}T00:00:00.000Z`)
         .order("start_at")
-        .limit(500);
+        .limit(300);
       if (!canSeeAll) reservationQuery = reservationQuery.eq("reserved_by", userId!);
 
-      const [machines, reservations, defects, maintenance] = await Promise.all([
-        supabase
-          .from("machines")
-          .select(
-            "id, name, asset_code, status, expected_return_at, current_site_id, responsible_user_id, category:machine_categories(id, name), site:sites(id, name), responsible:profiles(id, full_name)",
-          )
-          .eq("active", true)
-          .order("name")
-          .limit(500),
+      const [reservations, maintenance, inspections] = await Promise.all([
         reservationQuery,
         supabase
-          .from("defects")
-          .select("id, machine_id, description, severity, status, created_at")
-          .neq("status", "resolved")
-          .limit(500),
-        supabase
           .from("maintenance")
-          .select("id, machine_id, maintenance_type, scheduled_date, completed_date, status")
+          .select(
+            "id, machine_id, maintenance_type, scheduled_date, completed_date, status, service_provider, notes, machine:machines(id, name, asset_code)",
+          )
           .neq("status", "cancelled")
-          .limit(500),
+          .neq("status", "completed")
+          .gte("scheduled_date", fromISODate)
+          .lte("scheduled_date", toISODate)
+          .order("scheduled_date")
+          .limit(300),
+        supabase
+          .from("machines")
+          .select("id, name, asset_code, next_inspection_date")
+          .eq("active", true)
+          .eq("inspection_required", true)
+          .gte("next_inspection_date", fromISODate)
+          .lte("next_inspection_date", toISODate)
+          .order("next_inspection_date")
+          .limit(300),
       ]);
 
-      const firstError = [machines, reservations, defects, maintenance].find((r) => r.error);
+      const firstError = [reservations, maintenance, inspections].find((r) => r.error);
       if (firstError?.error) throw firstError.error;
 
       return {
-        machines: machines.data ?? [],
         reservations: reservations.data ?? [],
-        defects: defects.data ?? [],
         maintenance: maintenance.data ?? [],
+        inspections: inspections.data ?? [],
       };
     },
   });
 }
+
 
 /**
  * Überfällige Geräte (abgeleitet, kein gespeicherter Status): ausgeliehen und
