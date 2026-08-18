@@ -81,7 +81,10 @@ export function effectiveStatusLabel(machine: AssignableLike): string {
 /** Raw DB values we filter by, keyed by our normalised status key. */
 export const MACHINE_STATUS_DB_VALUES: Record<string, string> = {
   available: "available",
+  // Pseudowert: wird in der Abfrage als abgeleiteter Filter aufgelöst.
+  assigned: "assigned",
   reserved: "reserved",
+
   borrowed: "borrowed",
   maintenance: "maintenance",
   defect: "defect",
