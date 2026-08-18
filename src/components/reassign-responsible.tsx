@@ -134,7 +134,7 @@ function ReassignDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="person-select">Verantwortliche Person</Label>
-            <Popover open={open} onOpenChange={setOpen} modal>
+            <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
                   id="person-select"
