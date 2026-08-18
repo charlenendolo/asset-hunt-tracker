@@ -97,7 +97,11 @@ function QrMachinePage() {
                   </h1>
                   <p className="text-sm text-muted-foreground">{machine.data.asset_code}</p>
                 </div>
-                <StatusBadge status={machine.data.status} />
+                <StatusBadge
+                  status={machine.data.status}
+                  siteType={machine.data.site?.location_type ?? null}
+                  responsibleUserId={machine.data.responsible_user_id}
+                />
               </div>
               <div className="mt-3 divide-y divide-border border-t border-border">
                 <Row label="Standort" value={textOrDash(machine.data.site?.name)} />
@@ -122,6 +126,7 @@ function QrMachinePage() {
               status: machine.data.status,
               current_site_id: machine.data.current_site_id,
               responsible_user_id: machine.data.responsible_user_id,
+              site: machine.data.site ? { location_type: machine.data.site.location_type } : null,
             }}
           />
 

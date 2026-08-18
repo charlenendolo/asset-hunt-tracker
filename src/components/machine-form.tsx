@@ -234,7 +234,9 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                     className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">Ohne Kategorie</option>
-                    {(categories.data ?? []).map((c) => (
+                    {(categories.data ?? [])
+                      .filter((c) => c.active !== false || c.id === form.categoryId)
+                      .map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>

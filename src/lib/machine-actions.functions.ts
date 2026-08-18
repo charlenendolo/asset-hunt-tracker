@@ -47,7 +47,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
 
     const { data: machine, error: readError } = await supabaseAdmin
       .from("machines")
-      .select("id, status, current_site_id, responsible_user_id, active")
+      .select("id, status, current_site_id, responsible_user_id, active, site:sites(location_type)")
       .eq("id", data.machineId)
       .maybeSingle();
     if (readError) throw new Error("Gerät konnte nicht geladen werden.");
@@ -57,6 +57,15 @@ export const checkoutMachine = createServerFn({ method: "POST" })
     if (!machine.active || !AVAILABLE.includes(status)) {
       throw new Error(
         "Das Gerät ist nicht mehr verfügbar. Der Status wurde zwischenzeitlich geändert.",
+      );
+    }
+
+    // Abgeleiteter Status „Zugewiesen": Geräte an Baustellen oder in Fahrzeugen
+    // sind dort im Einsatz und dürfen nicht erneut ausgeliehen werden.
+    const { isAssignedSiteType } = await import("@/lib/status");
+    if (isAssignedSiteType(machine.site?.location_type ?? null)) {
+      throw new Error(
+        "Das Gerät ist einem Standort zugewiesen und steht dort im Einsatz. Es kann nicht ausgeliehen werden.",
       );
     }
 
@@ -134,7 +143,10 @@ export const returnMachine = createServerFn({ method: "POST" })
     const isManager = role === "admin" || role === "site_manager";
     const status = (machine.status ?? "").toLowerCase();
 
-    if (!CHECKED_OUT.includes(status)) {
+    // Ein während der Obhut gemeldeter Defekt setzt den Status auf "defective".
+    // Die Rückgabe muss trotzdem möglich bleiben, solange jemand verantwortlich ist.
+    const inCustody = CHECKED_OUT.includes(status) || (status === "defective" && !!machine.responsible_user_id);
+    if (!inCustody) {
       throw new Error(
         "Das Gerät ist nicht mehr ausgeliehen. Der Status wurde zwischenzeitlich geändert.",
       );
@@ -169,10 +181,18 @@ export const returnMachine = createServerFn({ method: "POST" })
 
     const toSiteId = data.siteId ?? machine.current_site_id ?? null;
 
+    // Offene Defekte überdauern die Rückgabe: das Gerät bleibt gesperrt.
+    const { count: openDefects } = await supabaseAdmin
+      .from("defects")
+      .select("id", { count: "exact", head: true })
+      .eq("machine_id", machine.id)
+      .neq("status", "resolved");
+    const nextStatus = status === "defective" || (openDefects ?? 0) > 0 ? "defective" : "available";
+
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("machines")
       .update({
-        status: "available",
+        status: nextStatus,
         responsible_user_id: null,
         current_site_id: toSiteId,
         expected_return_at: null,

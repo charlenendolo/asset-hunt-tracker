@@ -355,7 +355,7 @@ function MachinesPage() {
                     ) : null}
                     <td className="px-4 py-3">
                       <div className="flex flex-col items-start gap-1">
-                        <StatusBadge status={m.status} />
+                        <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
                         {isOverdue(m) ? (
                           <OverdueBadge expectedReturnAt={m.expected_return_at} />
                         ) : null}
@@ -430,7 +430,7 @@ function MachinesPage() {
                       <OverdueBadge expectedReturnAt={m.expected_return_at} className="mt-1.5" />
                     ) : null}
                   </div>
-                  <StatusBadge status={m.status} />
+                  <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
                 </Link>
               </li>
             ))}

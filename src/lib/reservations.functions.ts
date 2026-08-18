@@ -34,6 +34,31 @@ export const createReservation = createServerFn({ method: "POST" })
       throw new Error("Das Ende muss nach dem Beginn liegen.");
     }
 
+    // Eignung: defekte, in Wartung befindliche oder einem Standort zugewiesene
+    // Geräte können nicht reserviert werden.
+    const { data: machine, error: machineError } = await supabase
+      .from("machines")
+      .select("id, status, active, responsible_user_id, site:sites(location_type)")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (machineError) throw new Error("Gerät konnte nicht geladen werden.");
+    if (!machine || !machine.active) throw new Error("Gerät nicht gefunden.");
+    const machineStatus = (machine.status ?? "").toLowerCase();
+    if (machineStatus === "defective" || machineStatus === "defect") {
+      throw new Error("Das Gerät ist als defekt gemeldet und kann nicht reserviert werden.");
+    }
+    if (machineStatus === "maintenance") {
+      throw new Error("Das Gerät befindet sich in Wartung und kann nicht reserviert werden.");
+    }
+    {
+      const { isAssignedSiteType } = await import("@/lib/status");
+      if (!machine.responsible_user_id && isAssignedSiteType(machine.site?.location_type ?? null)) {
+        throw new Error(
+          "Das Gerät ist einem Standort zugewiesen und steht dort im Einsatz. Es kann nicht reserviert werden.",
+        );
+      }
+    }
+
     // Overlap: existing.start < new.end AND existing.end > new.start
     const { data: conflicts, error: conflictError } = await supabase
       .from("reservations")

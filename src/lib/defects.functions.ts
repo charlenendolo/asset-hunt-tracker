@@ -28,10 +28,26 @@ export const reportDefect = createServerFn({ method: "POST" })
 
     const { data: machine, error: readError } = await supabaseAdmin
       .from("machines")
-      .select("id, status, current_site_id")
+      .select("id, status, current_site_id, responsible_user_id")
       .eq("id", data.machineId)
       .maybeSingle();
     if (readError || !machine) throw new Error("Gerät konnte nicht geladen werden.");
+
+    // Ist das Gerät in fremder Obhut, darf nur der Träger der Obhut (oder
+    // Admin/Bauleiter) einen Defekt melden. Die Obhut bleibt dabei bestehen.
+    if (machine.responsible_user_id && machine.responsible_user_id !== userId) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("role, active")
+        .eq("id", userId)
+        .maybeSingle();
+      const role = String(profile?.role ?? "user").toLowerCase();
+      const isManager = profile?.active && ["admin", "site_manager", "manager", "bauleiter"].includes(role);
+      if (!isManager) {
+        throw new Error("Dieses Gerät ist einer anderen Person zugewiesen.");
+      }
+    }
+
 
     const { data: inserted, error } = await supabaseAdmin
       .from("defects")

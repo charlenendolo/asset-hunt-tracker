@@ -185,7 +185,16 @@ function MachineDetailPage() {
             <MachineHeroPhoto src={photoUrls[m.id]} alt={m.name} />
 
             <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-3">
-              <Field label="Status" value={<StatusBadge status={m.status} />} />
+              <Field
+                label="Status"
+                value={
+                  <StatusBadge
+                    status={m.status}
+                    siteType={m.site?.location_type ?? null}
+                    responsibleUserId={m.responsible_user_id}
+                  />
+                }
+              />
               <Field label="Gerätenummer" value={m.asset_code} />
               <Field label="Inventarnummer" value={textOrDash(m.company_inventory_number)} />
               <Field label="Kategorie" value={textOrDash(m.category?.name)} />
@@ -392,6 +401,8 @@ function MachineDetailPage() {
                 status: m.status,
                 current_site_id: m.current_site_id,
                 responsible_user_id: m.responsible_user_id,
+                site: m.site ? { location_type: m.site.location_type } : null,
+
               }}
             />
             {identity.isAdmin ? (

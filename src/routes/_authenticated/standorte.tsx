@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapPin, Plus } from "lucide-react";
+import { MapPin, Pencil, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
-import { CreateSiteDialog } from "@/components/site-combobox";
+import { CreateSiteDialog, EditSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,15 @@ import { machinesBySiteCountQuery, sitesQuery } from "@/lib/queries";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER, siteTypeLabel } from "@/lib/site-types";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { formatNumber, textOrDash } from "@/lib/format";
+
+type SiteRow = {
+  id: string;
+  name: string;
+  site_number: string | null;
+  address: string | null;
+  active: boolean;
+  location_type: string;
+};
 
 export const Route = createFileRoute("/_authenticated/standorte")({
   head: () => ({
@@ -38,6 +47,7 @@ function SitesPage() {
   const counts = useQuery(machinesBySiteCountQuery);
   const identity = useIdentity();
   const [createOpen, setCreateOpen] = useState(false);
+  const [editSite, setEditSite] = useState<SiteRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
 
   const visible = (sites.data ?? []).filter(
@@ -139,7 +149,7 @@ function SitesPage() {
                 ? " cursor-pointer transition-colors hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]"
                 : "");
             return (
-              <li key={s.id}>
+              <li key={s.id} className="relative">
                 {identity.canManage ? (
                   <Link to="/maschinen" search={{ siteId: s.id }} className={cardClass}>
                     {body}
@@ -147,6 +157,16 @@ function SitesPage() {
                 ) : (
                   <div className={cardClass}>{body}</div>
                 )}
+                {identity.canManage ? (
+                  <button
+                    type="button"
+                    aria-label={`Standort ${s.name} bearbeiten`}
+                    onClick={() => setEditSite(s as SiteRow)}
+                    className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Bearbeiten
+                  </button>
+                ) : null}
               </li>
             );
           })}
@@ -155,6 +175,14 @@ function SitesPage() {
 
       {identity.canManage ? (
         <CreateSiteDialog open={createOpen} onOpenChange={setCreateOpen} />
+      ) : null}
+
+      {identity.canManage && editSite ? (
+        <EditSiteDialog
+          site={editSite}
+          open={!!editSite}
+          onOpenChange={(o) => (!o ? setEditSite(null) : undefined)}
+        />
       ) : null}
     </AppShell>
   );

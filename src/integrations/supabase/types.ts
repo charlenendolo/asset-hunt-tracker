@@ -175,16 +175,19 @@ export type Database = {
       }
       machine_categories: {
         Row: {
+          active: boolean
           created_at: string
           id: string
           name: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
           id?: string
           name: string
         }
         Update: {
+          active?: boolean
           created_at?: string
           id?: string
           name?: string

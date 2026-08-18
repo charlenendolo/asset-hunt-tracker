@@ -1,6 +1,12 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { machineStatusDbValues, machineStatusKey } from "@/lib/status";
+import {
+  ASSIGNED_SITE_TYPES,
+  isAssignedSiteType,
+  machineStatusDbValues,
+  machineStatusKey,
+} from "@/lib/status";
+
 import { listProfiles } from "@/lib/users.functions";
 
 const FIVE_MIN = 5 * 60 * 1000;
@@ -12,12 +18,13 @@ export const categoriesQuery = queryOptions({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("machine_categories")
-      .select("id, name")
+      .select("id, name, active")
       .order("name");
     if (error) throw error;
     return data ?? [];
   },
 });
+
 
 /**
  * Zubehör-Katalog für die Auswahl: eindeutige Bezeichnungen aus den bereits
@@ -70,6 +77,20 @@ export const profilesQuery = queryOptions({
 
 /** Pseudo-Statuswert für den abgeleiteten Überfällig-Filter (kein DB-Status). */
 export const OVERDUE_FILTER = "overdue";
+
+/** Pseudo-Statuswert für den abgeleiteten Zugewiesen-Filter (kein DB-Status). */
+export const ASSIGNED_FILTER = "assigned";
+
+/** Standort-IDs, deren Typ ein Gerät als „zugewiesen" gelten lässt. */
+async function fetchAssignedSiteIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("sites")
+    .select("id")
+    .in("location_type", [...ASSIGNED_SITE_TYPES]);
+  if (error) throw error;
+  return (data ?? []).map((s) => s.id);
+}
+
 
 export type MachineFilters = {
   search: string;
@@ -126,9 +147,22 @@ export function machinesQuery(filters: MachineFilters) {
           .in("status", machineStatusDbValues("borrowed"))
           .not("expected_return_at", "is", null)
           .lt("expected_return_at", new Date().toISOString());
+      } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
+        // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
+        const assignedSiteIds = await fetchAssignedSiteIds();
+        q = q.in("status", machineStatusDbValues("available")).is("responsible_user_id", null);
+        if (filters.status === ASSIGNED_FILTER) {
+          if (assignedSiteIds.length === 0) return { rows: [], count: 0 };
+          q = q.in("current_site_id", assignedSiteIds);
+        } else if (assignedSiteIds.length > 0) {
+          q = q.or(
+            `current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`,
+          );
+        }
       } else if (filters.status) {
         q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
       }
+
 
       const [column, direction] = filters.sort.split(":");
       q = q.order(column ?? "name", { ascending: direction !== "desc" });
@@ -150,15 +184,20 @@ export function machineStatusCountsQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("machines")
-        .select("status")
+        .select("status, responsible_user_id, site:sites(location_type)")
         .eq("active", true)
         .limit(5000);
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
-        const key = row.status ?? "unknown";
+        const assigned =
+          machineStatusKey(row.status) === "available" &&
+          !row.responsible_user_id &&
+          isAssignedSiteType(row.site?.location_type ?? null);
+        const key = assigned ? "assigned" : (row.status ?? "unknown");
         counts[key] = (counts[key] ?? 0) + 1;
       }
+
       return { total: data?.length ?? 0, counts };
     },
   });
