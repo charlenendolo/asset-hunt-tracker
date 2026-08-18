@@ -228,7 +228,7 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
     if (movementError) {
       await supabaseAdmin
         .from("machines")
-        .update({ responsible_user_id: previousId })
+        .update({ responsible_user_id: previousId, status: machine.status })
         .eq("id", machine.id);
       throw new Error("Änderung konnte nicht protokolliert werden. Vorgang abgebrochen.");
     }
