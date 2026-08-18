@@ -72,6 +72,20 @@ export const profilesQuery = queryOptions({
 /** Pseudo-Statuswert für den abgeleiteten Überfällig-Filter (kein DB-Status). */
 export const OVERDUE_FILTER = "overdue";
 
+/** Pseudo-Statuswert für den abgeleiteten Zugewiesen-Filter (kein DB-Status). */
+export const ASSIGNED_FILTER = "assigned";
+
+/** Standort-IDs, deren Typ ein Gerät als „zugewiesen" gelten lässt. */
+async function fetchAssignedSiteIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("sites")
+    .select("id")
+    .in("location_type", [...ASSIGNED_SITE_TYPES]);
+  if (error) throw error;
+  return (data ?? []).map((s) => s.id);
+}
+
+
 export type MachineFilters = {
   search: string;
   categoryId: string;
