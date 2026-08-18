@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
-import { machineStatusKey, machineStatusLabel } from "@/lib/status";
+import { MACHINE_STATUS_LABELS, effectiveStatusKey, machineStatusKey, machineStatusLabel } from "@/lib/status";
 
 const STATUS_CLASSES: Record<string, string> = {
   available: "text-status-available border-status-available/25 bg-status-available/8",
+  assigned: "text-status-reserved border-status-reserved/25 bg-status-reserved/8",
   reserved: "text-status-reserved border-status-reserved/25 bg-status-reserved/8",
   borrowed: "text-status-borrowed border-status-borrowed/25 bg-status-borrowed/8",
   maintenance: "text-status-maintenance border-status-maintenance/25 bg-status-maintenance/8",
@@ -12,12 +13,24 @@ const STATUS_CLASSES: Record<string, string> = {
 
 export function StatusBadge({
   status,
+  siteType,
+  responsibleUserId,
   className,
 }: {
   status?: string | null | undefined;
+  /** sites.location_type des aktuellen Standorts — für „Zugewiesen". */
+  siteType?: string | null | undefined;
+  responsibleUserId?: string | null | undefined;
   className?: string | undefined;
 }) {
-  const key = machineStatusKey(status);
+  const key =
+    siteType === undefined
+      ? machineStatusKey(status)
+      : effectiveStatusKey({
+          status: status ?? null,
+          responsible_user_id: responsibleUserId ?? null,
+          site: { location_type: siteType ?? null },
+        });
   return (
     <span
       className={cn(
@@ -27,7 +40,7 @@ export function StatusBadge({
       )}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {machineStatusLabel(status)}
+      {key === "unknown" ? machineStatusLabel(status) : MACHINE_STATUS_LABELS[key]}
     </span>
   );
 }
