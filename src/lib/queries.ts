@@ -12,12 +12,13 @@ export const categoriesQuery = queryOptions({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("machine_categories")
-      .select("id, name")
+      .select("id, name, active")
       .order("name");
     if (error) throw error;
     return data ?? [];
   },
 });
+
 
 /**
  * Zubehör-Katalog für die Auswahl: eindeutige Bezeichnungen aus den bereits
