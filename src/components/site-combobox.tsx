@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIdentity } from "@/hooks/use-identity";
 import { sitesQuery } from "@/lib/queries";
-import { createSite } from "@/lib/sites.functions";
+import { createSite, updateSite } from "@/lib/sites.functions";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER, type SiteType } from "@/lib/site-types";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { cn } from "@/lib/utils";
@@ -291,6 +291,144 @@ export function CreateSiteDialog({
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!valid || mutation.isPending}>
             {mutation.isPending ? "Wird angelegt …" : "Standort anlegen"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+/** Standort bearbeiten — nur Stammdaten, keine Gerätezuordnungen. */
+export function EditSiteDialog({
+  site,
+  open,
+  onOpenChange,
+}: {
+  site: {
+    id: string;
+    name: string;
+    site_number: string | null;
+    address: string | null;
+    active: boolean;
+    location_type: string;
+  };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const submit = useServerFn(updateSite);
+  const [name, setName] = useState(site.name);
+  const [locationType, setLocationType] = useState<string>(site.location_type);
+  const [siteNumber, setSiteNumber] = useState(site.site_number ?? "");
+  const [address, setAddress] = useState(site.address ?? "");
+  const [active, setActive] = useState(site.active);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(site.name);
+    setLocationType(site.location_type);
+    setSiteNumber(site.site_number ?? "");
+    setAddress(site.address ?? "");
+    setActive(site.active);
+  }, [open, site]);
+
+  const valid = name.trim().length >= 2 && !!locationType;
+
+  const mutation = useMutation({
+    mutationFn: async () =>
+      submit({
+        data: {
+          siteId: site.id,
+          name: name.trim(),
+          locationType: locationType as SiteType,
+          siteNumber: siteNumber.trim() || null,
+          address: address.trim() || null,
+          active,
+        },
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["sites"] }),
+        queryClient.invalidateQueries({ queryKey: ["machines"] }),
+      ]);
+      toast.success("Standort aktualisiert.");
+      onOpenChange(false);
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Standort konnte nicht gespeichert werden."),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => (!o && mutation.isPending ? undefined : onOpenChange(o))}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Standort bearbeiten</DialogTitle>
+          <DialogDescription>
+            Änderungen betreffen nur die Standortdaten, nicht die dort erfassten Geräte.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-site-name">Bezeichnung</Label>
+            <Input
+              id="edit-site-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-site-type">Standorttyp</Label>
+            <select
+              id="edit-site-type"
+              value={locationType}
+              onChange={(e) => setLocationType(e.target.value)}
+              className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {SITE_TYPE_ORDER.map((t) => (
+                <option key={t} value={t}>
+                  {SITE_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-site-number">Nummer / Kennzeichen (optional)</Label>
+            <Input
+              id="edit-site-number"
+              value={siteNumber}
+              onChange={(e) => setSiteNumber(e.target.value)}
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-site-address">Adresse (optional)</Label>
+            <Input
+              id="edit-site-address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="h-11"
+            />
+          </div>
+          <label className="flex items-center gap-3 rounded-md border border-border px-3 py-3">
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => setActive(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-sm font-medium">Standort aktiv</span>
+          </label>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
+            Abbrechen
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={!valid || mutation.isPending}>
+            {mutation.isPending ? "Wird gespeichert …" : "Änderungen speichern"}
           </Button>
         </DialogFooter>
       </DialogContent>
