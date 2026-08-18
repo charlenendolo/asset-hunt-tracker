@@ -76,17 +76,23 @@ function ReassignDialog({
 }) {
   const qc = useQueryClient();
   const profiles = useQuery(profilesQuery);
-  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(machine.responsible_user_id);
   const [comment, setComment] = useState("");
   const run = useServerFn(reassignMachineResponsibility);
 
-  const people = useMemo(() => {
-    const rows = (profiles.data ?? []).filter((p) => p.active !== false);
-    const term = search.trim().toLowerCase();
-    if (!term) return rows.slice(0, 30);
-    return rows.filter((p) => (p.full_name ?? "").toLowerCase().includes(term)).slice(0, 30);
-  }, [profiles.data, search]);
+  const people = useMemo(
+    () => (profiles.data ?? []).filter((p) => p.active !== false),
+    [profiles.data],
+  );
+
+  const selectedName =
+    selected === null
+      ? "Verantwortlichkeit entfernen"
+      : (people.find((p) => p.id === selected)?.full_name ??
+        machine.responsible?.full_name ??
+        "Ohne Namen");
+
 
   const mutation = useMutation({
     mutationFn: async () =>
