@@ -235,3 +235,91 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+const updateSchema = z.object({
+  machineId: z.string().uuid(),
+  assetCode: z.string().trim().min(1).max(60),
+  name: z.string().trim().min(2).max(160),
+  categoryId: z.string().uuid().nullable().optional(),
+  manufacturer: optionalText(120),
+  model: optionalText(120),
+  serialNumber: optionalText(120),
+  companyInventoryNumber: optionalText(120),
+  siteId: z.string().uuid().nullable().optional(),
+  description: optionalText(2000),
+  inspectionRequired: z.boolean().default(false),
+  lastInspectionDate: optionalDate,
+  nextInspectionDate: optionalDate,
+  purchaseDate: optionalDate,
+  purchasePrice: z.number().nonnegative().nullable().optional(),
+});
+
+/**
+ * Stammdatenpflege durch Administratoren.
+ * Bewusst ohne Status, Verantwortlichkeit und Rückgabedatum — dafür bleiben
+ * Ausleihe/Rückgabe und die administrative Zuweisung zuständig.
+ * Ein Standortwechsel wird als Bewegung "transfer" protokolliert; reine
+ * Textänderungen fluten den Verlauf nicht.
+ */
+export const updateMachine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { requireManager } = await import("./roles.server");
+    await requireManager(context.supabase, {
+      adminOnly: true,
+      message: "Nur Administratoren dürfen Gerätestammdaten bearbeiten.",
+    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machine, error: readError } = await supabaseAdmin
+      .from("machines")
+      .select("id, current_site_id")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (readError || !machine) throw new Error("Gerät konnte nicht geladen werden.");
+
+    const assetCode = data.assetCode.trim();
+    const { data: duplicate } = await supabaseAdmin
+      .from("machines")
+      .select("id")
+      .eq("asset_code", assetCode)
+      .neq("id", machine.id)
+      .maybeSingle();
+    if (duplicate) throw new Error("Diese Gerätenummer ist bereits vergeben.");
+
+    const nextSiteId = data.siteId ?? null;
+    const { error } = await supabaseAdmin
+      .from("machines")
+      .update({
+        asset_code: assetCode,
+        name: data.name.trim(),
+        category_id: data.categoryId ?? null,
+        manufacturer: data.manufacturer,
+        model: data.model,
+        serial_number: data.serialNumber,
+        company_inventory_number: data.companyInventoryNumber,
+        current_site_id: nextSiteId,
+        description: data.description,
+        inspection_required: data.inspectionRequired,
+        last_inspection_date: data.lastInspectionDate,
+        next_inspection_date: data.nextInspectionDate,
+        purchase_date: data.purchaseDate,
+        purchase_price: data.purchasePrice ?? null,
+      })
+      .eq("id", machine.id);
+    if (error) throw new Error("Änderung fehlgeschlagen: " + error.message);
+
+    if ((machine.current_site_id ?? null) !== nextSiteId) {
+      await supabaseAdmin.from("movements").insert({
+        machine_id: machine.id,
+        movement_type: "transfer",
+        performed_by: context.userId,
+        from_site_id: machine.current_site_id,
+        to_site_id: nextSiteId,
+        comment: "Standort über Gerätebearbeitung geändert",
+      });
+    }
+
+    return { ok: true as const };
+  });
