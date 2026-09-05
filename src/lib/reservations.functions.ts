@@ -25,6 +25,8 @@ export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
 
     const start = new Date(data.startAt);
     const end = new Date(data.endAt);

@@ -26,6 +26,8 @@ export const reportDefect = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
 
     const { data: machine, error: readError } = await supabaseAdmin
       .from("machines")
