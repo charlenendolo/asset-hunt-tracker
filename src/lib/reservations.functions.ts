@@ -100,7 +100,7 @@ export const createReservation = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error("Reservierung konnte nicht gespeichert werden: " + error.message);
+    if (error) failSafely("Reservierung konnte nicht gespeichert werden.", error, "reservations");
 
     return { id: inserted.id };
   });

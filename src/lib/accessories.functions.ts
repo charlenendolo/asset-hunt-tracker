@@ -53,7 +53,7 @@ export const updateMachineAccessory = createServerFn({ method: "POST" })
       .from("accessories")
       .update({ quantity: data.quantity, required: data.required })
       .eq("id", data.id);
-    if (error) throw new Error("Zubehör konnte nicht geändert werden: " + error.message);
+    if (error) failSafely("Zubehör konnte nicht geändert werden.", error, "accessories");
     return { ok: true as const };
   });
 
@@ -67,6 +67,6 @@ export const deleteMachineAccessory = createServerFn({ method: "POST" })
     });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("accessories").delete().eq("id", data.id);
-    if (error) throw new Error("Zubehör konnte nicht entfernt werden: " + error.message);
+    if (error) failSafely("Zubehör konnte nicht entfernt werden.", error, "accessories");
     return { ok: true as const };
   });

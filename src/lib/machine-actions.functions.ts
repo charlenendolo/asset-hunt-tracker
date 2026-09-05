@@ -85,7 +85,7 @@ export const checkoutMachine = createServerFn({ method: "POST" })
       .is("responsible_user_id", null)
       .select("id")
       .maybeSingle();
-    if (updateError) throw new Error("Ausleihe fehlgeschlagen: " + updateError.message);
+    if (updateError) failSafely("Ausleihe fehlgeschlagen.", updateError, "checkout");
     if (!updated) {
       throw new Error(
         "Das Gerät ist nicht mehr verfügbar. Der Status wurde zwischenzeitlich geändert.",
@@ -202,7 +202,7 @@ export const returnMachine = createServerFn({ method: "POST" })
       .eq("responsible_user_id", machine.responsible_user_id ?? userId)
       .select("id")
       .maybeSingle();
-    if (updateError) throw new Error("Rückgabe fehlgeschlagen: " + updateError.message);
+    if (updateError) failSafely("Rückgabe fehlgeschlagen.", updateError, "return");
     if (!updated) {
       throw new Error(
         "Das Gerät ist nicht mehr ausgeliehen. Der Status wurde zwischenzeitlich geändert.",
@@ -231,7 +231,7 @@ export const returnMachine = createServerFn({ method: "POST" })
         })
         .eq("id", machine.id);
       throw new Error(
-        "Bewegung konnte nicht protokolliert werden. Rückgabe abgebrochen. " + movementError.message,
+        "Bewegung konnte nicht protokolliert werden. Rückgabe abgebrochen.",
       );
     }
 

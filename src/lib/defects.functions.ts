@@ -61,7 +61,7 @@ export const reportDefect = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error("Defekt konnte nicht gespeichert werden: " + error.message);
+    if (error) failSafely("Defekt konnte nicht gespeichert werden.", error, "defects");
 
     if (data.blockMachine && machine.status !== "defective") {
       const { error: statusError } = await supabaseAdmin
@@ -124,7 +124,7 @@ export const closeDefect = createServerFn({ method: "POST" })
       })
       .eq("id", defect.id)
       .eq("status", defect.status);
-    if (error) throw new Error("Defekt konnte nicht abgeschlossen werden: " + error.message);
+    if (error) failSafely("Defekt konnte nicht abgeschlossen werden.", error, "defects");
 
     let machineFreed = false;
     if (data.setAvailable) {
