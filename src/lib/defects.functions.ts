@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { failSafely } from "@/lib/safe-error";
 
 /**
  * Defektvorgänge. Der Defekt-Datensatz und der Maschinenstatus werden immer
@@ -25,6 +26,8 @@ export const reportDefect = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
 
     const { data: machine, error: readError } = await supabaseAdmin
       .from("machines")
@@ -61,7 +64,7 @@ export const reportDefect = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error("Defekt konnte nicht gespeichert werden: " + error.message);
+    if (error) failSafely("Defekt konnte nicht gespeichert werden.", error, "defects");
 
     if (data.blockMachine && machine.status !== "defective") {
       const { error: statusError } = await supabaseAdmin
@@ -124,7 +127,7 @@ export const closeDefect = createServerFn({ method: "POST" })
       })
       .eq("id", defect.id)
       .eq("status", defect.status);
-    if (error) throw new Error("Defekt konnte nicht abgeschlossen werden: " + error.message);
+    if (error) failSafely("Defekt konnte nicht abgeschlossen werden.", error, "defects");
 
     let machineFreed = false;
     if (data.setAvailable) {

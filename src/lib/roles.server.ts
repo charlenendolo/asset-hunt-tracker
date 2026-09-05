@@ -31,3 +31,18 @@ export async function requireManager(
   }
   return role;
 }
+
+/**
+ * Zero-Trust-Basisprüfung für jede authentifizierte Aktion.
+ * Ein Zugriffstoken bleibt nach einer Deaktivierung bis zum Ablauf technisch
+ * gültig — deshalb wird der Aktivstatus bei jedem Vorgang frisch geprüft.
+ */
+export async function requireActiveUser(supabase: unknown): Promise<string> {
+  return currentRole(supabase);
+}
+
+/** Interne Details bleiben im Log, der Nutzer sieht eine verständliche Meldung. */
+export function failSafely(message: string, error: unknown, scope: string): never {
+  console.error(`[${scope}]`, error);
+  throw new Error(message);
+}

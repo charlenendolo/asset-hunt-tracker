@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { failSafely } from "@/lib/safe-error";
 
 /**
  * Anlage und administrative Korrekturen an Maschinen.
@@ -107,7 +108,7 @@ export const createMachine = createServerFn({ method: "POST" })
       })
       .select("id, name, asset_code")
       .single();
-    if (error) throw new Error("Maschine konnte nicht angelegt werden: " + error.message);
+    if (error) failSafely("Maschine konnte nicht angelegt werden.", error, "machines");
 
     // Zubehör gehört zur Anlage: schlägt es fehl, wird die Maschine wieder
     // entfernt, damit kein unbemerkter Teilzustand entsteht.
@@ -207,7 +208,7 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
       : updateQuery.is("responsible_user_id", null);
 
     const { data: updated, error: updateError } = await updateQuery.select("id").maybeSingle();
-    if (updateError) throw new Error("Änderung fehlgeschlagen: " + updateError.message);
+    if (updateError) failSafely("Änderung fehlgeschlagen.", updateError, "machines");
     if (!updated) {
       throw new Error("Die Verantwortlichkeit wurde zwischenzeitlich geändert. Bitte neu laden.");
     }
@@ -308,7 +309,7 @@ export const updateMachine = createServerFn({ method: "POST" })
         purchase_price: data.purchasePrice ?? null,
       })
       .eq("id", machine.id);
-    if (error) throw new Error("Änderung fehlgeschlagen: " + error.message);
+    if (error) failSafely("Änderung fehlgeschlagen.", error, "machines");
 
     if ((machine.current_site_id ?? null) !== nextSiteId) {
       await supabaseAdmin.from("movements").insert({

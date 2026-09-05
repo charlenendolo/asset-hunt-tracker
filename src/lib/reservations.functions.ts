@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { failSafely } from "@/lib/safe-error";
 
 /**
  * Reservations are written through the authenticated user's own Supabase
@@ -24,6 +25,8 @@ export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
 
     const start = new Date(data.startAt);
     const end = new Date(data.endAt);
@@ -100,7 +103,7 @@ export const createReservation = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error("Reservierung konnte nicht gespeichert werden: " + error.message);
+    if (error) failSafely("Reservierung konnte nicht gespeichert werden.", error, "reservations");
 
     return { id: inserted.id };
   });

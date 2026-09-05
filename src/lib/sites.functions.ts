@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { failSafely } from "@/lib/safe-error";
 import { SITE_TYPE_ORDER } from "@/lib/site-types";
 
 /**
@@ -86,7 +87,7 @@ export const updateSite = createServerFn({ method: "POST" })
       .eq("id", data.siteId)
       .select("id, name, site_number, address, active, location_type")
       .maybeSingle();
-    if (error) throw new Error("Standort konnte nicht gespeichert werden: " + error.message);
+    if (error) failSafely("Standort konnte nicht gespeichert werden.", error, "sites");
     if (!updated) throw new Error("Standort nicht gefunden.");
     return updated;
   });

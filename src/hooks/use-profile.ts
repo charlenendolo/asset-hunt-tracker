@@ -31,7 +31,14 @@ export function useCurrentProfile() {
       // for the signed-in user only.
       const { data, error } = await supabase.rpc("current_profile");
       if (error) throw error;
-      return (data?.[0] ?? null) as Profile | null;
+      const row = (data?.[0] ?? null) as Profile | null;
+      // Deaktivierte Zugänge werden sofort abgemeldet; serverseitig werden ihre
+      // Vorgänge ohnehin abgelehnt.
+      if (row && row.active === false) {
+        await supabase.auth.signOut();
+        return null;
+      }
+      return row;
     },
   });
 

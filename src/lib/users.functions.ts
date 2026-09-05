@@ -191,7 +191,7 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
         message: error.message,
         code: error.code,
       });
-      throw new Error("Änderung konnte nicht gespeichert werden: " + error.message);
+      throw new Error("Änderung konnte nicht gespeichert werden.");
     }
 
     // Deaktivierung und Rollenwechsel dürfen nicht durch eine noch offene
