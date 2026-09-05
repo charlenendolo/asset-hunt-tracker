@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { failSafely } from "@/lib/safe-error";
 
 /**
  * Checkout / return are executed server-side because the existing RLS policy
