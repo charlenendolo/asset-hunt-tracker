@@ -28,7 +28,10 @@ export type MachineHistoryEvent = {
     | "defect_resolved"
     | "maintenance_scheduled"
     | "maintenance_completed"
-    | "reservation";
+    | "reservation"
+    | "handover_requested"
+    | "handover_completed"
+    | "handover_cancelled";
   title: string;
   /** Wen betrifft das Ereignis (Obhut/Empfänger/Melder). */
   subject: string | null;
@@ -56,7 +59,7 @@ export const getMachineHistory = createServerFn({ method: "POST" })
 
     const machineId = data.machineId;
 
-    const [movements, defects, maintenance, reservations] = await Promise.all([
+    const [movements, defects, maintenance, reservations, handovers] = await Promise.all([
       supabaseAdmin
         .from("movements")
         .select(
@@ -88,9 +91,19 @@ export const getMachineHistory = createServerFn({ method: "POST" })
         .eq("machine_id", machineId)
         .order("created_at", { ascending: false })
         .limit(100),
+      supabaseAdmin
+        .from("machine_handovers")
+        .select(
+          "id, status, note, created_at, responded_at, from_user:profiles!machine_handovers_from_user_id_fkey(full_name), to_user:profiles!machine_handovers_to_user_id_fkey(full_name)",
+        )
+        .eq("machine_id", machineId)
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
-    const firstError = [movements, defects, maintenance, reservations].find((r) => r.error);
+    const firstError = [movements, defects, maintenance, reservations, handovers].find(
+      (r) => r.error,
+    );
     if (firstError?.error) {
       throw new Error("Verlauf konnte nicht geladen werden: " + firstError.error.message);
     }
@@ -225,6 +238,41 @@ export const getMachineHistory = createServerFn({ method: "POST" })
         toSite: r.site?.name ?? null,
         detail: [range, r.notes].filter(Boolean).join(" · "),
       });
+    }
+
+    for (const h of handovers.data ?? []) {
+      const from = h.from_user?.full_name ?? "Unbekannt";
+      const to = h.to_user?.full_name ?? "Unbekannt";
+      events.push({
+        id: `ho-${h.id}`,
+        at: h.created_at,
+        kind: "handover_requested",
+        title: "Übergabe angefragt",
+        subject: `${from} → ${to}`,
+        actor: null,
+        fromSite: null,
+        toSite: null,
+        detail: h.note ?? null,
+      });
+      if (h.status !== "pending" && h.responded_at) {
+        const titles: Record<string, string> = {
+          accepted: "Übergabe bestätigt",
+          rejected: "Übergabe abgelehnt",
+          withdrawn: "Übergabe zurückgezogen",
+          expired: "Übergabe abgelaufen",
+        };
+        events.push({
+          id: `hor-${h.id}`,
+          at: h.responded_at,
+          kind: h.status === "accepted" ? "handover_completed" : "handover_cancelled",
+          title: titles[h.status] ?? "Übergabe beendet",
+          subject: `${from} → ${to}`,
+          actor: null,
+          fromSite: null,
+          toSite: null,
+          detail: null,
+        });
+      }
     }
 
     events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());

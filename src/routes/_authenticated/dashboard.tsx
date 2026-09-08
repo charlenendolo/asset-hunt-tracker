@@ -14,6 +14,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { MyMachines } from "@/components/my-machines";
+import { AdminHandovers, PendingHandovers } from "@/components/handover";
 import { Pill } from "@/components/status-badge";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { useIdentity } from "@/hooks/use-identity";
@@ -237,6 +238,10 @@ function UserDashboard() {
         subline="Hier findest du alles, was dir aktuell zugewiesen ist."
       />
 
+      <div className="mb-6">
+        <PendingHandovers />
+      </div>
+
       <MyMachines />
 
       <section className="mt-8">
@@ -366,6 +371,11 @@ function ManagerDashboard() {
           </div>
         </div>
       </Hero>
+
+      <div className="mb-6 space-y-4">
+        <PendingHandovers />
+        <AdminHandovers />
+      </div>
 
       {!isAdmin ? (
         <div className="mb-6">

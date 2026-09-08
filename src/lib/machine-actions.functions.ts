@@ -184,6 +184,14 @@ export const returnMachine = createServerFn({ method: "POST" })
     }
 
 
+    // Eine offene Übergabe darf die Rückgabe nicht überdauern — sie wird
+    // vorher zurückgezogen, damit keine widersprüchliche Obhut entsteht.
+    await supabaseAdmin
+      .from("machine_handovers")
+      .update({ status: "withdrawn", responded_at: new Date().toISOString() })
+      .eq("machine_id", machine.id)
+      .eq("status", "pending");
+
     const toSiteId = data.siteId ?? machine.current_site_id ?? null;
 
     // Offene Defekte überdauern die Rückgabe: das Gerät bleibt gesperrt.
