@@ -31,6 +31,9 @@ const ICONS: Record<MachineHistoryEvent["kind"], React.ComponentType<{ className
   maintenance_scheduled: Wrench,
   maintenance_completed: Wrench,
   reservation: CalendarClock,
+  handover_requested: ArrowRightLeft,
+  handover_completed: PackageCheck,
+  handover_cancelled: AlertTriangle,
 };
 
 function EventRow({ event }: { event: MachineHistoryEvent }) {
