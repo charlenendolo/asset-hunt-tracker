@@ -368,17 +368,5 @@ export const respondHandover = createServerFn({ method: "POST" })
       throw new Error("Diese Übergabe wurde bereits abgeschlossen.");
     }
 
-    await supabaseAdmin.from("movements").insert({
-      machine_id: machine.id,
-      movement_type: "handover",
-      performed_by: userId,
-      responsible_user_id: userId,
-      from_site_id: machine.current_site_id,
-      to_site_id: machine.current_site_id,
-      equipment_complete: data.condition === "good",
-      condition: data.condition === "good" ? "good" : "damaged",
-      comment: "Übergabe bestätigt",
-    });
-
     return { ok: true as const, accepted: true, defectId };
   });
