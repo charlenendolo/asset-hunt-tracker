@@ -45,7 +45,7 @@ import {
   labelFor,
   DEFECT_SEVERITY_LABELS,
   MOVEMENT_TYPE_LABELS,
-  MAINTENANCE_STATUS_LABELS,
+  
 } from "@/lib/status";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
