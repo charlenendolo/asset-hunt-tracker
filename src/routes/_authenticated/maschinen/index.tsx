@@ -16,8 +16,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog } from "@/components/label-print";
 import { useIdentity } from "@/hooks/use-identity";
-import { categoriesQuery, machinesQuery, sitesQuery, OVERDUE_FILTER } from "@/lib/queries";
+import {
+  categoriesQuery,
+  machinesQuery,
+  sitesQuery,
+  OVERDUE_FILTER,
+  INSPECTION_DUE_FILTER,
+} from "@/lib/queries";
 import { OverdueBadge } from "@/components/overdue-badge";
+import { InspectionBadge } from "@/components/inspection-badge";
 import { isOverdue } from "@/lib/overdue";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
@@ -273,6 +280,7 @@ function MachinesPage() {
             </option>
           ))}
           <option value={OVERDUE_FILTER}>Überfällig</option>
+          <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>
@@ -359,6 +367,7 @@ function MachinesPage() {
                         {isOverdue(m) ? (
                           <OverdueBadge expectedReturnAt={m.expected_return_at} />
                         ) : null}
+                        <InspectionBadge machine={m} />
                       </div>
                     </td>
 
@@ -429,6 +438,7 @@ function MachinesPage() {
                     {isOverdue(m) ? (
                       <OverdueBadge expectedReturnAt={m.expected_return_at} className="mt-1.5" />
                     ) : null}
+                    <InspectionBadge machine={m} className="mt-1.5" />
                   </div>
                   <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
                 </Link>
