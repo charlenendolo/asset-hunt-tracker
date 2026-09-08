@@ -30,6 +30,12 @@ import {
 import { OverdueBadge } from "@/components/overdue-badge";
 import { overdueLabel } from "@/lib/overdue";
 import { formatExpectedReturn } from "@/lib/format";
+import {
+  MAINTENANCE_DUE_LABELS,
+  countMachinesWithDueMaintenance,
+  isMaintenanceDue,
+  maintenanceDueState,
+} from "@/lib/due-dates";
 
 import {
   MACHINE_STATUS_LABELS,
@@ -39,7 +45,7 @@ import {
   labelFor,
   DEFECT_SEVERITY_LABELS,
   MOVEMENT_TYPE_LABELS,
-  MAINTENANCE_STATUS_LABELS,
+  
 } from "@/lib/status";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -331,9 +337,10 @@ function ManagerDashboard() {
   const openDefects = (defects.data ?? []).filter(
     (d) => d.status === "open" || d.status === "in_progress",
   );
-  const dueMaintenance = (maintenance.data ?? []).filter(
-    (m) => m.status !== "completed" && m.status !== "cancelled",
-  );
+  // Fällige Wartungen: offene Wartungen, deren Termin überschritten, heute oder
+  // innerhalb des Vorwarnfensters liegt — gleiche Logik wie im Wartungsmodul.
+  const dueMaintenance = (maintenance.data ?? []).filter((m) => isMaintenanceDue(m));
+  const dueMaintenanceMachines = countMachinesWithDueMaintenance(maintenance.data ?? []);
 
   const greeting = profile?.full_name ? `Guten Tag ${profile.full_name}` : "Guten Tag";
 
@@ -355,12 +362,15 @@ function ManagerDashboard() {
             </p>
             <p className="mt-0.5 text-xl font-light">{formatNumber(openDefects.length)}</p>
           </div>
-          <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
+          <Link
+            to="/wartung"
+            className="rounded-xl bg-primary-foreground/10 px-4 py-3 transition-colors hover:bg-primary-foreground/15"
+          >
             <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
               Fällige Wartungen
             </p>
-            <p className="mt-0.5 text-xl font-light">{formatNumber(dueMaintenance.length)}</p>
-          </div>
+            <p className="mt-0.5 text-xl font-light">{formatNumber(dueMaintenanceMachines)}</p>
+          </Link>
           <div className="rounded-xl bg-primary-foreground/10 px-4 py-3">
             <p className="text-[11px] uppercase tracking-wider text-primary-foreground/65">
               Anstehende Reservierungen
@@ -507,7 +517,9 @@ function ManagerDashboard() {
                       {m.maintenance_type} · {formatDate(m.scheduled_date)}
                     </p>
                   </div>
-                  <Pill tone="warning">{labelFor(MAINTENANCE_STATUS_LABELS, m.status)}</Pill>
+                  <Pill tone={maintenanceDueState(m) === "overdue" ? "danger" : "warning"}>
+                    {MAINTENANCE_DUE_LABELS[maintenanceDueState(m) ?? "upcoming"]}
+                  </Pill>
                 </li>
               ))}
             </ul>

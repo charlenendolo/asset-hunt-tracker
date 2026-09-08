@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { maintenanceQuery } from "@/lib/queries";
 import { formatCurrency, formatDate, textOrDash } from "@/lib/format";
 import { MAINTENANCE_STATUS_LABELS, labelFor } from "@/lib/status";
+import { MAINTENANCE_DUE_LABELS, maintenanceDueState } from "@/lib/due-dates";
 
 export const Route = createFileRoute("/_authenticated/wartung")({
   head: () => ({
@@ -65,7 +66,14 @@ function MaintenancePage() {
                   {formatCurrency(w.cost)}
                 </p>
               </div>
-              <Pill tone="warning">{labelFor(MAINTENANCE_STATUS_LABELS, w.status)}</Pill>
+              <span className="flex items-center gap-1.5">
+                {maintenanceDueState(w) ? (
+                  <Pill tone={maintenanceDueState(w) === "overdue" ? "danger" : "warning"}>
+                    {MAINTENANCE_DUE_LABELS[maintenanceDueState(w)!]}
+                  </Pill>
+                ) : null}
+                <Pill>{labelFor(MAINTENANCE_STATUS_LABELS, w.status)}</Pill>
+              </span>
             </li>
           ))}
         </ul>

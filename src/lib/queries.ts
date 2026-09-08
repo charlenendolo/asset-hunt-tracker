@@ -6,6 +6,7 @@ import {
   machineStatusDbValues,
   machineStatusKey,
 } from "@/lib/status";
+import { localISODate } from "@/lib/due-dates";
 
 import { listProfiles } from "@/lib/users.functions";
 
@@ -81,6 +82,12 @@ export const OVERDUE_FILTER = "overdue";
 /** Pseudo-Statuswert für den abgeleiteten Zugewiesen-Filter (kein DB-Status). */
 export const ASSIGNED_FILTER = "assigned";
 
+/**
+ * Pseudo-Statuswert für den abgeleiteten Prüfpflichtig-Filter (kein DB-Status):
+ * Prüfung erforderlich und nächster Prüftermin heute oder überschritten.
+ */
+export const INSPECTION_DUE_FILTER = "inspection_due";
+
 /** Standort-IDs, deren Typ ein Gerät als „zugewiesen" gelten lässt. */
 async function fetchAssignedSiteIds(): Promise<string[]> {
   const { data, error } = await supabase
@@ -107,7 +114,7 @@ export type MachineFilters = {
 };
 
 export const MACHINE_LIST_SELECT =
-  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
+  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
 
 export function machinesQuery(filters: MachineFilters) {
   return queryOptions({
@@ -147,6 +154,13 @@ export function machinesQuery(filters: MachineFilters) {
           .in("status", machineStatusDbValues("borrowed"))
           .not("expected_return_at", "is", null)
           .lt("expected_return_at", new Date().toISOString());
+      } else if (filters.status === INSPECTION_DUE_FILTER) {
+        // Abgeleiteter Zustand: Prüfung erforderlich + Termin heute oder überschritten
+        // (Kalendertagsvergleich, kein UTC-Zeitstempel). Unabhängig vom Betriebsstatus.
+        q = q
+          .eq("inspection_required", true)
+          .not("next_inspection_date", "is", null)
+          .lte("next_inspection_date", localISODate());
       } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
         // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
         const assignedSiteIds = await fetchAssignedSiteIds();
