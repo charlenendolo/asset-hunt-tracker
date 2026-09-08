@@ -194,6 +194,67 @@ export type Database = {
         }
         Relationships: []
       }
+      machine_handovers: {
+        Row: {
+          created_at: string
+          expires_at: string
+          from_user_id: string
+          id: string
+          machine_id: string
+          note: string | null
+          responded_at: string | null
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          from_user_id: string
+          id?: string
+          machine_id: string
+          note?: string | null
+          responded_at?: string | null
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          from_user_id?: string
+          id?: string
+          machine_id?: string
+          note?: string | null
+          responded_at?: string | null
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_handovers_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_handovers_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_handovers_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machine_photos: {
         Row: {
           created_at: string
