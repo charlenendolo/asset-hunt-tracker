@@ -22,6 +22,7 @@ import { SiteCombobox } from "@/components/site-combobox";
 import { machineRelationsQuery } from "@/lib/queries";
 import { effectiveStatusKey } from "@/lib/status";
 import { ReportDefectButton } from "@/components/defect-dialogs";
+import { MachineHandoverSection } from "@/components/handover";
 
 type MachineLike = {
   id: string;
@@ -121,6 +122,15 @@ export function MachineActions({
           Dieses Gerät ist reserviert. Bitte Reservierungen prüfen.
         </p>
       ) : null}
+
+      <MachineHandoverSection
+        machine={{
+          id: machine.id,
+          name: machine.name,
+          responsible_user_id: machine.responsible_user_id,
+          status: machine.status,
+        }}
+      />
 
       <ActionDialog
         mode={open}
