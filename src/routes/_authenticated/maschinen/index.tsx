@@ -20,9 +20,13 @@ import {
   categoriesQuery,
   machinesQuery,
   sitesQuery,
+  inspectionWarningDaysQuery,
   OVERDUE_FILTER,
   INSPECTION_DUE_FILTER,
+  INSPECTION_MISSING_FILTER,
 } from "@/lib/queries";
+import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
+
 import { OverdueBadge } from "@/components/overdue-badge";
 import { InspectionBadge } from "@/components/inspection-badge";
 import { isOverdue } from "@/lib/overdue";
