@@ -20,6 +20,7 @@ import {
   getDeletionCheck,
   updateEmployeeAccount,
 } from "@/lib/users.functions";
+import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
