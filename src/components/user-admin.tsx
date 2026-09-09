@@ -502,8 +502,8 @@ export function UserRowActions({
         />
       ) : null}
       <EmployeeAccessDialog userId={user.id} open={employeeOpen} onOpenChange={setEmployeeOpen} />
-      {/* Passwort-Aktionen nur bei echtem E-Mail-Zugang; PIN-Nutzer behalten die PIN-Verwaltung. */}
-      {email ? <PasswordAdminActions userId={user.id} email={email} /> : null}
+      {/* Passwort-Aktionen für jeden Zugang: Anmeldung per Benutzername oder E-Mail. */}
+      <PasswordAdminActions userId={user.id} email={email ?? null} />
     </div>
   );
 }

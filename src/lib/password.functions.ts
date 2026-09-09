@@ -55,9 +55,10 @@ export const changeOwnPassword = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: me } = await context.supabase.auth.getUser();
     const email = me?.user?.email ?? null;
-    if (!email || isSyntheticEmail(email)) {
-      throw new Error("Dein Zugang nutzt den Mitarbeiter-Login. Bitte den PIN ändern.");
+    if (!email) {
+      throw new Error("Für diesen Zugang ist keine Anmeldung mit Passwort möglich.");
     }
+
     if (data.currentPassword === data.newPassword) {
       throw new Error("Das neue Passwort muss sich vom aktuellen unterscheiden.");
     }
