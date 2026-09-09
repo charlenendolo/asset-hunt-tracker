@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  BadgeCheck,
   CircleCheck,
+
   Container,
   CalendarClock,
   TriangleAlert,
@@ -349,6 +351,28 @@ function ManagerDashboard() {
   const dueMaintenance = (maintenance.data ?? []).filter((m) => isMaintenanceDue(m));
   const dueMaintenanceMachines = countMachinesWithDueMaintenance(maintenance.data ?? []);
 
+  // Prüfungen: gleiche Quelle und Logik wie Gerätefilter und Prüfkalender.
+  const inspections = useQuery(inspectionMachinesQuery);
+  const warningDays = useQuery(inspectionWarningDaysQuery);
+  const inspectionWindowDays = warningDays.data ?? DEFAULT_INSPECTION_WARNING_DAYS;
+  const inspectionMachines = inspections.data ?? [];
+  const dueInspections = inspectionMachines.filter(
+    (m) => inspectionStatus(m, undefined, inspectionWindowDays) !== null,
+  );
+  const inspectionCounts = {
+    overdue: dueInspections.filter(
+      (m) => inspectionStatus(m, undefined, inspectionWindowDays) === "overdue",
+    ).length,
+    today: dueInspections.filter(
+      (m) => inspectionStatus(m, undefined, inspectionWindowDays) === "today",
+    ).length,
+    upcoming: dueInspections.filter(
+      (m) => inspectionStatus(m, undefined, inspectionWindowDays) === "upcoming",
+    ).length,
+  };
+  const missingInspectionDates = inspectionMachines.filter(isInspectionDateMissing);
+
+
   const greeting = profile?.full_name ? `Guten Tag ${profile.full_name}` : "Guten Tag";
 
   return (
@@ -443,7 +467,52 @@ function ManagerDashboard() {
             </p>
           )}
         </Link>
+        <Link
+          to="/maschinen"
+          search={{ status: "inspection_due" }}
+          title={`Prüfungen: überfällig, heute fällig oder innerhalb von ${inspectionWindowDays} Tagen`}
+          className="relative block overflow-hidden rounded-xl border border-primary/40 bg-primary/10 px-4 py-4 text-primary transition-[filter,background-color] hover:brightness-[0.97] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99] active:brightness-[0.96]"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold tracking-wide">Prüfungen</p>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15">
+              <BadgeCheck className="h-4 w-4" strokeWidth={2} />
+            </span>
+          </div>
+          {inspections.isLoading ? (
+            <Skeleton className="mt-2 h-8 w-16 opacity-40" />
+          ) : (
+            <>
+              <p className="mt-2 text-2xl font-semibold tracking-tight">
+                {formatNumber(dueInspections.length)}
+              </p>
+              <p className="mt-1 text-[11px] font-medium opacity-80">
+                {formatNumber(inspectionCounts.overdue)} überfällig ·{" "}
+                {formatNumber(inspectionCounts.today)} heute ·{" "}
+                {formatNumber(inspectionCounts.upcoming)} demnächst
+              </p>
+            </>
+          )}
+        </Link>
+        {missingInspectionDates.length > 0 ? (
+          <Link
+            to="/maschinen"
+            search={{ status: INSPECTION_MISSING_FILTER }}
+            className="relative block overflow-hidden rounded-xl border border-status-maintenance/40 bg-status-maintenance/12 px-4 py-4 text-status-maintenance transition-[filter,background-color] hover:brightness-[0.97] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-semibold tracking-wide">Prüftermin fehlt</p>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-status-maintenance/15">
+                <CalendarClock className="h-4 w-4" strokeWidth={2} />
+              </span>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tracking-tight">
+              {formatNumber(missingInspectionDates.length)}
+            </p>
+          </Link>
+        ) : null}
       </div>
+
 
       <OverdueSection
         machines={overdueMachines}
