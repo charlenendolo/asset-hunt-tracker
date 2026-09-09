@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordAdminActions } from "@/components/password-admin";
 import { createEmployeeAccount, updateEmployeeAccount } from "@/lib/users.functions";
+import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 import { setupEmployeeAccess, setupManagerAccess } from "@/lib/access.functions";
 import {
   disablePinAccess,
