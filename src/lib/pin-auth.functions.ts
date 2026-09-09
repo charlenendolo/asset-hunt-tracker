@@ -55,8 +55,11 @@ export const searchPinEmployees = createServerFn({ method: "POST" })
       return count > 1 ? { ...row, name: `${row.name} (${count})` } : row;
     });
 
+    // Zero Trust: ohne Suchbegriff wird nichts zurückgegeben. Die Namensliste
+    // ist internes Personaldatum und darf nicht unangemeldet abrufbar sein.
     const q = (data.query ?? "").trim().toLowerCase();
-    const matched = q ? labelled.filter((r) => r.name.toLowerCase().includes(q)) : labelled;
+    if (q.length < 2) return [] as { ref: string; name: string }[];
+    const matched = labelled.filter((r) => r.name.toLowerCase().includes(q));
     return matched.slice(0, 10);
   });
 
