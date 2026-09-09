@@ -45,10 +45,12 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: returnTo } = Route.useSearch();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const login = useServerFn(passwordLogin);
 
   // Client-only: eine bestehende Session leitet weiter (kein SSR-Zweig -> keine Hydration-Mismatch).
   useEffect(() => {
@@ -61,18 +63,25 @@ function AuthPage() {
     };
   }, [navigate, returnTo]);
 
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (signInError) {
-      setError("Anmeldung fehlgeschlagen. Bitte prüfe E-Mail und Passwort.");
-      return;
+    try {
+      const result = await login({ data: { identifier, password } });
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
+      });
+      if (sessionError) throw new Error("Anmeldung nicht möglich. Bitte erneut versuchen.");
+      navigate({ href: returnTo ?? "/dashboard", replace: true });
+    } catch (err) {
+      setError(
+        (err as Error)?.message?.trim() || "Benutzername/E-Mail oder Passwort ist falsch.",
+      );
+    } finally {
+      setLoading(false);
     }
-    navigate({ href: returnTo ?? "/dashboard", replace: true });
   }
 
   return (
@@ -84,64 +93,81 @@ function AuthPage() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <h1 className="text-xl font-light tracking-tight text-foreground">Anmelden</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Wähle deinen Anmeldeweg.
+            Mit Benutzername oder E-Mail-Adresse und Passwort.
           </p>
 
-          <Tabs defaultValue="pin" className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email">Bauleiter</TabsTrigger>
-              <TabsTrigger value="pin">Mitarbeiter</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="pin" className="mt-6">
-              <PinLoginForm
-                onSignedIn={() => navigate({ href: returnTo ?? "/dashboard", replace: true })}
+          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="identifier" className="text-sm font-medium">
+                Benutzername oder E-Mail-Adresse
+              </Label>
+              <Input
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="h-11"
               />
-            </TabsContent>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Passwort
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11"
+              />
+            </div>
 
-            <TabsContent value="email" className="mt-6">
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    E-Mail
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Passwort
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
+            {error ? (
+              <p className="rounded-md border border-status-defect/25 bg-status-defect/5 px-3 py-2 text-sm text-status-defect">
+                {error}
+              </p>
+            ) : null}
 
-                {error ? (
-                  <p className="rounded-md border border-status-defect/25 bg-status-defect/5 px-3 py-2 text-sm text-status-defect">
-                    {error}
-                  </p>
-                ) : null}
+            <Button type="submit" disabled={loading} className="h-11 w-full font-medium">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
+            </Button>
+          </form>
 
-                <Button type="submit" disabled={loading} className="h-11 w-full font-medium">
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          {/* Übergangslösung: Zugänge ohne Passwort melden sich weiterhin per PIN an. */}
+          <div className="mt-6 border-t border-border pt-4">
+            {showPin ? (
+              <>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Anmeldung mit PIN (nur für Zugänge ohne Passwort).
+                </p>
+                <PinLoginForm
+                  onSignedIn={() => navigate({ href: returnTo ?? "/dashboard", replace: true })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(false)}
+                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  Zurück zur Anmeldung mit Passwort
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowPin(true)}
+                className="text-xs text-muted-foreground underline underline-offset-4"
+              >
+                Noch kein Passwort? Mit PIN anmelden
+              </button>
+            )}
+          </div>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Interne Geräte- und Maschinenverwaltung
@@ -150,3 +176,4 @@ function AuthPage() {
     </div>
   );
 }
+
