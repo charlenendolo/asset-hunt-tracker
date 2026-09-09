@@ -607,6 +607,31 @@ export function calendarQuery(
   });
 }
 
+/**
+ * Prüfkalender: alle prüfpflichtigen Geräte mit Prüftermin im sichtbaren
+ * Zeitraum — bewusst ohne Vorwarnfenster, damit die komplette Prüfplanung
+ * sichtbar bleibt. Gleiche Datenquelle wie Dashboard und Gerätefilter.
+ */
+export function inspectionCalendarQuery(fromISODate: string, toISODate: string) {
+  return queryOptions({
+    queryKey: ["calendar", "inspections", fromISODate, toISODate],
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("machines")
+        .select("id, name, asset_code, inspection_required, next_inspection_date")
+        .eq("active", true)
+        .eq("inspection_required", true)
+        .gte("next_inspection_date", fromISODate)
+        .lte("next_inspection_date", toISODate)
+        .order("next_inspection_date")
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 
 /**
  * Überfällige Geräte (abgeleitet, kein gespeicherter Status): ausgeliehen und
