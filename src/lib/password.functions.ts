@@ -118,11 +118,11 @@ export const setTemporaryPassword = createServerFn({ method: "POST" })
     await assertActiveAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Auch Zugänge ohne echte E-Mail bekommen ein Passwort: sie melden sich
+    // künftig mit ihrem Benutzernamen an.
     const { data: target } = await supabaseAdmin.auth.admin.getUserById(data.userId);
-    const email = target?.user?.email ?? null;
-    if (!email || isSyntheticEmail(email)) {
-      throw new Error("Dieser Zugang nutzt den Mitarbeiter-Login. Bitte den PIN zurücksetzen.");
-    }
+    if (!target?.user) throw new Error("Benutzer wurde nicht gefunden.");
+
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,
