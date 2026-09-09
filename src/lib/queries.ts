@@ -6,7 +6,7 @@ import {
   machineStatusDbValues,
   machineStatusKey,
 } from "@/lib/status";
-import { localISODate, localISODatePlusDays } from "@/lib/due-dates";
+import { localISODatePlusDays } from "@/lib/due-dates";
 
 import { listProfiles } from "@/lib/users.functions";
 import { getInspectionWarningDays } from "@/lib/settings.functions";
