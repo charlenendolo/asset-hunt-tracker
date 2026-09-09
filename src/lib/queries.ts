@@ -84,9 +84,42 @@ export const ASSIGNED_FILTER = "assigned";
 
 /**
  * Pseudo-Statuswert für den abgeleiteten Prüfpflichtig-Filter (kein DB-Status):
- * Prüfung erforderlich und nächster Prüftermin heute oder überschritten.
+ * Prüfung erforderlich und nächster Prüftermin überfällig, heute oder innerhalb
+ * der konfigurierten Vorwarnzeit. Gleiche Logik wie die Dashboard-Karte.
  */
 export const INSPECTION_DUE_FILTER = "inspection_due";
+
+/** Prüfpflichtige Geräte ohne hinterlegten Prüftermin. */
+export const INSPECTION_MISSING_FILTER = "inspection_missing";
+
+/** Konfigurierbare Vorwarnzeit für Prüfungen (gilt für alle Nutzer). */
+export const inspectionWarningDaysQuery = queryOptions({
+  queryKey: ["settings", "inspection_warning_days"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => (await getInspectionWarningDays()).days,
+});
+
+/**
+ * Eine gemeinsame Datenbasis für Dashboard-Karte und Prüfkalender:
+ * alle aktiven, prüfpflichtigen Geräte mit ihrem nächsten Prüftermin.
+ * Der Zustand (überfällig / heute / demnächst) wird über inspectionStatus
+ * aus @/lib/due-dates abgeleitet — keine zweite Berechnung.
+ */
+export const inspectionMachinesQuery = queryOptions({
+  queryKey: ["machines", "inspections"],
+  staleTime: 60 * 1000,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machines")
+      .select("id, name, asset_code, inspection_required, next_inspection_date")
+      .eq("active", true)
+      .eq("inspection_required", true)
+      .order("next_inspection_date", { ascending: true, nullsFirst: false })
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
 
 /** Standort-IDs, deren Typ ein Gerät als „zugewiesen" gelten lässt. */
 async function fetchAssignedSiteIds(): Promise<string[]> {
@@ -97,6 +130,7 @@ async function fetchAssignedSiteIds(): Promise<string[]> {
   if (error) throw error;
   return (data ?? []).map((s) => s.id);
 }
+
 
 
 export type MachineFilters = {
