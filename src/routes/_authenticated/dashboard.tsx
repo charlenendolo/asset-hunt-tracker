@@ -26,16 +26,23 @@ import {
   recentMovementsQuery,
   myReservationsQuery,
   overdueMachinesQuery,
+  inspectionMachinesQuery,
+  inspectionWarningDaysQuery,
+  INSPECTION_MISSING_FILTER,
 } from "@/lib/queries";
 import { OverdueBadge } from "@/components/overdue-badge";
 import { overdueLabel } from "@/lib/overdue";
 import { formatExpectedReturn } from "@/lib/format";
 import {
   MAINTENANCE_DUE_LABELS,
+  DEFAULT_INSPECTION_WARNING_DAYS,
   countMachinesWithDueMaintenance,
   isMaintenanceDue,
   maintenanceDueState,
+  inspectionStatus,
+  isInspectionDateMissing,
 } from "@/lib/due-dates";
+
 
 import {
   MACHINE_STATUS_LABELS,
