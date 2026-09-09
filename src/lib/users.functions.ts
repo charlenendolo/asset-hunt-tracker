@@ -25,13 +25,30 @@ export function isSyntheticEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase().endsWith(`@${INTERNAL_EMAIL_DOMAIN}`);
 }
 
+/** Prüft Format und Einmaligkeit (Groß-/Kleinschreibung egal). */
+async function assertUsernameFree(
+  admin: { from: (t: "profiles") => any },
+  username: string,
+  exceptUserId?: string,
+) {
+  if (!isValidUsername(username)) {
+    throw new Error(`Benutzername ungültig. ${USERNAME_HINT}`);
+  }
+  let query = admin.from("profiles").select("id").eq("username", normalizeUsername(username));
+  if (exceptUserId) query = query.neq("id", exceptUserId);
+  const { data } = await query.maybeSingle();
+  if (data) throw new Error("Dieser Benutzername ist bereits vergeben.");
+}
+
 const createSchema = z.object({
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
   fullName: z.string().trim().min(2).max(120),
+  username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
   password: z.string().min(8).max(72),
   role: z.enum(ROLES),
   withPin: z.boolean().optional(),
 });
+
 
 export const createEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
