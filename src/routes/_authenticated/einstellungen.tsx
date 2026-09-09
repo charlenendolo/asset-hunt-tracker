@@ -135,6 +135,7 @@ function SettingsPage() {
           </section>
         ) : null}
 
+        {identity.isAdmin ? <InspectionWarningSetting /> : null}
 
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
