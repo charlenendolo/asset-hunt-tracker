@@ -45,6 +45,7 @@ export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState(randomPassword);
   const [role, setRole] = useState<Role>("user");
   const [withPin, setWithPin] = useState(true);
@@ -52,7 +53,8 @@ export function CreateUserDialog() {
 
   const submit = useServerFn(createEmployeeAccount);
   const mutation = useMutation({
-    mutationFn: async () => submit({ data: { fullName, email, password, role, withPin } }),
+    mutationFn: async () =>
+      submit({ data: { fullName, email, username: normalizeUsername(username), password, role, withPin } }),
     onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["profiles"] });
       await qc.invalidateQueries({ queryKey: ["pin-access"] });

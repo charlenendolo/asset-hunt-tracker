@@ -97,7 +97,7 @@ function UsersPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Input
             className="h-10 w-full sm:max-w-xs"
-            placeholder="Name oder E-Mail suchen"
+            placeholder="Name, Benutzername oder E-Mail suchen"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Benutzer suchen"
