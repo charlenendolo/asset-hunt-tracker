@@ -24,7 +24,7 @@ import { checkPassword, passwordChecks } from "@/lib/password-policy";
  * Standard ist der Reset-Link; das temporäre Passwort ist die Ausweichoption
  * und wird nach dem Setzen weder angezeigt noch gespeichert.
  */
-export function PasswordAdminActions({ userId, email }: { userId: string; email: string }) {
+export function PasswordAdminActions({ userId, email }: { userId: string; email: string | null }) {
   const [open, setOpen] = useState(false);
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -67,20 +67,22 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs text-muted-foreground">Passwort</span>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={reset.isPending}
-        onClick={() => reset.mutate()}
-        title={`Reset-Link an ${email}`}
-      >
-        {reset.isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Mail className="mr-2 h-4 w-4" strokeWidth={1.75} />
-        )}
-        Reset-Link senden
-      </Button>
+      {email ? (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={reset.isPending}
+          onClick={() => reset.mutate()}
+          title={`Reset-Link an ${email}`}
+        >
+          {reset.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Mail className="mr-2 h-4 w-4" strokeWidth={1.75} />
+          )}
+          Reset-Link senden
+        </Button>
+      ) : null}
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         <KeyRound className="mr-2 h-4 w-4" strokeWidth={1.75} />
         Passwort ändern
