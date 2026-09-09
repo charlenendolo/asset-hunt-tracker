@@ -57,7 +57,13 @@ function DefectsPage() {
     ...defectInconsistenciesQuery,
     enabled: identity.canManage,
   });
+  const conflictQuery = useQuery({
+    ...reservationConflictsQuery,
+    enabled: identity.canManage,
+  });
+  const conflicts = conflictQuery.data ?? [];
   const [filter, setFilter] = useState<Filter>("open");
+
 
   const rows = defects.data ?? [];
   const open = rows.filter((d) => d.status !== "resolved");
