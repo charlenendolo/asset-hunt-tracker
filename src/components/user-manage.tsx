@@ -115,6 +115,22 @@ export function EditUserDialog({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor={`e-user-${user.id}`}>Benutzername</Label>
+              <Input
+                id={`e-user-${user.id}`}
+                className="h-11"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="z. B. max.mustermann"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+                {USERNAME_HINT}
+              </p>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor={`e-mail-${user.id}`}>E-Mail</Label>
               <Input
                 id={`e-mail-${user.id}`}
