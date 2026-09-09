@@ -184,7 +184,7 @@ function MachineDetailPage() {
             />
           ) : null}
           <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <MachineHeroPhoto src={photoUrls[m.id]} alt={m.name} />
+            <MachineHeroPhoto src={photoUrls[m.id]} machineId={m.id} alt={m.name} />
 
             <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-3">
               <Field

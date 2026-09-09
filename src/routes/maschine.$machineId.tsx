@@ -87,7 +87,11 @@ function QrMachinePage() {
       ) : (
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <MachineHeroPhoto src={photoUrls[machine.data.id]} alt={machine.data.name} />
+            <MachineHeroPhoto
+              src={photoUrls[machine.data.id]}
+              machineId={machine.data.id}
+              alt={machine.data.name}
+            />
 
             <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3">
