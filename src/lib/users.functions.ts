@@ -409,6 +409,8 @@ export const listProfiles = createServerFn({ method: "GET" })
       if (error) throw new Error("Benutzer konnten nicht geladen werden.");
       return (data ?? []).map((p) => ({
         ...p,
+        username: null as string | null,
+        has_password: null as boolean | null,
         role: null as string | null,
         active: null as boolean | null,
       }));
@@ -417,14 +419,27 @@ export const listProfiles = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, role, active, created_at")
+      .select("id, full_name, username, role, active, created_at")
       .order("full_name");
     if (error) throw new Error("Benutzer konnten nicht geladen werden.");
+
+    // Migrationsstand sichtbar machen: welcher Zugang hat schon ein Passwort?
+    const withPassword = await Promise.all(
+      (data ?? []).map(async (p) => {
+        const { data: has } = await supabaseAdmin.rpc("account_has_password", { _user_id: p.id });
+        return [p.id, has === true] as const;
+      }),
+    );
+    const passwordById = new Map(withPassword);
+
     return (data ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name,
       created_at: p.created_at,
+      username: (p.username ?? null) as string | null,
+      has_password: passwordById.get(p.id) ?? null,
       role: p.role as string | null,
       active: p.active as boolean | null,
     }));
   });
+
