@@ -118,6 +118,22 @@ export function CreateUserDialog() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="u-username">Benutzername</Label>
+              <Input
+                id="u-username"
+                className="h-11"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="z. B. max.mustermann"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+                {USERNAME_HINT}
+              </p>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="u-mail">E-Mail (optional)</Label>
               <Input
                 id="u-mail"
@@ -128,9 +144,10 @@ export function CreateUserDialog() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Ohne E-Mail meldet sich die Person ausschließlich mit Auswahl + PIN an.
+                Ohne E-Mail meldet sich die Person mit Benutzername und Passwort an.
               </p>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="u-role">Rolle</Label>
               <select
