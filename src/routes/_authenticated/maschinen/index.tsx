@@ -301,6 +301,8 @@ function MachinesPage() {
           ))}
           <option value={OVERDUE_FILTER}>Überfällig</option>
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
+          <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
+
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>
