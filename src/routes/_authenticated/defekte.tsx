@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldAlert, TriangleAlert } from "lucide-react";
+import { CalendarClock, ShieldAlert, TriangleAlert } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { PageHeader, HeaderStat } from "@/components/page-header";
@@ -10,9 +10,20 @@ import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialogs";
 import { useIdentity } from "@/hooks/use-identity";
-import { defectInconsistenciesQuery, openDefectsQuery } from "@/lib/queries";
+import {
+  defectInconsistenciesQuery,
+  openDefectsQuery,
+  reservationConflictsQuery,
+} from "@/lib/queries";
 import { formatDateTime, textOrDash } from "@/lib/format";
-import { DEFECT_SEVERITY_LABELS, DEFECT_STATUS_LABELS, labelFor } from "@/lib/status";
+import {
+  DEFECT_SEVERITY_LABELS,
+  DEFECT_STATUS_LABELS,
+  MACHINE_STATUS_LABELS,
+  machineStatusKey,
+  labelFor,
+} from "@/lib/status";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/defekte")({
@@ -46,7 +57,13 @@ function DefectsPage() {
     ...defectInconsistenciesQuery,
     enabled: identity.canManage,
   });
+  const conflictQuery = useQuery({
+    ...reservationConflictsQuery,
+    enabled: identity.canManage,
+  });
+  const conflicts = conflictQuery.data ?? [];
   const [filter, setFilter] = useState<Filter>("open");
+
 
   const rows = defects.data ?? [];
   const open = rows.filter((d) => d.status !== "resolved");
@@ -117,6 +134,50 @@ function DefectsPage() {
           </ul>
         </section>
       ) : null}
+
+      {identity.canManage && conflicts.length > 0 ? (
+        <section className="mb-5 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-4">
+          <div className="mb-3 flex items-start gap-3">
+            <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Künftige Reservierungen für nicht einsatzbereite Geräte.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Die Reservierungen bleiben unverändert bestehen. Kläre Reparatur, Ersatzgerät oder
+                Terminverschiebung rechtzeitig.
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {conflicts.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <Link
+                    to="/maschinen/$machineId"
+                    params={{ machineId: r.machine!.id }}
+                    className="truncate text-sm font-medium text-foreground hover:text-primary"
+                  >
+                    {r.machine?.name} · {r.machine?.asset_code}
+                  </Link>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {formatDateTime(r.start_at)} – {formatDateTime(r.end_at)} ·{" "}
+                    {textOrDash(r.reserved?.full_name)}
+                  </p>
+                </div>
+                <Pill tone="danger">
+                  {MACHINE_STATUS_LABELS[machineStatusKey(r.machine?.status ?? "")] ?? "Defekt"}
+                </Pill>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+
 
       <div className="mb-4 flex rounded-lg border border-border bg-card p-0.5 sm:w-fit">
         {(
