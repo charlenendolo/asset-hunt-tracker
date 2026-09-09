@@ -416,6 +416,30 @@ export const defectInconsistenciesQuery = queryOptions({
   },
 });
 
+/**
+ * Konflikte: künftige Reservierungen für Geräte, die aktuell defekt sind oder
+ * in Wartung stehen. Es werden bewusst keine Reservierungen gelöscht oder
+ * geändert — der Konflikt wird nur sichtbar gemacht.
+ */
+export const reservationConflictsQuery = queryOptions({
+  queryKey: ["reservations", "conflicts"],
+  staleTime: 60 * 1000,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("reservations")
+      .select(
+        "id, start_at, end_at, status, machine:machines!inner(id, name, asset_code, status), site:sites(id, name), reserved:profiles(id, full_name)",
+      )
+      .neq("status", "cancelled")
+      .gte("end_at", new Date().toISOString())
+      .in("machine.status", ["defective", "defekt", "maintenance", "wartung"])
+      .order("start_at")
+      .limit(200);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
 
 export const maintenanceQuery = queryOptions({
   queryKey: ["maintenance", "list"],
