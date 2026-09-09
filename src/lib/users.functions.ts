@@ -90,9 +90,10 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
 
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .update({ full_name: data.fullName, role: data.role, active: true })
+      .update({ full_name: data.fullName, role: data.role, active: true, username })
       .eq("id", created.user.id);
     if (profileError) throw new Error("Profil konnte nicht aktualisiert werden.");
+
 
     let pin: string | null = null;
     if (data.withPin) {
