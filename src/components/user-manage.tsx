@@ -40,7 +40,13 @@ export function EditUserDialog({
   user,
   email,
 }: {
-  user: { id: string; full_name: string | null; role: string; active: boolean };
+  user: {
+    id: string;
+    full_name: string | null;
+    username?: string | null;
+    role: string;
+    active: boolean;
+  };
   email: string | null;
 }) {
   const qc = useQueryClient();
@@ -48,6 +54,7 @@ export function EditUserDialog({
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(user.full_name ?? "");
   const [mail, setMail] = useState(email ?? "");
+  const [username, setUsername] = useState(user.username ?? "");
   const [role, setRole] = useState<Role>((user.role as Role) ?? "user");
 
   const save = useMutation({
@@ -57,6 +64,7 @@ export function EditUserDialog({
           userId: user.id,
           fullName: fullName.trim(),
           role,
+          username: normalizeUsername(username),
           ...(mail.trim() || email ? { email: mail.trim() } : {}),
         },
       }),
@@ -73,9 +81,14 @@ export function EditUserDialog({
   });
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
+  const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
   const needsEmail = role !== "user";
   const invalid =
-    fullName.trim().length < 2 || mailInvalid || (needsEmail && mail.trim().length === 0);
+    fullName.trim().length < 2 ||
+    mailInvalid ||
+    usernameInvalid ||
+    (needsEmail && mail.trim().length === 0);
+
 
   return (
     <>
