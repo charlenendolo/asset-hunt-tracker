@@ -32,7 +32,7 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
   const trimmed = query.trim();
   // Namen werden ausschließlich geladen, wenn das Dropdown bewusst geöffnet
   // wurde oder mindestens 2 Zeichen getippt sind – nie beim Seitenaufruf.
-  const enabled = open && (trimmed.length >= 2 || trimmed.length === 0);
+  const enabled = open && trimmed.length >= 2;
   const employees = useQuery({
     queryKey: ["pin-employees", trimmed],
     enabled,
@@ -164,6 +164,10 @@ export function PinLoginForm({ onSignedIn }: { onSignedIn: () => void }) {
             {employees.isLoading ? (
               <p className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Suche läuft…
+              </p>
+            ) : trimmed.length < 2 ? (
+              <p className="px-3 py-4 text-sm text-muted-foreground">
+                Mindestens 2 Buchstaben deines Namens eingeben.
               </p>
             ) : results.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground">Kein Mitarbeiter gefunden.</p>
