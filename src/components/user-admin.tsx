@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordAdminActions } from "@/components/password-admin";
 import { createEmployeeAccount, updateEmployeeAccount } from "@/lib/users.functions";
+import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 import { setupEmployeeAccess, setupManagerAccess } from "@/lib/access.functions";
 import {
   disablePinAccess,
@@ -34,17 +35,31 @@ const ROLE_OPTIONS = [
 
 type Role = (typeof ROLE_OPTIONS)[number]["value"];
 
+/** Startpasswort nach der geltenden Passwortregel (Groß, klein, Ziffer, Sonderzeichen). */
 function randomPassword() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint32Array(12));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const special = "!?#%*+-";
+  const all = upper + lower + digits + special;
+  const pick = (set: string, n: number) =>
+    Array.from(crypto.getRandomValues(new Uint32Array(n)), (b) => set[b % set.length]);
+  const chars = [...pick(upper, 2), ...pick(lower, 5), ...pick(digits, 3), ...pick(special, 2), ...pick(all, 2)];
+  const order = crypto.getRandomValues(new Uint32Array(chars.length));
+  return chars
+    .map((c, i) => ({ c, k: order[i]! }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.c)
+    .join("");
 }
+
 
 export function CreateUserDialog() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState(randomPassword);
   const [role, setRole] = useState<Role>("user");
   const [withPin, setWithPin] = useState(true);
@@ -52,7 +67,8 @@ export function CreateUserDialog() {
 
   const submit = useServerFn(createEmployeeAccount);
   const mutation = useMutation({
-    mutationFn: async () => submit({ data: { fullName, email, password, role, withPin } }),
+    mutationFn: async () =>
+      submit({ data: { fullName, email, username: normalizeUsername(username), password, role, withPin } }),
     onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["profiles"] });
       await qc.invalidateQueries({ queryKey: ["pin-access"] });
@@ -63,6 +79,7 @@ export function CreateUserDialog() {
       setOpen(false);
       setFullName("");
       setEmail("");
+      setUsername("");
       setPassword(randomPassword());
       setRole("user");
       setWithPin(true);
@@ -71,7 +88,10 @@ export function CreateUserDialog() {
   });
 
   const emailInvalid = email.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(email.trim());
-  const invalid = fullName.trim().length < 2 || emailInvalid || password.length < 8;
+  const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
+  const invalid =
+    fullName.trim().length < 2 || emailInvalid || usernameInvalid || password.length < 8;
+
 
   return (
     <>
@@ -98,6 +118,22 @@ export function CreateUserDialog() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="u-username">Benutzername</Label>
+              <Input
+                id="u-username"
+                className="h-11"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="z. B. max.mustermann"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+                {USERNAME_HINT}
+              </p>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="u-mail">E-Mail (optional)</Label>
               <Input
                 id="u-mail"
@@ -108,9 +144,10 @@ export function CreateUserDialog() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Ohne E-Mail meldet sich die Person ausschließlich mit Auswahl + PIN an.
+                Ohne E-Mail meldet sich die Person mit Benutzername und Passwort an.
               </p>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="u-role">Rolle</Label>
               <select
@@ -465,8 +502,8 @@ export function UserRowActions({
         />
       ) : null}
       <EmployeeAccessDialog userId={user.id} open={employeeOpen} onOpenChange={setEmployeeOpen} />
-      {/* Passwort-Aktionen nur bei echtem E-Mail-Zugang; PIN-Nutzer behalten die PIN-Verwaltung. */}
-      {email ? <PasswordAdminActions userId={user.id} email={email} /> : null}
+      {/* Passwort-Aktionen für jeden Zugang: Anmeldung per Benutzername oder E-Mail. */}
+      <PasswordAdminActions userId={user.id} email={email ?? null} />
     </div>
   );
 }

@@ -72,18 +72,20 @@ function UsersPage() {
     if (statusFilter === "inactive" && p.active) return false;
     if (!q) return true;
     const mail = (emailById.get(p.id) ?? "").toLowerCase();
-    return (p.full_name ?? "").toLowerCase().includes(q) || mail.includes(q);
+    return (
+      (p.full_name ?? "").toLowerCase().includes(q) ||
+      (p.username ?? "").toLowerCase().includes(q) ||
+      mail.includes(q)
+    );
   });
 
-  function accessLabel(id: string) {
-    const hasEmail = !!emailById.get(id);
-    const pin = pinById.get(id);
-    if (hasEmail && pin) return { text: "E-Mail aktiv · PIN aktiv", tone: "success" as const };
-    if (hasEmail && pin === false) return { text: "E-Mail aktiv · PIN deaktiviert", tone: "success" as const };
-    if (hasEmail) return { text: "E-Mail", tone: "success" as const };
-    if (pin) return { text: "PIN", tone: "neutral" as const };
+  function accessLabel(row: { id: string; has_password?: boolean | null; username?: string | null }) {
+    const pin = pinById.get(row.id);
+    if (row.has_password) return { text: "Passwort aktiv", tone: "success" as const };
+    if (pin) return { text: "Nur PIN – Passwort fehlt", tone: "warning" as const };
     return { text: "Kein Zugang", tone: "warning" as const };
   }
+
 
   return (
     <AppShell
@@ -95,7 +97,7 @@ function UsersPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Input
             className="h-10 w-full sm:max-w-xs"
-            placeholder="Name oder E-Mail suchen"
+            placeholder="Name, Benutzername oder E-Mail suchen"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Benutzer suchen"
@@ -140,6 +142,7 @@ function UsersPage() {
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
+                  {isAdmin ? <th className="px-4 py-3">Benutzername</th> : null}
                   <th className="px-4 py-3">Rolle</th>
                   {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
                   {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
@@ -154,6 +157,11 @@ function UsersPage() {
                     <td className="px-4 py-3 font-medium text-foreground">
                       {textOrDash(p.full_name)}
                     </td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {textOrDash(p.username)}
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3">
                       {p.role ? (
                         <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
@@ -172,7 +180,7 @@ function UsersPage() {
                     ) : null}
                     {isAdmin ? (
                       <td className="px-4 py-3">
-                        <Pill tone={accessLabel(p.id).tone}>{accessLabel(p.id).text}</Pill>
+                        <Pill tone={accessLabel(p).tone}>{accessLabel(p).text}</Pill>
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
@@ -195,6 +203,7 @@ function UsersPage() {
                               user={{
                                 id: p.id,
                                 full_name: p.full_name,
+                                username: p.username,
                                 role: p.role ?? "user",
                                 active: p.active ?? true,
                               }}
@@ -205,6 +214,7 @@ function UsersPage() {
                         </div>
                       </td>
                     ) : null}
+
                   </tr>
                 ))}
               </tbody>

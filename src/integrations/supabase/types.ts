@@ -547,6 +547,7 @@ export type Database = {
           full_name: string | null
           id: string
           role: string
+          username: string | null
         }
         Insert: {
           active?: boolean
@@ -554,6 +555,7 @@ export type Database = {
           full_name?: string | null
           id: string
           role?: string
+          username?: string | null
         }
         Update: {
           active?: boolean
@@ -561,6 +563,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -657,6 +660,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_has_password: { Args: { _user_id: string }; Returns: boolean }
       current_profile: {
         Args: never
         Returns: {

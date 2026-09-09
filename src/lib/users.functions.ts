@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 
 /**
  * Admin-only account provisioning. No schema change: the existing
@@ -25,13 +26,30 @@ export function isSyntheticEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase().endsWith(`@${INTERNAL_EMAIL_DOMAIN}`);
 }
 
+/** Prüft Format und Einmaligkeit (Groß-/Kleinschreibung egal). */
+async function assertUsernameFree(
+  admin: { from: (t: "profiles") => any },
+  username: string,
+  exceptUserId?: string,
+) {
+  if (!isValidUsername(username)) {
+    throw new Error(`Benutzername ungültig. ${USERNAME_HINT}`);
+  }
+  let query = admin.from("profiles").select("id").eq("username", normalizeUsername(username));
+  if (exceptUserId) query = query.neq("id", exceptUserId);
+  const { data } = await query.maybeSingle();
+  if (data) throw new Error("Dieser Benutzername ist bereits vergeben.");
+}
+
 const createSchema = z.object({
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
   fullName: z.string().trim().min(2).max(120),
+  username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
   password: z.string().min(8).max(72),
   role: z.enum(ROLES),
   withPin: z.boolean().optional(),
 });
+
 
 export const createEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -40,9 +58,13 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const username = data.username?.trim() ? normalizeUsername(data.username) : null;
+    if (username) await assertUsernameFree(supabaseAdmin as never, username);
+
     const realEmail = data.email?.trim() ? data.email.trim() : null;
     // Placeholder is replaced by the stable pin+<auth uuid> address right after creation.
     const email = realEmail ?? `pin+${crypto.randomUUID()}@${INTERNAL_EMAIL_DOMAIN}`;
+
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -68,9 +90,10 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
 
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .update({ full_name: data.fullName, role: data.role, active: true })
+      .update({ full_name: data.fullName, role: data.role, active: true, username })
       .eq("id", created.user.id);
     if (profileError) throw new Error("Profil konnte nicht aktualisiert werden.");
+
 
     let pin: string | null = null;
     if (data.withPin) {
@@ -120,6 +143,7 @@ const updateSchema = z.object({
   active: z.boolean().optional(),
   fullName: z.string().trim().min(2).max(120).optional(),
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
+  username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
 });
 
 export const updateEmployeeAccount = createServerFn({ method: "POST" })
@@ -132,10 +156,26 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const patch: { role?: string; active?: boolean; full_name?: string } = {};
+    const patch: {
+      role?: string;
+      active?: boolean;
+      full_name?: string;
+      username?: string | null;
+    } = {};
     if (data.role) patch.role = data.role;
     if (typeof data.active === "boolean") patch.active = data.active;
     if (data.fullName) patch.full_name = data.fullName;
+    // Benutzername ändern aktualisiert denselben Datensatz — nie ein neuer Zugang.
+    if (typeof data.username === "string") {
+      const next = normalizeUsername(data.username);
+      if (!next) {
+        patch.username = null;
+      } else {
+        await assertUsernameFree(supabaseAdmin as never, next, data.userId);
+        patch.username = next;
+      }
+    }
+
 
     // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
     const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
@@ -369,6 +409,8 @@ export const listProfiles = createServerFn({ method: "GET" })
       if (error) throw new Error("Benutzer konnten nicht geladen werden.");
       return (data ?? []).map((p) => ({
         ...p,
+        username: null as string | null,
+        has_password: null as boolean | null,
         role: null as string | null,
         active: null as boolean | null,
       }));
@@ -377,14 +419,27 @@ export const listProfiles = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, role, active, created_at")
+      .select("id, full_name, username, role, active, created_at")
       .order("full_name");
     if (error) throw new Error("Benutzer konnten nicht geladen werden.");
+
+    // Migrationsstand sichtbar machen: welcher Zugang hat schon ein Passwort?
+    const withPassword = await Promise.all(
+      (data ?? []).map(async (p) => {
+        const { data: has } = await supabaseAdmin.rpc("account_has_password", { _user_id: p.id });
+        return [p.id, has === true] as const;
+      }),
+    );
+    const passwordById = new Map(withPassword);
+
     return (data ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name,
       created_at: p.created_at,
+      username: (p.username ?? null) as string | null,
+      has_password: passwordById.get(p.id) ?? null,
       role: p.role as string | null,
       active: p.active as boolean | null,
     }));
   });
+

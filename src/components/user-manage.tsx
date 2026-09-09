@@ -20,6 +20,7 @@ import {
   getDeletionCheck,
   updateEmployeeAccount,
 } from "@/lib/users.functions";
+import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
@@ -40,7 +41,13 @@ export function EditUserDialog({
   user,
   email,
 }: {
-  user: { id: string; full_name: string | null; role: string; active: boolean };
+  user: {
+    id: string;
+    full_name: string | null;
+    username?: string | null;
+    role: string;
+    active: boolean;
+  };
   email: string | null;
 }) {
   const qc = useQueryClient();
@@ -48,6 +55,7 @@ export function EditUserDialog({
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(user.full_name ?? "");
   const [mail, setMail] = useState(email ?? "");
+  const [username, setUsername] = useState(user.username ?? "");
   const [role, setRole] = useState<Role>((user.role as Role) ?? "user");
 
   const save = useMutation({
@@ -57,6 +65,7 @@ export function EditUserDialog({
           userId: user.id,
           fullName: fullName.trim(),
           role,
+          username: normalizeUsername(username),
           ...(mail.trim() || email ? { email: mail.trim() } : {}),
         },
       }),
@@ -73,9 +82,14 @@ export function EditUserDialog({
   });
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
+  const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
   const needsEmail = role !== "user";
   const invalid =
-    fullName.trim().length < 2 || mailInvalid || (needsEmail && mail.trim().length === 0);
+    fullName.trim().length < 2 ||
+    mailInvalid ||
+    usernameInvalid ||
+    (needsEmail && mail.trim().length === 0);
+
 
   return (
     <>
@@ -99,6 +113,22 @@ export function EditUserDialog({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`e-user-${user.id}`}>Benutzername</Label>
+              <Input
+                id={`e-user-${user.id}`}
+                className="h-11"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="z. B. max.mustermann"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+                {USERNAME_HINT}
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`e-mail-${user.id}`}>E-Mail</Label>
