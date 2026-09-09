@@ -58,9 +58,13 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const username = data.username?.trim() ? normalizeUsername(data.username) : null;
+    if (username) await assertUsernameFree(supabaseAdmin as never, username);
+
     const realEmail = data.email?.trim() ? data.email.trim() : null;
     // Placeholder is replaced by the stable pin+<auth uuid> address right after creation.
     const email = realEmail ?? `pin+${crypto.randomUUID()}@${INTERNAL_EMAIL_DOMAIN}`;
+
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
