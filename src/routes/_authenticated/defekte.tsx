@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldAlert, TriangleAlert } from "lucide-react";
+import { CalendarClock, ShieldAlert, TriangleAlert } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { PageHeader, HeaderStat } from "@/components/page-header";
@@ -10,9 +10,20 @@ import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialogs";
 import { useIdentity } from "@/hooks/use-identity";
-import { defectInconsistenciesQuery, openDefectsQuery } from "@/lib/queries";
+import {
+  defectInconsistenciesQuery,
+  openDefectsQuery,
+  reservationConflictsQuery,
+} from "@/lib/queries";
 import { formatDateTime, textOrDash } from "@/lib/format";
-import { DEFECT_SEVERITY_LABELS, DEFECT_STATUS_LABELS, labelFor } from "@/lib/status";
+import {
+  DEFECT_SEVERITY_LABELS,
+  DEFECT_STATUS_LABELS,
+  MACHINE_STATUS_LABELS,
+  machineStatusKey,
+  labelFor,
+} from "@/lib/status";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/defekte")({
@@ -152,7 +163,7 @@ function DefectsPage() {
                   </p>
                 </div>
                 <Pill tone="danger">
-                  {labelFor(r.machine?.status ?? "", MACHINE_STATUS_LABELS_BY_DB)}
+                  {MACHINE_STATUS_LABELS[machineStatusKey(r.machine?.status ?? "")] ?? "Defekt"}
                 </Pill>
               </li>
             ))}
