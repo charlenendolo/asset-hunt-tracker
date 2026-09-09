@@ -66,6 +66,7 @@ export function CreateUserDialog() {
       setOpen(false);
       setFullName("");
       setEmail("");
+      setUsername("");
       setPassword(randomPassword());
       setRole("user");
       setWithPin(true);
@@ -74,7 +75,10 @@ export function CreateUserDialog() {
   });
 
   const emailInvalid = email.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(email.trim());
-  const invalid = fullName.trim().length < 2 || emailInvalid || password.length < 8;
+  const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
+  const invalid =
+    fullName.trim().length < 2 || emailInvalid || usernameInvalid || password.length < 8;
+
 
   return (
     <>
