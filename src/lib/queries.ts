@@ -147,7 +147,10 @@ export type MachineFilters = {
   pageSize: number;
   /** Nur Geräte in der Obhut dieser Person (machines.responsible_user_id). */
   responsibleUserId?: string;
+  /** Vorwarnzeit für den Prüfpflichtig-Filter (Kalendertage). */
+  inspectionWarningDays?: number;
 };
+
 
 export const MACHINE_LIST_SELECT =
   "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
@@ -191,13 +194,18 @@ export function machinesQuery(filters: MachineFilters) {
           .not("expected_return_at", "is", null)
           .lt("expected_return_at", new Date().toISOString());
       } else if (filters.status === INSPECTION_DUE_FILTER) {
-        // Abgeleiteter Zustand: Prüfung erforderlich + Termin heute oder überschritten
-        // (Kalendertagsvergleich, kein UTC-Zeitstempel). Unabhängig vom Betriebsstatus.
+        // Abgeleiteter Zustand: Prüfung erforderlich + Termin überfällig, heute
+        // oder innerhalb der konfigurierten Vorwarnzeit (Kalendertagsvergleich,
+        // kein UTC-Zeitstempel). Unabhängig vom Betriebsstatus.
         q = q
           .eq("inspection_required", true)
           .not("next_inspection_date", "is", null)
-          .lte("next_inspection_date", localISODate());
+          .lte("next_inspection_date", localISODatePlusDays(filters.inspectionWarningDays ?? 0));
+      } else if (filters.status === INSPECTION_MISSING_FILTER) {
+        // Prüfpflichtig, aber ohne Termin — dürfen nicht unsichtbar bleiben.
+        q = q.eq("inspection_required", true).is("next_inspection_date", null);
       } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
+
         // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
         const assignedSiteIds = await fetchAssignedSiteIds();
         q = q.in("status", machineStatusDbValues("available")).is("responsible_user_id", null);
