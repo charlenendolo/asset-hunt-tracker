@@ -19,6 +19,7 @@ import { Route as AuthenticatedDefekteRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedEinstellungenRouteImport } from './routes/_authenticated/einstellungen'
 import { Route as AuthenticatedEtikettenRouteImport } from './routes/_authenticated/etiketten'
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
+import { Route as AuthenticatedPruefkalenderRouteImport } from './routes/_authenticated/pruefkalender'
 import { Route as AuthenticatedReservierungenRouteImport } from './routes/_authenticated/reservierungen'
 import { Route as AuthenticatedStandorteRouteImport } from './routes/_authenticated/standorte'
 import { Route as AuthenticatedWartungRouteImport } from './routes/_authenticated/wartung'
@@ -76,6 +77,12 @@ const AuthenticatedKalenderRoute = AuthenticatedKalenderRouteImport.update({
   path: '/kalender',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPruefkalenderRoute =
+  AuthenticatedPruefkalenderRouteImport.update({
+    id: '/pruefkalender',
+    path: '/pruefkalender',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReservierungenRoute =
   AuthenticatedReservierungenRouteImport.update({
     id: '/reservierungen',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/einstellungen': typeof AuthenticatedEinstellungenRoute
   '/etiketten': typeof AuthenticatedEtikettenRoute
   '/kalender': typeof AuthenticatedKalenderRoute
+  '/pruefkalender': typeof AuthenticatedPruefkalenderRoute
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
@@ -137,6 +145,7 @@ export interface FileRoutesByTo {
   '/einstellungen': typeof AuthenticatedEinstellungenRoute
   '/etiketten': typeof AuthenticatedEtikettenRoute
   '/kalender': typeof AuthenticatedKalenderRoute
+  '/pruefkalender': typeof AuthenticatedPruefkalenderRoute
   '/reservierungen': typeof AuthenticatedReservierungenRoute
   '/standorte': typeof AuthenticatedStandorteRoute
   '/wartung': typeof AuthenticatedWartungRoute
@@ -156,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated/einstellungen': typeof AuthenticatedEinstellungenRoute
   '/_authenticated/etiketten': typeof AuthenticatedEtikettenRoute
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
+  '/_authenticated/pruefkalender': typeof AuthenticatedPruefkalenderRoute
   '/_authenticated/reservierungen': typeof AuthenticatedReservierungenRoute
   '/_authenticated/standorte': typeof AuthenticatedStandorteRoute
   '/_authenticated/wartung': typeof AuthenticatedWartungRoute
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/einstellungen'
     | '/etiketten'
     | '/kalender'
+    | '/pruefkalender'
     | '/reservierungen'
     | '/standorte'
     | '/wartung'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/einstellungen'
     | '/etiketten'
     | '/kalender'
+    | '/pruefkalender'
     | '/reservierungen'
     | '/standorte'
     | '/wartung'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/einstellungen'
     | '/_authenticated/etiketten'
     | '/_authenticated/kalender'
+    | '/_authenticated/pruefkalender'
     | '/_authenticated/reservierungen'
     | '/_authenticated/standorte'
     | '/_authenticated/wartung'
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKalenderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pruefkalender': {
+      id: '/_authenticated/pruefkalender'
+      path: '/pruefkalender'
+      fullPath: '/pruefkalender'
+      preLoaderRoute: typeof AuthenticatedPruefkalenderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reservierungen': {
       id: '/_authenticated/reservierungen'
       path: '/reservierungen'
@@ -350,6 +370,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEinstellungenRoute: typeof AuthenticatedEinstellungenRoute
   AuthenticatedEtikettenRoute: typeof AuthenticatedEtikettenRoute
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
+  AuthenticatedPruefkalenderRoute: typeof AuthenticatedPruefkalenderRoute
   AuthenticatedReservierungenRoute: typeof AuthenticatedReservierungenRoute
   AuthenticatedStandorteRoute: typeof AuthenticatedStandorteRoute
   AuthenticatedWartungRoute: typeof AuthenticatedWartungRoute
@@ -364,6 +385,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEinstellungenRoute: AuthenticatedEinstellungenRoute,
   AuthenticatedEtikettenRoute: AuthenticatedEtikettenRoute,
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
+  AuthenticatedPruefkalenderRoute: AuthenticatedPruefkalenderRoute,
   AuthenticatedReservierungenRoute: AuthenticatedReservierungenRoute,
   AuthenticatedStandorteRoute: AuthenticatedStandorteRoute,
   AuthenticatedWartungRoute: AuthenticatedWartungRoute,
