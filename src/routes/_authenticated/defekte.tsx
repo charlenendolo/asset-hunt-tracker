@@ -118,6 +118,50 @@ function DefectsPage() {
         </section>
       ) : null}
 
+      {identity.canManage && conflicts.length > 0 ? (
+        <section className="mb-5 rounded-xl border border-destructive/30 bg-destructive/8 px-4 py-4">
+          <div className="mb-3 flex items-start gap-3">
+            <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Künftige Reservierungen für nicht einsatzbereite Geräte.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Die Reservierungen bleiben unverändert bestehen. Kläre Reparatur, Ersatzgerät oder
+                Terminverschiebung rechtzeitig.
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {conflicts.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <Link
+                    to="/maschinen/$machineId"
+                    params={{ machineId: r.machine!.id }}
+                    className="truncate text-sm font-medium text-foreground hover:text-primary"
+                  >
+                    {r.machine?.name} · {r.machine?.asset_code}
+                  </Link>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {formatDateTime(r.start_at)} – {formatDateTime(r.end_at)} ·{" "}
+                    {textOrDash(r.reserved?.full_name)}
+                  </p>
+                </div>
+                <Pill tone="danger">
+                  {labelFor(r.machine?.status ?? "", MACHINE_STATUS_LABELS_BY_DB)}
+                </Pill>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+
+
       <div className="mb-4 flex rounded-lg border border-border bg-card p-0.5 sm:w-fit">
         {(
           [
