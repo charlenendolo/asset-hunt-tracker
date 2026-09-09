@@ -143,6 +143,7 @@ const updateSchema = z.object({
   active: z.boolean().optional(),
   fullName: z.string().trim().min(2).max(120).optional(),
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
+  username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
 });
 
 export const updateEmployeeAccount = createServerFn({ method: "POST" })
@@ -155,10 +156,26 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const patch: { role?: string; active?: boolean; full_name?: string } = {};
+    const patch: {
+      role?: string;
+      active?: boolean;
+      full_name?: string;
+      username?: string | null;
+    } = {};
     if (data.role) patch.role = data.role;
     if (typeof data.active === "boolean") patch.active = data.active;
     if (data.fullName) patch.full_name = data.fullName;
+    // Benutzername ändern aktualisiert denselben Datensatz — nie ein neuer Zugang.
+    if (typeof data.username === "string") {
+      const next = normalizeUsername(data.username);
+      if (!next) {
+        patch.username = null;
+      } else {
+        await assertUsernameFree(supabaseAdmin as never, next, data.userId);
+        patch.username = next;
+      }
+    }
+
 
     // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
     const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
