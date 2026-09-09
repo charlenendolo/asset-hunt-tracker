@@ -35,11 +35,24 @@ const ROLE_OPTIONS = [
 
 type Role = (typeof ROLE_OPTIONS)[number]["value"];
 
+/** Startpasswort nach der geltenden Passwortregel (Groß, klein, Ziffer, Sonderzeichen). */
 function randomPassword() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint32Array(12));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const special = "!?#%*+-";
+  const all = upper + lower + digits + special;
+  const pick = (set: string, n: number) =>
+    Array.from(crypto.getRandomValues(new Uint32Array(n)), (b) => set[b % set.length]);
+  const chars = [...pick(upper, 2), ...pick(lower, 5), ...pick(digits, 3), ...pick(special, 2), ...pick(all, 2)];
+  const order = crypto.getRandomValues(new Uint32Array(chars.length));
+  return chars
+    .map((c, i) => ({ c, k: order[i]! }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.c)
+    .join("");
 }
+
 
 export function CreateUserDialog() {
   const qc = useQueryClient();
