@@ -57,11 +57,29 @@ export const checkoutMachine = createServerFn({ method: "POST" })
     if (!machine) throw new Error("Gerät nicht gefunden.");
 
     const status = (machine.status ?? "").toLowerCase();
+    // Defekte Geräte sind niemals ausleihbar — erst nach dokumentierter Reparatur.
+    if (["defective", "defekt", "defect"].includes(status)) {
+      throw new Error(
+        "Das Gerät ist als defekt gemeldet und kann erst nach abgeschlossener Reparatur wieder ausgeliehen werden.",
+      );
+    }
+    // Zusätzlich: offene Defektmeldungen blockieren die Ausleihe.
+    const { count: openDefects } = await supabaseAdmin
+      .from("defects")
+      .select("id", { count: "exact", head: true })
+      .eq("machine_id", machine.id)
+      .neq("status", "resolved");
+    if ((openDefects ?? 0) > 0) {
+      throw new Error(
+        "Für dieses Gerät ist ein Defekt offen. Es kann erst nach abgeschlossener Reparatur wieder ausgeliehen werden.",
+      );
+    }
     if (!machine.active || !AVAILABLE.includes(status)) {
       throw new Error(
         "Das Gerät ist nicht mehr verfügbar. Der Status wurde zwischenzeitlich geändert.",
       );
     }
+
 
     // Abgeleiteter Status „Zugewiesen": Geräte an Baustellen oder in Fahrzeugen
     // sind dort im Einsatz und dürfen nicht erneut ausgeliehen werden.
