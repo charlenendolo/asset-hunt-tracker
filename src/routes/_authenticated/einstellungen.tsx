@@ -1,18 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { QrCode } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { ChangePasswordForm } from "@/components/change-password";
 import { Pill } from "@/components/status-badge";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProfile } from "@/hooks/use-profile";
 import { useIdentity } from "@/hooks/use-identity";
-import { categoriesQuery } from "@/lib/queries";
+import { categoriesQuery, inspectionWarningDaysQuery } from "@/lib/queries";
+import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
+import { setInspectionWarningDays } from "@/lib/settings.functions";
 import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
+
 
 
 export const Route = createFileRoute("/_authenticated/einstellungen")({
@@ -42,7 +48,71 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/** Admin-Einstellung: Vorwarnzeit für fällige Prüfungen (Kalendertage). */
+function InspectionWarningSetting() {
+  const queryClient = useQueryClient();
+  const current = useQuery(inspectionWarningDaysQuery);
+  const [days, setDays] = useState<string>("");
+  const value = days === "" ? String(current.data ?? DEFAULT_INSPECTION_WARNING_DAYS) : days;
+
+  const save = useMutation({
+    mutationFn: async () => setInspectionWarningDays({ data: { days: Number(value) } }),
+    onSuccess: async () => {
+      toast.success("Vorwarnzeit gespeichert.");
+      setDays("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["machines"] }),
+      ]);
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Speichern nicht möglich."),
+  });
+
+  const numeric = Number(value);
+  const invalid = !Number.isInteger(numeric) || numeric < 0 || numeric > 365;
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="mb-1 text-sm font-medium text-foreground">Prüfungen</h2>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Wie viele Tage im Voraus soll eine fällige Prüfung im Dashboard und im Gerätefilter
+        angezeigt werden? (0–365 Tage, Standard 30)
+      </p>
+      {current.isLoading ? (
+        <Skeleton className="h-10 w-full" />
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="number"
+            min={0}
+            max={365}
+            inputMode="numeric"
+            className="h-10 w-28"
+            value={value}
+            onChange={(e) => setDays(e.target.value)}
+            aria-label="Vorwarnzeit in Tagen"
+          />
+          <span className="text-sm text-muted-foreground">Tage</span>
+          <Button
+            size="sm"
+            disabled={invalid || save.isPending}
+            onClick={() => save.mutate()}
+            className="ml-auto"
+          >
+            {save.isPending ? "Speichern…" : "Speichern"}
+          </Button>
+        </div>
+      )}
+      {invalid ? (
+        <p className="mt-2 text-xs text-destructive">Bitte einen Wert zwischen 0 und 365 angeben.</p>
+      ) : null}
+    </section>
+  );
+}
+
 function SettingsPage() {
+
   const { profile, user, isLoading, isAdmin } = useCurrentProfile();
   const identity = useIdentity();
   const categories = useQuery(categoriesQuery);
@@ -135,6 +205,7 @@ function SettingsPage() {
           </section>
         ) : null}
 
+        {identity.isAdmin ? <InspectionWarningSetting /> : null}
 
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">

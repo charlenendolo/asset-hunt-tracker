@@ -20,9 +20,13 @@ import {
   categoriesQuery,
   machinesQuery,
   sitesQuery,
+  inspectionWarningDaysQuery,
   OVERDUE_FILTER,
   INSPECTION_DUE_FILTER,
+  INSPECTION_MISSING_FILTER,
 } from "@/lib/queries";
+import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
+
 import { OverdueBadge } from "@/components/overdue-badge";
 import { InspectionBadge } from "@/components/inspection-badge";
 import { isOverdue } from "@/lib/overdue";
@@ -113,6 +117,10 @@ function MachinesPage() {
   const mineActive = urlSearch.mine === true;
   const mineUserId = mineActive ? identity.userId : null;
 
+  // Vorwarnzeit für „Prüfpflichtig“ — gleiche Einstellung wie Dashboard.
+  const warningDays = useQuery(inspectionWarningDaysQuery);
+  const inspectionWarningDays = warningDays.data ?? DEFAULT_INSPECTION_WARNING_DAYS;
+
   const filters = useMemo(
     () => ({
       search,
@@ -123,14 +131,26 @@ function MachinesPage() {
       sort,
       page,
       pageSize: PAGE_SIZE,
+      inspectionWarningDays,
       ...(mineUserId ? { responsibleUserId: mineUserId } : {}),
     }),
-    [search, categoryId, siteId, locationType, status, sort, page, mineUserId],
+    [
+      search,
+      categoryId,
+      siteId,
+      locationType,
+      status,
+      sort,
+      page,
+      mineUserId,
+      inspectionWarningDays,
+    ],
   );
 
   const categories = useQuery(categoriesQuery);
   const sites = useQuery(sitesQuery);
   const activeSite = siteId ? ((sites.data ?? []).find((s) => s.id === siteId) ?? null) : null;
+
   const machines = useQuery({
     ...machinesQuery(filters),
     enabled: !mineActive || !!mineUserId,
@@ -281,6 +301,8 @@ function MachinesPage() {
           ))}
           <option value={OVERDUE_FILTER}>Überfällig</option>
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
+          <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
+
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>

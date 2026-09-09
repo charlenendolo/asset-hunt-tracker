@@ -6,9 +6,11 @@ import {
   machineStatusDbValues,
   machineStatusKey,
 } from "@/lib/status";
-import { localISODate } from "@/lib/due-dates";
+import { localISODatePlusDays } from "@/lib/due-dates";
 
 import { listProfiles } from "@/lib/users.functions";
+import { getInspectionWarningDays } from "@/lib/settings.functions";
+
 
 const FIVE_MIN = 5 * 60 * 1000;
 
@@ -84,9 +86,42 @@ export const ASSIGNED_FILTER = "assigned";
 
 /**
  * Pseudo-Statuswert für den abgeleiteten Prüfpflichtig-Filter (kein DB-Status):
- * Prüfung erforderlich und nächster Prüftermin heute oder überschritten.
+ * Prüfung erforderlich und nächster Prüftermin überfällig, heute oder innerhalb
+ * der konfigurierten Vorwarnzeit. Gleiche Logik wie die Dashboard-Karte.
  */
 export const INSPECTION_DUE_FILTER = "inspection_due";
+
+/** Prüfpflichtige Geräte ohne hinterlegten Prüftermin. */
+export const INSPECTION_MISSING_FILTER = "inspection_missing";
+
+/** Konfigurierbare Vorwarnzeit für Prüfungen (gilt für alle Nutzer). */
+export const inspectionWarningDaysQuery = queryOptions({
+  queryKey: ["settings", "inspection_warning_days"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => (await getInspectionWarningDays()).days,
+});
+
+/**
+ * Eine gemeinsame Datenbasis für Dashboard-Karte und Prüfkalender:
+ * alle aktiven, prüfpflichtigen Geräte mit ihrem nächsten Prüftermin.
+ * Der Zustand (überfällig / heute / demnächst) wird über inspectionStatus
+ * aus @/lib/due-dates abgeleitet — keine zweite Berechnung.
+ */
+export const inspectionMachinesQuery = queryOptions({
+  queryKey: ["machines", "inspections"],
+  staleTime: 60 * 1000,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machines")
+      .select("id, name, asset_code, inspection_required, next_inspection_date")
+      .eq("active", true)
+      .eq("inspection_required", true)
+      .order("next_inspection_date", { ascending: true, nullsFirst: false })
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
 
 /** Standort-IDs, deren Typ ein Gerät als „zugewiesen" gelten lässt. */
 async function fetchAssignedSiteIds(): Promise<string[]> {
@@ -97,6 +132,7 @@ async function fetchAssignedSiteIds(): Promise<string[]> {
   if (error) throw error;
   return (data ?? []).map((s) => s.id);
 }
+
 
 
 export type MachineFilters = {
@@ -111,7 +147,10 @@ export type MachineFilters = {
   pageSize: number;
   /** Nur Geräte in der Obhut dieser Person (machines.responsible_user_id). */
   responsibleUserId?: string;
+  /** Vorwarnzeit für den Prüfpflichtig-Filter (Kalendertage). */
+  inspectionWarningDays?: number;
 };
+
 
 export const MACHINE_LIST_SELECT =
   "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
@@ -155,13 +194,18 @@ export function machinesQuery(filters: MachineFilters) {
           .not("expected_return_at", "is", null)
           .lt("expected_return_at", new Date().toISOString());
       } else if (filters.status === INSPECTION_DUE_FILTER) {
-        // Abgeleiteter Zustand: Prüfung erforderlich + Termin heute oder überschritten
-        // (Kalendertagsvergleich, kein UTC-Zeitstempel). Unabhängig vom Betriebsstatus.
+        // Abgeleiteter Zustand: Prüfung erforderlich + Termin überfällig, heute
+        // oder innerhalb der konfigurierten Vorwarnzeit (Kalendertagsvergleich,
+        // kein UTC-Zeitstempel). Unabhängig vom Betriebsstatus.
         q = q
           .eq("inspection_required", true)
           .not("next_inspection_date", "is", null)
-          .lte("next_inspection_date", localISODate());
+          .lte("next_inspection_date", localISODatePlusDays(filters.inspectionWarningDays ?? 0));
+      } else if (filters.status === INSPECTION_MISSING_FILTER) {
+        // Prüfpflichtig, aber ohne Termin — dürfen nicht unsichtbar bleiben.
+        q = q.eq("inspection_required", true).is("next_inspection_date", null);
       } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
+
         // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
         const assignedSiteIds = await fetchAssignedSiteIds();
         q = q.in("status", machineStatusDbValues("available")).is("responsible_user_id", null);
@@ -559,6 +603,31 @@ export function calendarQuery(
         maintenance: maintenance.data ?? [],
         inspections: inspections.data ?? [],
       };
+    },
+  });
+}
+
+/**
+ * Prüfkalender: alle prüfpflichtigen Geräte mit Prüftermin im sichtbaren
+ * Zeitraum — bewusst ohne Vorwarnfenster, damit die komplette Prüfplanung
+ * sichtbar bleibt. Gleiche Datenquelle wie Dashboard und Gerätefilter.
+ */
+export function inspectionCalendarQuery(fromISODate: string, toISODate: string) {
+  return queryOptions({
+    queryKey: ["calendar", "inspections", fromISODate, toISODate],
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("machines")
+        .select("id, name, asset_code, inspection_required, next_inspection_date")
+        .eq("active", true)
+        .eq("inspection_required", true)
+        .gte("next_inspection_date", fromISODate)
+        .lte("next_inspection_date", toISODate)
+        .order("next_inspection_date")
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 }

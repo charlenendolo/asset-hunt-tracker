@@ -42,10 +42,31 @@ export type DueState = "overdue" | "today" | "upcoming";
 
 /* ------------------------------------------------------------ Prüfung */
 
+/** Standard-Vorwarnzeit für Prüfungen (Kalendertage), wenn keine Einstellung gesetzt ist. */
+export const DEFAULT_INSPECTION_WARNING_DAYS = 30;
+
 export type InspectionLike = {
   inspection_required?: boolean | null;
   next_inspection_date?: string | null;
 };
+
+/**
+ * Einzige Quelle der Wahrheit für den Prüfzustand eines Geräts.
+ * overdue = Termin vor heute, today = Termin heute, upcoming = Termin innerhalb
+ * der konfigurierten Vorwarnzeit. Ohne Prüfpflicht oder ohne Termin: null.
+ */
+export function inspectionStatus(
+  machine: InspectionLike,
+  today: string = localISODate(),
+  windowDays: number = DEFAULT_INSPECTION_WARNING_DAYS,
+): DueState | null {
+  if (machine.inspection_required !== true) return null;
+  const due = dateOnly(machine.next_inspection_date);
+  if (!due) return null;
+  if (due < today) return "overdue";
+  if (due === today) return "today";
+  return due <= localISODatePlusDays(windowDays) ? "upcoming" : null;
+}
 
 /**
  * Prüfpflichtig = Prüfung erforderlich und nächster Prüftermin heute oder in
@@ -56,17 +77,24 @@ export function inspectionDueState(
   machine: InspectionLike,
   today: string = localISODate(),
 ): Exclude<DueState, "upcoming"> | null {
-  if (machine.inspection_required !== true) return null;
-  const due = dateOnly(machine.next_inspection_date);
-  if (!due) return null;
-  if (due < today) return "overdue";
-  if (due === today) return "today";
-  return null;
+  const state = inspectionStatus(machine, today, 0);
+  return state === "upcoming" ? null : state;
 }
 
 export function isInspectionDue(machine: InspectionLike, today: string = localISODate()): boolean {
   return inspectionDueState(machine, today) !== null;
 }
+
+/** Gerät ist prüfpflichtig, aber ohne hinterlegten Prüftermin. */
+export function isInspectionDateMissing(machine: InspectionLike): boolean {
+  return machine.inspection_required === true && !dateOnly(machine.next_inspection_date);
+}
+
+export const INSPECTION_DUE_LABELS: Record<DueState, string> = {
+  overdue: "Prüfung überfällig",
+  today: "Prüfung heute fällig",
+  upcoming: "Prüfung demnächst fällig",
+};
 
 export function inspectionDueLabel(machine: InspectionLike, today: string = localISODate()): string {
   const state = inspectionDueState(machine, today);
@@ -74,6 +102,7 @@ export function inspectionDueLabel(machine: InspectionLike, today: string = loca
   if (state === "overdue") return "Prüfung überfällig";
   return "Prüfpflichtig";
 }
+
 
 /* ------------------------------------------------------------ Wartung */
 
