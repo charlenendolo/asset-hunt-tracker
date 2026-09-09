@@ -84,7 +84,8 @@ export function MachineHeroPhoto({
             if (el.clientWidth > 0) setIndex(Math.round(el.scrollLeft / el.clientWidth));
           }}
           className="flex w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ touchAction: "pan-y pinch-zoom" }}
+          // pan-x: horizontales Wischen zwischen Fotos; pan-y: Seite bleibt vertikal scrollbar.
+          style={{ touchAction: "pan-x pan-y pinch-zoom" }}
         >
           {urls.map((url, i) => (
             <button
