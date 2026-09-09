@@ -72,18 +72,20 @@ function UsersPage() {
     if (statusFilter === "inactive" && p.active) return false;
     if (!q) return true;
     const mail = (emailById.get(p.id) ?? "").toLowerCase();
-    return (p.full_name ?? "").toLowerCase().includes(q) || mail.includes(q);
+    return (
+      (p.full_name ?? "").toLowerCase().includes(q) ||
+      (p.username ?? "").toLowerCase().includes(q) ||
+      mail.includes(q)
+    );
   });
 
-  function accessLabel(id: string) {
-    const hasEmail = !!emailById.get(id);
-    const pin = pinById.get(id);
-    if (hasEmail && pin) return { text: "E-Mail aktiv · PIN aktiv", tone: "success" as const };
-    if (hasEmail && pin === false) return { text: "E-Mail aktiv · PIN deaktiviert", tone: "success" as const };
-    if (hasEmail) return { text: "E-Mail", tone: "success" as const };
-    if (pin) return { text: "PIN", tone: "neutral" as const };
+  function accessLabel(row: { id: string; has_password?: boolean | null; username?: string | null }) {
+    const pin = pinById.get(row.id);
+    if (row.has_password) return { text: "Passwort aktiv", tone: "success" as const };
+    if (pin) return { text: "Nur PIN – Passwort fehlt", tone: "warning" as const };
     return { text: "Kein Zugang", tone: "warning" as const };
   }
+
 
   return (
     <AppShell
