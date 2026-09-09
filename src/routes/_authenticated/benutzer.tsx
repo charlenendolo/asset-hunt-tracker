@@ -142,6 +142,7 @@ function UsersPage() {
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                   <th className="px-4 py-3">Name</th>
+                  {isAdmin ? <th className="px-4 py-3">Benutzername</th> : null}
                   <th className="px-4 py-3">Rolle</th>
                   {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
                   {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
@@ -156,6 +157,11 @@ function UsersPage() {
                     <td className="px-4 py-3 font-medium text-foreground">
                       {textOrDash(p.full_name)}
                     </td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {textOrDash(p.username)}
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3">
                       {p.role ? (
                         <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
@@ -174,7 +180,7 @@ function UsersPage() {
                     ) : null}
                     {isAdmin ? (
                       <td className="px-4 py-3">
-                        <Pill tone={accessLabel(p.id).tone}>{accessLabel(p.id).text}</Pill>
+                        <Pill tone={accessLabel(p).tone}>{accessLabel(p).text}</Pill>
                       </td>
                     ) : null}
                     <td className="px-4 py-3">
@@ -197,6 +203,7 @@ function UsersPage() {
                               user={{
                                 id: p.id,
                                 full_name: p.full_name,
+                                username: p.username,
                                 role: p.role ?? "user",
                                 active: p.active ?? true,
                               }}
@@ -207,6 +214,7 @@ function UsersPage() {
                         </div>
                       </td>
                     ) : null}
+
                   </tr>
                 ))}
               </tbody>
