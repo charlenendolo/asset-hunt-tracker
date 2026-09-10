@@ -40,6 +40,7 @@ export function MachineHeroPhoto({
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const lightboxRef = useRef<HTMLDivElement | null>(null);
 
   const photos = useMachineGallery(machineId);
   const urls = photos.length > 0 ? photos.map((p) => p.url as string) : src ? [src] : [];
@@ -50,13 +51,33 @@ export function MachineHeroPhoto({
     if (index > count - 1) setIndex(0);
   }, [count, index]);
 
-  const scrollTo = (next: number) => {
-    const el = trackRef.current;
+  const scrollTo = (next: number, ref: typeof trackRef = trackRef) => {
+    const el = ref.current;
     if (!el) return;
     const clamped = (next + count) % count;
     el.scrollTo({ left: el.clientWidth * clamped, behavior: "smooth" });
     setIndex(clamped);
   };
+
+  // Lightbox startet auf dem Foto, das in der Vorschau aktiv war.
+  useEffect(() => {
+    if (!open) return;
+    const el = lightboxRef.current;
+    if (!el) return;
+    el.scrollTo({ left: el.clientWidth * active, behavior: "instant" as ScrollBehavior });
+    // Nach dem Schließen bleibt die Vorschau auf dem zuletzt gezeigten Foto.
+  }, [open, active]);
+
+  // Tastatursteuerung im Vollbild.
+  useEffect(() => {
+    if (!open || count < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") scrollTo(active - 1, lightboxRef);
+      if (e.key === "ArrowRight") scrollTo(active + 1, lightboxRef);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   if (count === 0) {
     return (
