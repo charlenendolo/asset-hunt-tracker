@@ -104,10 +104,14 @@ export function SiteCombobox({
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent
+          className="w-[--radix-popover-trigger-width] overflow-y-auto p-0"
+          style={{ maxHeight: "min(60vh, 400px)" }}
+          align="start"
+        >
           <Command>
             <CommandInput placeholder="Standort suchen …" />
-            <CommandList>
+            <CommandList className="max-h-none">
               <CommandEmpty>Kein Standort gefunden.</CommandEmpty>
               <CommandGroup>
                 <CommandItem
