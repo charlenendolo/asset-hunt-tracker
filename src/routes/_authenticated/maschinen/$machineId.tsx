@@ -15,6 +15,7 @@ import { MachineActions } from "@/components/machine-actions";
 import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialogs";
 import { ReassignResponsibleButton } from "@/components/reassign-responsible";
 import { EditMachineButton } from "@/components/machine-edit";
+import { ChangeSiteButton } from "@/components/change-site";
 import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
@@ -416,6 +417,19 @@ function MachineDetailPage() {
             />
             {identity.isAdmin ? (
               <EditMachineButton className="mt-3 w-full" machine={m} />
+            ) : null}
+            {identity.isAdmin ? (
+              <ChangeSiteButton
+                className="mt-3 w-full"
+                machine={{
+                  id: m.id,
+                  name: m.name,
+                  current_site_id: m.current_site_id,
+                  site: m.site
+                    ? { name: m.site.name, location_type: m.site.location_type }
+                    : null,
+                }}
+              />
             ) : null}
             {identity.isAdmin ? (
               <ReassignResponsibleButton
