@@ -237,6 +237,88 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+const changeSiteSchema = z.object({
+  machineId: z.string().uuid(),
+  siteId: z.string().uuid().nullable(),
+  comment: z.string().trim().max(2000).nullable().optional(),
+});
+
+/**
+ * Administrative Standortkorrektur.
+ * Bewusst getrennt von Obhut und Status: „Zugewiesen" ist ein abgeleiteter
+ * Zustand aus dem Standorttyp, deshalb wird der gespeicherte Status
+ * (ausgeliehen, defekt, Wartung, verfügbar) niemals überschrieben.
+ * Der Wechsel wird als Bewegung „transfer" protokolliert.
+ */
+export const changeMachineSite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => changeSiteSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { requireManager } = await import("./roles.server");
+    await requireManager(context.supabase, {
+      adminOnly: true,
+      message: "Nur Administratoren dürfen den Standort ändern.",
+    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machine, error: readError } = await supabaseAdmin
+      .from("machines")
+      .select("id, current_site_id, responsible_user_id")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (readError || !machine) throw new Error("Gerät konnte nicht geladen werden.");
+
+    const previousSiteId = machine.current_site_id ?? null;
+    if (previousSiteId === data.siteId) {
+      throw new Error("Das Gerät befindet sich bereits an diesem Standort.");
+    }
+
+    if (data.siteId) {
+      const { data: site } = await supabaseAdmin
+        .from("sites")
+        .select("id, active")
+        .eq("id", data.siteId)
+        .maybeSingle();
+      if (!site) throw new Error("Standort nicht gefunden.");
+      if (site.active === false) throw new Error("Dieser Standort ist nicht aktiv.");
+    }
+
+    // Optimistischer Abgleich gegen den zuvor gelesenen Stand.
+    let updateQuery = supabaseAdmin
+      .from("machines")
+      .update({ current_site_id: data.siteId })
+      .eq("id", machine.id);
+    updateQuery = previousSiteId
+      ? updateQuery.eq("current_site_id", previousSiteId)
+      : updateQuery.is("current_site_id", null);
+
+    const { data: updated, error: updateError } = await updateQuery.select("id").maybeSingle();
+    if (updateError) failSafely("Änderung fehlgeschlagen.", updateError, "machines");
+    if (!updated) {
+      throw new Error("Der Standort wurde zwischenzeitlich geändert. Bitte neu laden.");
+    }
+
+    const trail = "Standort administrativ geändert";
+    const { error: movementError } = await supabaseAdmin.from("movements").insert({
+      machine_id: machine.id,
+      movement_type: "transfer",
+      performed_by: context.userId,
+      responsible_user_id: machine.responsible_user_id,
+      from_site_id: previousSiteId,
+      to_site_id: data.siteId,
+      comment: data.comment ? `${trail} · ${data.comment}` : trail,
+    });
+    if (movementError) {
+      await supabaseAdmin
+        .from("machines")
+        .update({ current_site_id: previousSiteId })
+        .eq("id", machine.id);
+      throw new Error("Änderung konnte nicht protokolliert werden. Vorgang abgebrochen.");
+    }
+
+    return { ok: true as const };
+  });
+
 const updateSchema = z.object({
   machineId: z.string().uuid(),
   assetCode: z.string().trim().min(1).max(60),

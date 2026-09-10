@@ -40,6 +40,7 @@ export function MachineHeroPhoto({
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const lightboxRef = useRef<HTMLDivElement | null>(null);
 
   const photos = useMachineGallery(machineId);
   const urls = photos.length > 0 ? photos.map((p) => p.url as string) : src ? [src] : [];
@@ -50,13 +51,33 @@ export function MachineHeroPhoto({
     if (index > count - 1) setIndex(0);
   }, [count, index]);
 
-  const scrollTo = (next: number) => {
-    const el = trackRef.current;
+  const scrollTo = (next: number, ref: typeof trackRef = trackRef) => {
+    const el = ref.current;
     if (!el) return;
     const clamped = (next + count) % count;
     el.scrollTo({ left: el.clientWidth * clamped, behavior: "smooth" });
     setIndex(clamped);
   };
+
+  // Lightbox startet auf dem Foto, das in der Vorschau aktiv war.
+  useEffect(() => {
+    if (!open) return;
+    const el = lightboxRef.current;
+    if (!el) return;
+    el.scrollTo({ left: el.clientWidth * active, behavior: "instant" as ScrollBehavior });
+    // Nach dem Schließen bleibt die Vorschau auf dem zuletzt gezeigten Foto.
+  }, [open, active]);
+
+  // Tastatursteuerung im Vollbild.
+  useEffect(() => {
+    if (!open || count < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") scrollTo(active - 1, lightboxRef);
+      if (e.key === "ArrowRight") scrollTo(active + 1, lightboxRef);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   if (count === 0) {
     return (
@@ -147,11 +168,51 @@ export function MachineHeroPhoto({
         <DialogContent className="max-w-[95vw] border-0 bg-background/95 p-2 sm:max-w-3xl">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
 
-          <img
-            src={urls[active]}
-            alt={alt}
-            className="max-h-[85vh] w-full object-contain"
-          />
+          <div className="relative">
+            <div
+              ref={lightboxRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                if (el.clientWidth > 0) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+              }}
+              className="flex w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{ touchAction: "pan-x pan-y pinch-zoom" }}
+            >
+              {urls.map((url, i) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={count > 1 ? `${alt} – Foto ${i + 1} von ${count}` : alt}
+                  className="max-h-[85vh] w-full flex-none snap-center object-contain"
+                  draggable={false}
+                />
+              ))}
+            </div>
+
+            {count > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scrollTo(active - 1, lightboxRef)}
+                  aria-label="Vorheriges Foto"
+                  className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-border bg-background/80 p-1.5 text-foreground shadow-sm transition-colors hover:bg-background sm:block"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollTo(active + 1, lightboxRef)}
+                  aria-label="Nächstes Foto"
+                  className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-border bg-background/80 p-1.5 text-foreground shadow-sm transition-colors hover:bg-background sm:block"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-foreground/70 px-2 py-0.5 text-[11px] font-medium text-background">
+                  {active + 1} / {count}
+                </span>
+              </>
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
     </>
