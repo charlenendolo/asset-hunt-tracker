@@ -147,11 +147,51 @@ export function MachineHeroPhoto({
         <DialogContent className="max-w-[95vw] border-0 bg-background/95 p-2 sm:max-w-3xl">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
 
-          <img
-            src={urls[active]}
-            alt={alt}
-            className="max-h-[85vh] w-full object-contain"
-          />
+          <div className="relative">
+            <div
+              ref={lightboxRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                if (el.clientWidth > 0) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+              }}
+              className="flex w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{ touchAction: "pan-x pan-y pinch-zoom" }}
+            >
+              {urls.map((url, i) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={count > 1 ? `${alt} – Foto ${i + 1} von ${count}` : alt}
+                  className="max-h-[85vh] w-full flex-none snap-center object-contain"
+                  draggable={false}
+                />
+              ))}
+            </div>
+
+            {count > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scrollTo(active - 1, lightboxRef)}
+                  aria-label="Vorheriges Foto"
+                  className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-border bg-background/80 p-1.5 text-foreground shadow-sm transition-colors hover:bg-background sm:block"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollTo(active + 1, lightboxRef)}
+                  aria-label="Nächstes Foto"
+                  className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full border border-border bg-background/80 p-1.5 text-foreground shadow-sm transition-colors hover:bg-background sm:block"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-foreground/70 px-2 py-0.5 text-[11px] font-medium text-background">
+                  {active + 1} / {count}
+                </span>
+              </>
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
     </>
