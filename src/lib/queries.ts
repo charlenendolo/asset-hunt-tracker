@@ -290,7 +290,7 @@ export function machineDetailQuery(id: string) {
       const { data, error } = await supabase
         .from("machines")
         .select(
-          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name)",
+          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name))",
         )
         .eq("id", id)
         .maybeSingle();

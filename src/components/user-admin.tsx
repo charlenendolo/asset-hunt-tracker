@@ -102,7 +102,7 @@ export function CreateUserDialog() {
       <Dialog open={open} onOpenChange={(o) => (!mutation.isPending ? setOpen(o) : undefined)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Mitarbeiterzugang anlegen</DialogTitle>
+              <DialogTitle>Benutzerzugang anlegen</DialogTitle>
             <DialogDescription>
               Der Zugang ist sofort aktiv. Das Startpasswort bitte persönlich übergeben.
             </DialogDescription>

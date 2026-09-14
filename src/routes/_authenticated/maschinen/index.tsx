@@ -34,6 +34,7 @@ import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
+import { PropertyTags } from "@/components/machine-properties";
 
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
@@ -409,6 +410,14 @@ function MachinesPage() {
                               [m.manufacturer, m.model].filter(Boolean).join(" ") || null,
                             )}
                           </span>
+                          <span className="mt-1 block">
+                            <PropertyTags
+                              names={(m.properties ?? []).flatMap((item) =>
+                                item.property ? [item.property.name] : [],
+                              )}
+                              limit={2}
+                            />
+                          </span>
                         </span>
                       </Link>
                     </td>
@@ -461,6 +470,14 @@ function MachinesPage() {
                       <OverdueBadge expectedReturnAt={m.expected_return_at} className="mt-1.5" />
                     ) : null}
                     <InspectionBadge machine={m} className="mt-1.5" />
+                    <span className="mt-1.5 block">
+                      <PropertyTags
+                        names={(m.properties ?? []).flatMap((item) =>
+                          item.property ? [item.property.name] : [],
+                        )}
+                        limit={2}
+                      />
+                    </span>
                   </div>
                   <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
                 </Link>

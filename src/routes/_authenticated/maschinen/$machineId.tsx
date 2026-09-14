@@ -23,6 +23,7 @@ import { MachinePhotos } from "@/components/machine-photos";
 import { MachineHeroPhoto } from "@/components/machine-hero-photo";
 
 import { MachineAccessories } from "@/components/machine-accessories";
+import { MachineProperties, PropertyTags } from "@/components/machine-properties";
 import { MachineHistory } from "@/components/machine-history";
 import { ReserveMachineButton } from "@/components/reserve-machine";
 import { MachineQrSection } from "@/components/qr-code";
@@ -223,7 +224,10 @@ function MachineDetailPage() {
               />
 
               <Field label="Anschaffungsdatum" value={formatDate(m.purchase_date)} />
-              <Field label="Anschaffungspreis" value={formatCurrency(m.purchase_price)} />
+              <Field
+                label="Eigenschaften"
+                value={<PropertyTags names={(rel?.properties ?? []).map((item) => item.name)} />}
+              />
               <Field
                 label="Nächste Prüfung"
                 value={m.inspection_required ? formatDate(m.next_inspection_date) : "Nicht erforderlich"}
@@ -459,6 +463,10 @@ function MachineDetailPage() {
 
           <Section title="Zubehör">
             <MachineAccessories machineId={m.id} />
+          </Section>
+
+          <Section title="Eigenschaften">
+            <MachineProperties machineId={m.id} />
           </Section>
 
           <Section title="Fotos">
