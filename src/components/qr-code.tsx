@@ -45,13 +45,7 @@ export function QrImage({
 }) {
   const src = useMachineQrPng(machineId);
   if (!src) {
-    return (
-      <div
-        className={className}
-        style={{ width: size, height: size }}
-        aria-hidden
-      />
-    );
+    return <div className={className} style={{ width: size, height: size }} aria-hidden />;
   }
   return (
     <img
@@ -86,7 +80,7 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
           className="rounded-lg border border-border bg-white p-2"
           aria-label="QR-Code vergrößern"
         >
-           <QrImage machineId={machine.id} size={128} />
+          <QrImage machineId={machine.id} size={128} />
         </button>
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -99,8 +93,8 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
           </div>
           {temporary ? (
             <p className="text-xs text-status-defect">
-              Achtung: Aktuell wird eine temporäre Vorschau-Adresse kodiert. Für gedruckte
-              Etiketten bitte <code>VITE_APP_BASE_URL</code> auf die Produktionsdomain setzen.
+              Achtung: Aktuell wird eine temporäre Vorschau-Adresse kodiert. Für gedruckte Etiketten
+              bitte <code>VITE_APP_BASE_URL</code> auf die Produktionsdomain setzen.
             </p>
           ) : null}
         </div>
@@ -114,10 +108,15 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
           </DialogHeader>
           <div className="flex flex-col items-center gap-4">
             <div className="rounded-xl border border-border bg-white p-4">
-               <QrImage machineId={machine.id} size={240} />
+              <QrImage machineId={machine.id} size={240} />
             </div>
             <p className="break-all text-center text-xs text-muted-foreground">{url}</p>
-            <PrintLabelButton machine={machine} className="w-full" variant="default" size="default" />
+            <PrintLabelButton
+              machine={machine}
+              className="w-full"
+              variant="default"
+              size="default"
+            />
           </div>
         </DialogContent>
       </Dialog>

@@ -128,7 +128,9 @@ export function LabelPrintDialog({
       toast.error("Druckfenster wurde blockiert. Bitte Pop-ups für diese Seite erlauben.");
       return;
     }
-    toast.success(`${ready.length} Etikett${ready.length === 1 ? "" : "en"} an den Druck übergeben.`);
+    toast.success(
+      `${ready.length} Etikett${ready.length === 1 ? "" : "en"} an den Druck übergeben.`,
+    );
   }
 
   return (
@@ -272,7 +274,7 @@ export function LabelPrintDialog({
               <Button variant="outline" onClick={() => setStep("mode")}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
               </Button>
-               <Button onClick={handlePrint} disabled={isLoading || ready.length === 0}>
+              <Button onClick={handlePrint} disabled={isLoading || ready.length === 0}>
                 <Printer className="mr-2 h-4 w-4" /> Drucken
               </Button>
             </>
@@ -307,11 +309,7 @@ export function PrintLabelButton({
 }
 
 /** Einzelner PNG-Download — bewusst getrennt vom Etikettendruck. */
-export function QrDownloadButtons({
-  machine,
-}: {
-  machine: LabelMachine;
-}) {
+export function QrDownloadButtons({ machine }: { machine: LabelMachine }) {
   return (
     <div className="flex flex-wrap gap-2">
       <Button

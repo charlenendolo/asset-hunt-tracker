@@ -22,7 +22,11 @@ import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog, PrintLabelButton, QrDownloadButtons } from "@/components/label-print";
 import { useMachineQrPngs } from "@/hooks/use-machine-qr";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
-import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
+import {
+  MACHINE_STATUS_DB_VALUES,
+  MACHINE_STATUS_LABELS,
+  MACHINE_STATUS_ORDER,
+} from "@/lib/status";
 import { getMachineQrUrl, labelName, type LabelMachine } from "@/lib/qr-labels";
 import { useIdentity } from "@/hooks/use-identity";
 import { formatNumber, textOrDash } from "@/lib/format";
@@ -78,9 +82,7 @@ function QrPreviewDialog({
           <>
             <DialogHeader>
               <DialogTitle>{labelName(machine)}</DialogTitle>
-              <DialogDescription>
-                {machine.asset_code ?? "Gerätenummer fehlt"}
-              </DialogDescription>
+              <DialogDescription>{machine.asset_code ?? "Gerätenummer fehlt"}</DialogDescription>
             </DialogHeader>
             <div className="mx-auto h-56 w-56 rounded-lg border border-border bg-white p-3">
               {png ? (
@@ -329,7 +331,7 @@ function LabelsPage() {
                 }
                 aria-label={`${m.name} auswählen`}
               />
-               <QrThumb png={pngs[m.id]} onClick={() => setPreviewId(m.id)} />
+              <QrThumb png={pngs[m.id]} onClick={() => setPreviewId(m.id)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
                   {m.asset_code ? (
@@ -381,7 +383,7 @@ function LabelsPage() {
       <LabelPrintDialog machines={selectedMachines} open={open} onOpenChange={setOpen} />
       <QrPreviewDialog
         machine={previewMachine}
-         png={previewMachine ? pngs[previewMachine.id] : undefined}
+        png={previewMachine ? pngs[previewMachine.id] : undefined}
         open={!!previewMachine}
         onOpenChange={(v) => {
           if (!v) setPreviewId(null);

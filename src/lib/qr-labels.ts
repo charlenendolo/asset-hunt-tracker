@@ -69,11 +69,7 @@ export const LABEL_CSS = `
 `;
 
 /** Reines Label-Markup (ohne Styles) — Basis für Vorschau, Einzel- und Stapeldruck. */
-export function labelMarkup(
-  machine: LabelMachine,
-  format: LabelFormat,
-  qrPng: string,
-): string {
+export function labelMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qr = `<div class="ah-qr"><img src="${escapeHtml(qrPng)}" alt="" width="512" height="512" /></div>`;
   return `<div class="ah-label ah-label--standard">${qr}
@@ -107,11 +103,7 @@ export function qrFileName(machine: LabelMachine, extension: "png"): string {
  * Standardbasierter Browserdruck — kein Druckertreiber ist fest verdrahtet.
  * Eigenes Fenster, damit weder App-Navigation noch Dialog-Styles im Druck landen.
  */
-export function printLabels(
-  labels: string[],
-  format: LabelFormat,
-  mode: PrintMode,
-): boolean {
+export function printLabels(labels: string[], format: LabelFormat, mode: PrintMode): boolean {
   if (labels.length === 0) return false;
   const win = window.open("", "_blank", "width=720,height=820");
   if (!win) return false;
