@@ -19,15 +19,19 @@ import { setInspectionWarningDays } from "@/lib/settings.functions";
 import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
 
-
-
 export const Route = createFileRoute("/_authenticated/einstellungen")({
   head: () => ({
     meta: [
       { title: "Einstellungen – Repenning Geräteportal" },
-      { name: "description", content: "Konto, Rolle und Systemangaben von Repenning Geräteportal." },
+      {
+        name: "description",
+        content: "Konto, Rolle und Systemangaben von Repenning Geräteportal.",
+      },
       { property: "og:title", content: "Einstellungen – Repenning Geräteportal" },
-      { property: "og:description", content: "Konto, Rolle und Systemangaben von Repenning Geräteportal." },
+      {
+        property: "og:description",
+        content: "Konto, Rolle und Systemangaben von Repenning Geräteportal.",
+      },
     ],
   }),
   component: SettingsPage,
@@ -106,18 +110,18 @@ function InspectionWarningSetting() {
         </div>
       )}
       {invalid ? (
-        <p className="mt-2 text-xs text-destructive">Bitte einen Wert zwischen 0 und 365 angeben.</p>
+        <p className="mt-2 text-xs text-destructive">
+          Bitte einen Wert zwischen 0 und 365 angeben.
+        </p>
       ) : null}
     </section>
   );
 }
 
 function SettingsPage() {
-
   const { profile, user, isLoading, isAdmin } = useCurrentProfile();
   const identity = useIdentity();
   const categories = useQuery(categoriesQuery);
-
 
   return (
     <AppShell title="Einstellungen" description="Konto und Systemangaben">
@@ -132,7 +136,11 @@ function SettingsPage() {
               <Row label="E-Mail" value={textOrDash(user?.email ?? null)} />
               <Row
                 label="Rolle"
-                value={<Pill tone={isAdmin ? "primary" : "neutral"}>{ROLE_LABELS[profile?.role ?? ""] ?? textOrDash(profile?.role)}</Pill>}
+                value={
+                  <Pill tone={isAdmin ? "primary" : "neutral"}>
+                    {ROLE_LABELS[profile?.role ?? ""] ?? textOrDash(profile?.role)}
+                  </Pill>
+                }
               />
               <Row
                 label="Status"
@@ -170,9 +178,7 @@ function SettingsPage() {
           {categories.isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : (categories.data ?? []).length === 0 ? (
-            <p className="py-6 text-sm text-muted-foreground">
-              Noch keine Kategorien vorhanden.
-            </p>
+            <p className="py-6 text-sm text-muted-foreground">Noch keine Kategorien vorhanden.</p>
           ) : (
             <ul className="flex flex-wrap gap-2 pt-1">
               {categories.data!.map((c) => (
@@ -207,7 +213,6 @@ function SettingsPage() {
         ) : null}
 
         {identity.isAdmin ? <InspectionWarningSetting /> : null}
-
 
         <section className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-foreground">System</h2>

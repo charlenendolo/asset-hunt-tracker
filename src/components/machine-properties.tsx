@@ -14,11 +14,16 @@ export function PropertyTags({ names, limit }: { names: string[]; limit?: number
   return (
     <span className="flex flex-wrap gap-1.5">
       {shown.map((name) => (
-        <span key={name.toLocaleLowerCase("de-DE")} className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground">
+        <span
+          key={name.toLocaleLowerCase("de-DE")}
+          className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground"
+        >
           {name}
         </span>
       ))}
-      {remaining > 0 ? <span className="text-xs text-muted-foreground">+{remaining} weitere</span> : null}
+      {remaining > 0 ? (
+        <span className="text-xs text-muted-foreground">+{remaining} weitere</span>
+      ) : null}
     </span>
   );
 }
@@ -39,7 +44,8 @@ export function MachineProperties({ machineId }: { machineId: string }) {
       ]);
       toast.success("Eigenschaften gespeichert.");
     },
-    onError: (error: Error) => toast.error(error.message || "Eigenschaften konnten nicht gespeichert werden."),
+    onError: (error: Error) =>
+      toast.error(error.message || "Eigenschaften konnten nicht gespeichert werden."),
   });
 
   if (!identity.canManageMachines) return <PropertyTags names={values} />;

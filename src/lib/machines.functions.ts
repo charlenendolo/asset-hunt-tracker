@@ -421,7 +421,6 @@ export const updateMachine = createServerFn({ method: "POST" })
       });
     }
 
-
     if (data.properties) {
       const { replaceMachineProperties } = await import("./machine-properties.server");
       try {

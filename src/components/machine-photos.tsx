@@ -124,7 +124,10 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
       ) : (
         <ul className="grid grid-cols-3 gap-2">
           {items.map((p) => (
-            <li key={p.id} className="group relative overflow-hidden rounded-md border border-border">
+            <li
+              key={p.id}
+              className="group relative overflow-hidden rounded-md border border-border"
+            >
               {p.thumbUrl ? (
                 <img
                   src={p.thumbUrl}

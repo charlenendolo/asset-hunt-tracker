@@ -250,13 +250,13 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
           </Row>
 
           <Field label="Anschaffungsdatum" htmlFor="edit-purchase-date">
-              <Input
-                id="edit-purchase-date"
-                type="date"
-                value={form.purchaseDate}
-                onChange={(e) => set("purchaseDate", e.target.value)}
-                className="h-11"
-              />
+            <Input
+              id="edit-purchase-date"
+              type="date"
+              value={form.purchaseDate}
+              onChange={(e) => set("purchaseDate", e.target.value)}
+              className="h-11"
+            />
           </Field>
 
           <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">

@@ -93,12 +93,17 @@ export function SiteCombobox({
             aria-expanded={open}
             className={cn("w-full justify-between font-normal", className)}
           >
-            <span className={cn("flex min-w-0 items-center gap-2", !selected && "text-muted-foreground")}>
+            <span
+              className={cn(
+                "flex min-w-0 items-center gap-2",
+                !selected && "text-muted-foreground",
+              )}
+            >
               {selected ? <SiteTypeIcon type={selected.location_type} withTitle={false} /> : null}
               <span className="truncate">
-              {selected
-                ? `${selected.name} · ${SITE_TYPE_LABELS[selected.location_type as SiteType] ?? "Standort"}`
-                : emptyLabel}
+                {selected
+                  ? `${selected.name} · ${SITE_TYPE_LABELS[selected.location_type as SiteType] ?? "Standort"}`
+                  : emptyLabel}
               </span>
             </span>
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -228,7 +233,10 @@ export function CreateSiteDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (!o && mutation.isPending ? undefined : onOpenChange(o))}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => (!o && mutation.isPending ? undefined : onOpenChange(o))}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Neuen Standort hinzufügen</DialogTitle>
@@ -290,7 +298,11 @@ export function CreateSiteDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={mutation.isPending}
+          >
             Abbrechen
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!valid || mutation.isPending}>
@@ -301,7 +313,6 @@ export function CreateSiteDialog({
     </Dialog>
   );
 }
-
 
 /** Standort bearbeiten — nur Stammdaten, keine Gerätezuordnungen. */
 export function EditSiteDialog({
@@ -364,7 +375,10 @@ export function EditSiteDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (!o && mutation.isPending ? undefined : onOpenChange(o))}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => (!o && mutation.isPending ? undefined : onOpenChange(o))}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Standort bearbeiten</DialogTitle>
@@ -428,7 +442,11 @@ export function EditSiteDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={mutation.isPending}
+          >
             Abbrechen
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!valid || mutation.isPending}>

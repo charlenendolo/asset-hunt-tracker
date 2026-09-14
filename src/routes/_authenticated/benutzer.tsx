@@ -81,13 +81,16 @@ function UsersPage() {
     );
   });
 
-  function accessLabel(row: { id: string; has_password?: boolean | null; username?: string | null }) {
+  function accessLabel(row: {
+    id: string;
+    has_password?: boolean | null;
+    username?: string | null;
+  }) {
     const pin = pinById.get(row.id);
     if (row.has_password) return { text: "Passwort aktiv", tone: "success" as const };
     if (pin) return { text: "Nur PIN – Passwort fehlt", tone: "warning" as const };
     return { text: "Kein Zugang", tone: "warning" as const };
   }
-
 
   return (
     <AppShell
@@ -217,7 +220,6 @@ function UsersPage() {
                         </div>
                       </td>
                     ) : null}
-
                   </tr>
                 ))}
               </tbody>

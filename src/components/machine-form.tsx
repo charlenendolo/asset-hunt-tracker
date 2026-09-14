@@ -193,7 +193,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                 onClick={() => {
                   setCreated(null);
                   setAccessories([]);
-                   setProperties([]);
+                  setProperties([]);
                   setForm({ ...EMPTY, siteId: form.siteId, categoryId: form.categoryId });
                 }}
               >
@@ -240,10 +240,10 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                     {(categories.data ?? [])
                       .filter((c) => c.active !== false || c.id === form.categoryId)
                       .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
                   </select>
                 </Field>
                 <Field label="Standort" htmlFor="machine-site">

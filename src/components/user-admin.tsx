@@ -45,7 +45,13 @@ function randomPassword() {
   const all = upper + lower + digits + special;
   const pick = (set: string, n: number) =>
     Array.from(crypto.getRandomValues(new Uint32Array(n)), (b) => set[b % set.length]);
-  const chars = [...pick(upper, 2), ...pick(lower, 5), ...pick(digits, 3), ...pick(special, 2), ...pick(all, 2)];
+  const chars = [
+    ...pick(upper, 2),
+    ...pick(lower, 5),
+    ...pick(digits, 3),
+    ...pick(special, 2),
+    ...pick(all, 2),
+  ];
   const order = crypto.getRandomValues(new Uint32Array(chars.length));
   return chars
     .map((c, i) => ({ c, k: order[i]! }))
@@ -53,7 +59,6 @@ function randomPassword() {
     .map((x) => x.c)
     .join("");
 }
-
 
 export function CreateUserDialog() {
   const qc = useQueryClient();
@@ -69,7 +74,9 @@ export function CreateUserDialog() {
   const submit = useServerFn(createEmployeeAccount);
   const mutation = useMutation({
     mutationFn: async () =>
-      submit({ data: { fullName, email, username: normalizeUsername(username), password, role, withPin } }),
+      submit({
+        data: { fullName, email, username: normalizeUsername(username), password, role, withPin },
+      }),
     onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["profiles"] });
       await qc.invalidateQueries({ queryKey: ["pin-access"] });
@@ -93,7 +100,6 @@ export function CreateUserDialog() {
   const invalid =
     fullName.trim().length < 2 || emailInvalid || usernameInvalid || password.length < 8;
 
-
   return (
     <>
       <Button onClick={() => setOpen(true)}>
@@ -102,7 +108,7 @@ export function CreateUserDialog() {
       <Dialog open={open} onOpenChange={(o) => (!mutation.isPending ? setOpen(o) : undefined)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-              <DialogTitle>Benutzerzugang anlegen</DialogTitle>
+            <DialogTitle>Benutzerzugang anlegen</DialogTitle>
             <DialogDescription>
               Der Zugang ist sofort aktiv. Das Startpasswort bitte persönlich übergeben.
             </DialogDescription>
@@ -130,7 +136,9 @@ export function CreateUserDialog() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
-              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+              <p
+                className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}
+              >
                 {USERNAME_HINT}
               </p>
             </div>
@@ -248,8 +256,7 @@ export function ManagerAccessDialog({
   const [done, setDone] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: async () =>
-      submit({ data: { userId, role, email: mail.trim(), password } }),
+    mutationFn: async () => submit({ data: { userId, role, email: mail.trim(), password } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["profiles"] });
       await qc.invalidateQueries({ queryKey: ["pin-access"] });

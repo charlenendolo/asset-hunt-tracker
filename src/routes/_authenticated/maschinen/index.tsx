@@ -31,11 +31,14 @@ import { OverdueBadge } from "@/components/overdue-badge";
 import { InspectionBadge } from "@/components/inspection-badge";
 import { isOverdue } from "@/lib/overdue";
 import { SITE_TYPE_LABELS, SITE_TYPE_ORDER } from "@/lib/site-types";
-import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
+import {
+  MACHINE_STATUS_DB_VALUES,
+  MACHINE_STATUS_LABELS,
+  MACHINE_STATUS_ORDER,
+} from "@/lib/status";
 import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { PropertyTags } from "@/components/machine-properties";
-
 
 export const Route = createFileRoute("/_authenticated/maschinen/")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -232,7 +235,6 @@ function MachinesPage() {
         </div>
       ) : null}
 
-
       {canSelect && selectedIds.length > 0 ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
           <p className="text-sm font-medium text-foreground">
@@ -249,9 +251,7 @@ function MachinesPage() {
         </div>
       ) : null}
 
-
       <div className="mb-4 grid gap-2 rounded-xl border border-border bg-card/60 p-2 sm:grid-cols-2 xl:grid-cols-6">
-
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -303,7 +303,6 @@ function MachinesPage() {
           <option value={OVERDUE_FILTER}>Überfällig</option>
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
           <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
-
         </Select>
         <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
           <option value="name:asc">Name (A–Z)</option>
@@ -386,7 +385,11 @@ function MachinesPage() {
                     ) : null}
                     <td className="px-4 py-3">
                       <div className="flex flex-col items-start gap-1">
-                        <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
+                        <StatusBadge
+                          status={m.status}
+                          siteType={m.site?.location_type ?? null}
+                          responsibleUserId={m.responsible_user_id}
+                        />
                         {isOverdue(m) ? (
                           <OverdueBadge expectedReturnAt={m.expected_return_at} />
                         ) : null}
@@ -427,7 +430,9 @@ function MachinesPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       <span className="flex items-center gap-1.5">
-                        {m.site ? <SiteTypeIcon type={m.site.location_type} withTitle={false} /> : null}
+                        {m.site ? (
+                          <SiteTypeIcon type={m.site.location_type} withTitle={false} />
+                        ) : null}
                         {textOrDash(m.site?.name)}
                       </span>
                     </td>
@@ -462,7 +467,13 @@ function MachinesPage() {
                     <p className="truncate text-xs text-muted-foreground">
                       {m.asset_code} ·{" "}
                       <span className="inline-flex items-center gap-1 align-middle">
-                        {m.site ? <SiteTypeIcon type={m.site.location_type} className="h-3.5 w-3.5" withTitle={false} /> : null}
+                        {m.site ? (
+                          <SiteTypeIcon
+                            type={m.site.location_type}
+                            className="h-3.5 w-3.5"
+                            withTitle={false}
+                          />
+                        ) : null}
                         {textOrDash(m.site?.name)}
                       </span>
                     </p>
@@ -479,12 +490,15 @@ function MachinesPage() {
                       />
                     </span>
                   </div>
-                  <StatusBadge status={m.status} siteType={m.site?.location_type ?? null} responsibleUserId={m.responsible_user_id} />
+                  <StatusBadge
+                    status={m.status}
+                    siteType={m.site?.location_type ?? null}
+                    responsibleUserId={m.responsible_user_id}
+                  />
                 </Link>
               </li>
             ))}
           </ul>
-
 
           <div className="mt-4 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
@@ -520,7 +534,6 @@ function MachinesPage() {
         />
       ) : null}
     </AppShell>
-
   );
 }
 

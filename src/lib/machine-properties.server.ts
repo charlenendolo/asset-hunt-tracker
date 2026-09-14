@@ -53,9 +53,9 @@ export async function replaceMachineProperties(
   if (clearError) throw clearError;
 
   if (ids.length > 0) {
-    const { error } = await admin.from("machine_property_assignments").insert(
-      ids.map((propertyId) => ({ machine_id: machineId, property_id: propertyId })),
-    );
+    const { error } = await admin
+      .from("machine_property_assignments")
+      .insert(ids.map((propertyId) => ({ machine_id: machineId, property_id: propertyId })));
     if (error) throw error;
   }
 }

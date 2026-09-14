@@ -1,14 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  
-  FileText,
-  QrCode,
-  MessageSquare,
-  BadgeCheck,
-  BookOpen,
-} from "lucide-react";
+import { ArrowLeft, FileText, QrCode, MessageSquare, BadgeCheck, BookOpen } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { MachineActions } from "@/components/machine-actions";
@@ -43,7 +35,6 @@ import {
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import {
   machineStatusKey,
-
   CONDITION_LABELS,
   DEFECT_SEVERITY_LABELS,
   DEFECT_STATUS_LABELS,
@@ -230,7 +221,9 @@ function MachineDetailPage() {
               />
               <Field
                 label="Nächste Prüfung"
-                value={m.inspection_required ? formatDate(m.next_inspection_date) : "Nicht erforderlich"}
+                value={
+                  m.inspection_required ? formatDate(m.next_inspection_date) : "Nicht erforderlich"
+                }
               />
             </div>
             {m.description ? (
@@ -296,14 +289,17 @@ function MachineDetailPage() {
                     </div>
                     <span className="flex shrink-0 items-center gap-1">
                       <Pill
-                        tone={
-                          (r.status ?? "").toLowerCase() === "cancelled" ? "danger" : "neutral"
-                        }
+                        tone={(r.status ?? "").toLowerCase() === "cancelled" ? "danger" : "neutral"}
                       >
                         {labelFor(RESERVATION_STATUS_LABELS, r.status)}
                       </Pill>
                       <CancelReservationButton
-                        reservation={{ id: r.id, status: r.status, reserved_by: r.reserved_by, machine: { name: m.name } }}
+                        reservation={{
+                          id: r.id,
+                          status: r.status,
+                          reserved_by: r.reserved_by,
+                          machine: { name: m.name },
+                        }}
                         size="sm"
                         className="h-8 px-2 text-xs"
                       />
@@ -349,8 +345,7 @@ function MachineDetailPage() {
                         {d.description}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDateTime(d.created_at)} ·{" "}
-                        {labelFor(DEFECT_STATUS_LABELS, d.status)}
+                        {formatDateTime(d.created_at)} · {labelFor(DEFECT_STATUS_LABELS, d.status)}
                       </p>
                     </div>
                     <span className="flex shrink-0 flex-col items-end gap-2">
@@ -401,7 +396,6 @@ function MachineDetailPage() {
               <MachineHistory machineId={m.id} />
             </Section>
           ) : null}
-
         </div>
 
         <div className="space-y-4">
@@ -416,12 +410,9 @@ function MachineDetailPage() {
                 current_site_id: m.current_site_id,
                 responsible_user_id: m.responsible_user_id,
                 site: m.site ? { location_type: m.site.location_type } : null,
-
               }}
             />
-            {identity.isAdmin ? (
-              <EditMachineButton className="mt-3 w-full" machine={m} />
-            ) : null}
+            {identity.isAdmin ? <EditMachineButton className="mt-3 w-full" machine={m} /> : null}
             {identity.isAdmin ? (
               <ChangeSiteButton
                 className="mt-3 w-full"
@@ -429,9 +420,7 @@ function MachineDetailPage() {
                   id: m.id,
                   name: m.name,
                   current_site_id: m.current_site_id,
-                  site: m.site
-                    ? { name: m.site.name, location_type: m.site.location_type }
-                    : null,
+                  site: m.site ? { name: m.site.name, location_type: m.site.location_type } : null,
                 }}
               />
             ) : null}

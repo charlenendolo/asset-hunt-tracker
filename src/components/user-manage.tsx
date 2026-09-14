@@ -91,7 +91,6 @@ export function EditUserDialog({
     usernameInvalid ||
     (needsEmail && mail.trim().length === 0);
 
-
   return (
     <>
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
@@ -127,7 +126,9 @@ export function EditUserDialog({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
-              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+              <p
+                className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}
+              >
                 {USERNAME_HINT}
               </p>
             </div>
@@ -177,11 +178,7 @@ export function EditUserDialog({
 }
 
 /** „Benutzer löschen“ — archiviert den Zugang, Historie bleibt erhalten. */
-export function DeleteUserDialog({
-  user,
-}: {
-  user: { id: string; full_name: string | null };
-}) {
+export function DeleteUserDialog({ user }: { user: { id: string; full_name: string | null } }) {
   const qc = useQueryClient();
   const check = useServerFn(getDeletionCheck);
   const remove = useServerFn(deleteEmployeeAccount);

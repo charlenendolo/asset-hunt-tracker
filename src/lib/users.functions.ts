@@ -50,7 +50,6 @@ const createSchema = z.object({
   withPin: z.boolean().optional(),
 });
 
-
 export const createEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
@@ -64,7 +63,6 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
     const realEmail = data.email?.trim() ? data.email.trim() : null;
     // Placeholder is replaced by the stable pin+<auth uuid> address right after creation.
     const email = realEmail ?? `pin+${crypto.randomUUID()}@${INTERNAL_EMAIL_DOMAIN}`;
-
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -93,7 +91,6 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
       .update({ full_name: data.fullName, role: data.role, active: true, username })
       .eq("id", created.user.id);
     if (profileError) throw new Error("Profil konnte nicht aktualisiert werden.");
-
 
     let pin: string | null = null;
     if (data.withPin) {
@@ -136,7 +133,6 @@ export const listAccountEmails = createServerFn({ method: "GET" })
     }));
   });
 
-
 const updateSchema = z.object({
   userId: z.string().uuid(),
   role: z.enum(ROLES).optional(),
@@ -175,7 +171,6 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
         patch.username = next;
       }
     }
-
 
     // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
     const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
@@ -390,7 +385,6 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
     return { ok: true, sessionsRevoked };
   });
 
-
 /**
  * Profile directory. Role and active status are privileged columns
  * (revoked from `authenticated` at the grant level), so only verified
@@ -442,4 +436,3 @@ export const listProfiles = createServerFn({ method: "GET" })
       active: p.active as boolean | null,
     }));
   });
-
