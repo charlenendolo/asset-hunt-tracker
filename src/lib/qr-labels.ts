@@ -86,9 +86,9 @@ export const LABEL_CSS = `
 .ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;}
 .ah-label-svg{display:block;width:100%;height:100%;}
 .ah-label-svg text{font-family:Inter,Arial,Helvetica,sans-serif;fill:#000;}
-.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt * PT_TO_MM}mm;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
-.ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt * PT_TO_MM}mm;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
-.ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM}mm;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
+.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt * PT_TO_MM}px;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
+.ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt * PT_TO_MM}px;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
+.ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM}px;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
 `;
 
 function labelNameLines(machine: LabelMachine): string[] {
