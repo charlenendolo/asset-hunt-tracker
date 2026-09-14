@@ -30,18 +30,18 @@ function useLabelStyles() {
 export function MachineQrLabel({
   machine,
   format,
-  qrSvg,
+  qrPng,
   className,
 }: {
   machine: LabelMachine;
   format: LabelFormat;
-  qrSvg: string | undefined;
+  qrPng: string | undefined;
   className?: string;
 }) {
   useLabelStyles();
   const { widthMm, heightMm } = LABEL_FORMATS[format];
 
-  if (!qrSvg) {
+  if (!qrPng) {
     return (
       <div
         className={cn("rounded-sm border border-border bg-muted", className)}
@@ -54,7 +54,7 @@ export function MachineQrLabel({
   return (
     <div
       className={cn("border border-border", className)}
-      dangerouslySetInnerHTML={{ __html: labelMarkup(machine, format, qrSvg) }}
+      dangerouslySetInnerHTML={{ __html: labelMarkup(machine, format, qrPng) }}
     />
   );
 }

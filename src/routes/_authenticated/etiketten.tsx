@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { SiteCombobox } from "@/components/site-combobox";
 import { LabelPrintDialog, PrintLabelButton, QrDownloadButtons } from "@/components/label-print";
-import { useMachineQrSvgs } from "@/hooks/use-machine-qr";
+import { useMachineQrPngs } from "@/hooks/use-machine-qr";
 import { categoriesQuery, machinesQuery } from "@/lib/queries";
 import { MACHINE_STATUS_DB_VALUES, MACHINE_STATUS_LABELS, MACHINE_STATUS_ORDER } from "@/lib/status";
 import { getMachineQrUrl, labelName, type LabelMachine } from "@/lib/qr-labels";
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/etiketten")({
 
 const PAGE_SIZE = 50;
 
-function QrThumb({ svg, onClick }: { svg: string | undefined; onClick: () => void }) {
+function QrThumb({ png, onClick }: { png: string | undefined; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -55,24 +55,19 @@ function QrThumb({ svg, onClick }: { svg: string | undefined; onClick: () => voi
       aria-label="QR-Code vergrößern"
       className="h-10 w-10 shrink-0 rounded-md border border-border bg-white p-0.5"
     >
-      {svg ? (
-        <span
-          className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-      ) : null}
+      {png ? <img src={png} alt="" width={40} height={40} className="h-full w-full" /> : null}
     </button>
   );
 }
 
 function QrPreviewDialog({
   machine,
-  svg,
+  png,
   open,
   onOpenChange,
 }: {
   machine: LabelMachine | null;
-  svg: string | undefined;
+  png: string | undefined;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
@@ -88,19 +83,14 @@ function QrPreviewDialog({
               </DialogDescription>
             </DialogHeader>
             <div className="mx-auto h-56 w-56 rounded-lg border border-border bg-white p-3">
-              {svg ? (
-                <span
-                  className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
-                  dangerouslySetInnerHTML={{ __html: svg }}
-                />
-              ) : null}
+               {png ? <img src={png} alt="QR-Code zum Gerät" width={512} height={512} className="h-full w-full" /> : null}
             </div>
             <p className="break-all text-center text-xs text-muted-foreground">
               {getMachineQrUrl(machine.id)}
             </p>
             <div className="flex flex-col gap-2">
               <PrintLabelButton machine={machine} />
-              <QrDownloadButtons machine={machine} svg={svg} />
+               <QrDownloadButtons machine={machine} />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -161,7 +151,7 @@ function LabelsPage() {
 
   // QR nur für die aktuell sichtbare Seite erzeugen — skaliert auf tausende Geräte.
   const visibleIds = useMemo(() => rows.map((m) => m.id), [rows]);
-  const { svgs } = useMachineQrSvgs(identity.isAdmin ? visibleIds : []);
+  const { pngs } = useMachineQrPngs(identity.isAdmin ? visibleIds : []);
   const previewMachine = useMemo(() => {
     const m = rows.find((r) => r.id === previewId);
     return m ? { id: m.id, name: m.name, asset_code: m.asset_code } : null;
@@ -331,7 +321,7 @@ function LabelsPage() {
                 }
                 aria-label={`${m.name} auswählen`}
               />
-              <QrThumb svg={svgs[m.id]} onClick={() => setPreviewId(m.id)} />
+               <QrThumb png={pngs[m.id]} onClick={() => setPreviewId(m.id)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
                   {m.asset_code ? (
@@ -383,7 +373,7 @@ function LabelsPage() {
       <LabelPrintDialog machines={selectedMachines} open={open} onOpenChange={setOpen} />
       <QrPreviewDialog
         machine={previewMachine}
-        svg={previewMachine ? svgs[previewMachine.id] : undefined}
+         png={previewMachine ? pngs[previewMachine.id] : undefined}
         open={!!previewMachine}
         onOpenChange={(v) => {
           if (!v) setPreviewId(null);
