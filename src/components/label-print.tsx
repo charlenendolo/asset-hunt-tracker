@@ -67,7 +67,7 @@ function download(name: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
-export async function downloadLabelPng(machine: LabelMachine) {
+async function downloadLabelPng(machine: LabelMachine) {
   const qrPng = await generateMachineQrPng(machine.id);
   const labelPng = await renderLabelPng(machine, "standard", qrPng);
   download(labelFileName(machine, "png"), labelPng);
