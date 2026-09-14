@@ -25,7 +25,13 @@ import { OverdueNotice } from "@/components/overdue-badge";
 import { isOverdue } from "@/lib/overdue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
-import { formatDate, formatDateTime, formatExpectedReturn, textOrDash } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatExpectedReturn,
+  textOrDash,
+} from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import {
   machineStatusKey,
