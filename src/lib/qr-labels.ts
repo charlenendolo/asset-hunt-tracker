@@ -26,6 +26,32 @@ export const LABEL_FORMATS: Record<
   },
 };
 
+/**
+ * Kanonische Maße der sichtbaren Standardvorlage. HTML-Druck und PNG-Export
+ * leiten ihre Positionen ausschließlich hiervon ab.
+ */
+export const STANDARD_LABEL_DESIGN = {
+  paddingYmm: 1.4,
+  paddingXmm: 2,
+  gapMm: 1.6,
+  qrMm: 21,
+  infoGapMm: 0.7,
+  namePt: 8,
+  nameLineHeight: 1.1,
+  nameWeight: 500,
+  codePt: 11,
+  codeLineHeight: 1,
+  codeWeight: 700,
+  codeLetterSpacingEm: 0.03,
+  brandPt: 5,
+  brandLetterSpacingEm: 0.14,
+  brandWeight: 700,
+  brandColor: "#333333",
+  brandText: "Repenning · Geräte",
+} as const;
+
+const PT_TO_MM = 25.4 / 72;
+
 export const PRINT_MODE_LABELS: Record<PrintMode, string> = {
   labelprinter: "Etikettendrucker – 62 × 24 mm",
   a4: "A4-Bogen",
@@ -55,30 +81,71 @@ function escapeHtml(value: string): string {
 
 /** Monochromes, industrielles Etikett — identisches Markup in Vorschau und Druck. */
 export const LABEL_CSS = `
-.ah-label{box-sizing:border-box;background:#fff;color:#000;font-family:Inter,Arial,Helvetica,sans-serif;
-  display:flex;align-items:center;gap:1.6mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
+.ah-label{box-sizing:border-box;background:#fff;color:#000;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
 .ah-label *{box-sizing:border-box;}
-.ah-label--standard{width:62mm;height:24mm;padding:1.4mm 2mm;}
-.ah-qr{flex:none;width:21mm;height:21mm;background:#fff;}
-.ah-qr img{display:block;width:21mm;height:21mm;object-fit:contain;image-rendering:pixelated;}
-.ah-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:.7mm;}
-.ah-name{font-size:8pt;line-height:1.1;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;
-  -webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
-.ah-code{font-size:11pt;line-height:1;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
-.ah-brand{font-size:5pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;line-height:1;color:#333;}
+.ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;}
+.ah-label-svg{display:block;width:100%;height:100%;}
+.ah-label-svg text{font-family:Inter,Arial,Helvetica,sans-serif;fill:#000;}
+.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt * PT_TO_MM}px;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
+.ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt * PT_TO_MM}px;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
+.ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM}px;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
 `;
+
+function labelNameLines(machine: LabelMachine): string[] {
+  const words = labelName(machine).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (!line || candidate.length <= 24) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = word;
+      if (lines.length === 1) break;
+    }
+  }
+  if (lines.length < 2 && line) lines.push(line);
+  return lines.slice(0, 2).map((value) => (value.length > 27 ? `${value.slice(0, 26)}…` : value));
+}
+
+/**
+ * Kanonische Etikettenvorlage. Dieses SVG wird unverändert in Vorschau,
+ * Druck und PNG-Export verwendet.
+ */
+export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
+  const { widthMm, heightMm } = LABEL_FORMATS[format];
+  const infoX =
+    STANDARD_LABEL_DESIGN.paddingXmm + STANDARD_LABEL_DESIGN.qrMm + STANDARD_LABEL_DESIGN.gapMm;
+  const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
+  const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
+  const lines = labelNameLines(machine);
+  const nameLineMm = STANDARD_LABEL_DESIGN.namePt * PT_TO_MM * STANDARD_LABEL_DESIGN.nameLineHeight;
+  const codeLineMm = STANDARD_LABEL_DESIGN.codePt * PT_TO_MM * STANDARD_LABEL_DESIGN.codeLineHeight;
+  const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM;
+  const contentHeight =
+    lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm * 2 + codeLineMm + brandLineMm;
+  const contentTop = (heightMm - contentHeight) / 2;
+  const nameSpans = lines
+    .map(
+      (line, index) =>
+        `<tspan x="${infoX}" dy="${index === 0 ? 0 : nameLineMm}">${escapeHtml(line)}</tspan>`,
+    )
+    .join("");
+  const codeY = contentTop + lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm;
+  const brandY = codeY + codeLineMm + STANDARD_LABEL_DESIGN.infoGapMm;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="ah-label-svg" viewBox="0 0 ${widthMm} ${heightMm}" width="${widthMm}mm" height="${heightMm}mm" role="img" aria-label="Etikett ${code}">
+    <rect width="${widthMm}" height="${heightMm}" fill="#fff"/>
+    <image href="${escapeHtml(qrPng)}" x="${STANDARD_LABEL_DESIGN.paddingXmm}" y="${qrY}" width="${STANDARD_LABEL_DESIGN.qrMm}" height="${STANDARD_LABEL_DESIGN.qrMm}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>
+    <text class="ah-name" x="${infoX}" y="${contentTop}" dominant-baseline="hanging">${nameSpans}</text>
+    <text class="ah-code" x="${infoX}" y="${codeY}" dominant-baseline="hanging">${code}</text>
+    <text class="ah-brand" x="${infoX}" y="${brandY}" dominant-baseline="hanging">${STANDARD_LABEL_DESIGN.brandText.toUpperCase()}</text>
+  </svg>`;
+}
 
 /** Reines Label-Markup (ohne Styles) — Basis für Vorschau, Einzel- und Stapeldruck. */
 export function labelMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
-  const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
-  const qr = `<div class="ah-qr"><img src="${escapeHtml(qrPng)}" alt="" width="512" height="512" /></div>`;
-  return `<div class="ah-label ah-label--standard">${qr}
-    <div class="ah-info">
-      <div class="ah-name">${escapeHtml(labelName(machine))}</div>
-      <div class="ah-code">${code}</div>
-      <div class="ah-brand">Repenning · Geräte</div>
-    </div>
-  </div>`;
+  return `<div class="ah-label ah-label--${format}">${labelSvgMarkup(machine, format, qrPng)}</div>`;
 }
 
 export function sanitizeFilename(value: string): string {
@@ -93,10 +160,10 @@ export function sanitizeFilename(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export function qrFileName(machine: LabelMachine, extension: "png"): string {
+export function labelFileName(machine: LabelMachine, extension: "png"): string {
   const code = sanitizeFilename((machine.asset_code ?? "geraet").trim() || "geraet");
   const name = sanitizeFilename(labelName(machine));
-  return `${code}_${name}_QR.${extension}`;
+  return `${code}_${name}_Etikett.${extension}`;
 }
 
 /**
