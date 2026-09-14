@@ -12,7 +12,7 @@ import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/usernam
  */
 
 // Erlaubte Rollenwerte laut DB-Constraint profiles_role_check.
-const ROLES = ["admin", "site_manager", "user"] as const;
+const ROLES = ["admin", "site_manager", "warehouse_manager", "user"] as const;
 
 async function assertAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
   const { data } = await supabase.rpc("is_admin");

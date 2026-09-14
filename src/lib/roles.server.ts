@@ -10,7 +10,7 @@ type RpcClient = {
   }>;
 };
 
-export type ManagerRole = "admin" | "site_manager";
+export type ManagerRole = "admin" | "site_manager" | "warehouse_manager";
 
 export async function currentRole(supabase: unknown): Promise<string> {
   const { data } = await (supabase as RpcClient).rpc("current_profile");
@@ -25,7 +25,7 @@ export async function requireManager(
   options?: { adminOnly?: boolean; message?: string },
 ): Promise<string> {
   const role = await currentRole(supabase);
-  const allowed = options?.adminOnly ? ["admin"] : ["admin", "site_manager"];
+  const allowed = options?.adminOnly ? ["admin"] : ["admin", "site_manager", "warehouse_manager"];
   if (!allowed.includes(role)) {
     throw new Error(options?.message ?? "Dir fehlen die Rechte für diesen Vorgang.");
   }

@@ -4,7 +4,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
 
-export type AppRole = "admin" | "manager" | "user";
+export type AppRole = "admin" | "site_manager" | "warehouse_manager" | "user";
 
 /** Current auth user id (client session). */
 export function useCurrentUser() {
@@ -54,6 +54,7 @@ export function useCurrentProfile() {
       role === "site_manager" ||
       role === "manager" ||
       role === "bauleiter" ||
+      role === "warehouse_manager" ||
       role === "admin",
     isLoading: userLoading || query.isLoading,
   };

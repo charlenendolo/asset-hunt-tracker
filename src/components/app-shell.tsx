@@ -59,7 +59,7 @@ function useIsActive() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
   const { isAdmin, role } = useCurrentProfile();
-  const personal = role !== "admin" && role !== "site_manager" && role !== "bauleiter";
+  const personal = !["admin", "site_manager", "warehouse_manager", "bauleiter"].includes(role);
 
   return (
     <nav className="flex flex-col gap-0.5">
@@ -90,6 +90,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrator",
   site_manager: "Bauleiter",
+  warehouse_manager: "Lagerverwalter",
   user: "Mitarbeiter",
 };
 

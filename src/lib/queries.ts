@@ -55,6 +55,20 @@ export const accessoryNamesQuery = queryOptions({
   },
 });
 
+export const machinePropertyCatalogQuery = queryOptions({
+  queryKey: ["machine-properties", "catalog"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machine_properties")
+      .select("id, name")
+      .order("name")
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
 export const sitesQuery = queryOptions({
   queryKey: ["sites"],
   staleTime: FIVE_MIN,
@@ -153,7 +167,7 @@ export type MachineFilters = {
 
 
 export const MACHINE_LIST_SELECT =
-  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
+  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name))";
 
 export function machinesQuery(filters: MachineFilters) {
   return queryOptions({
@@ -170,8 +184,16 @@ export function machinesQuery(filters: MachineFilters) {
       }
       if (filters.search.trim()) {
         const term = `%${filters.search.trim()}%`;
+        const { data: propertyMatches, error: propertyError } = await supabase
+          .from("machine_property_assignments")
+          .select("machine_id, property:machine_properties!inner(name)")
+          .ilike("property.name", term)
+          .limit(5000);
+        if (propertyError) throw propertyError;
+        const propertyMachineIds = [...new Set((propertyMatches ?? []).map((row) => row.machine_id))];
+        const propertyClause = propertyMachineIds.length > 0 ? `,id.in.(${propertyMachineIds.join(",")})` : "";
         q = q.or(
-          `name.ilike.${term},asset_code.ilike.${term},serial_number.ilike.${term},manufacturer.ilike.${term},model.ilike.${term}`,
+          `name.ilike.${term},asset_code.ilike.${term},serial_number.ilike.${term},manufacturer.ilike.${term},model.ilike.${term}${propertyClause}`,
         );
       }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
@@ -282,13 +304,17 @@ export function machineRelationsQuery(id: string) {
   return queryOptions({
     queryKey: ["machine", id, "relations"],
     queryFn: async () => {
-      const [accessories, reservations, movements, defects, maintenance, photos] =
+      const [accessories, properties, reservations, movements, defects, maintenance, photos] =
         await Promise.all([
           supabase
             .from("accessories")
             .select("id, name, quantity, required")
             .eq("machine_id", id)
             .order("name"),
+          supabase
+            .from("machine_property_assignments")
+            .select("property:machine_properties(id, name)")
+            .eq("machine_id", id),
           supabase
             .from("reservations")
             .select(
@@ -326,13 +352,14 @@ export function machineRelationsQuery(id: string) {
             .order("is_primary", { ascending: false }),
         ]);
 
-      const firstError = [accessories, reservations, movements, defects, maintenance, photos].find(
+      const firstError = [accessories, properties, reservations, movements, defects, maintenance, photos].find(
         (r) => r.error,
       );
       if (firstError?.error) throw firstError.error;
 
       return {
         accessories: accessories.data ?? [],
+        properties: (properties.data ?? []).flatMap((row) => (row.property ? [row.property] : [])),
         reservations: reservations.data ?? [],
         movements: movements.data ?? [],
         defects: defects.data ?? [],
