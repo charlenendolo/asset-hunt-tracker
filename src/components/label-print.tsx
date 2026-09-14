@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { MachineQrLabel } from "@/components/machine-qr-label";
 import { generateMachineQrPng, useMachineQrPngs } from "@/hooks/use-machine-qr";
+import { renderLabelPng } from "@/lib/label-png";
 import {
   LABEL_FORMATS,
   PRINT_MODE_LABELS,
@@ -21,7 +22,7 @@ import {
   labelMarkup,
   labelName,
   printLabels,
-  qrFileName,
+  labelFileName,
   type LabelFormat,
   type LabelMachine,
   type PrintMode,
@@ -66,10 +67,10 @@ function download(name: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
-export async function downloadQrPng(machine: LabelMachine) {
-  const dataUrl = await generateMachineQrPng(machine.id);
-  const res = await fetch(dataUrl);
-  download(qrFileName(machine, "png"), await res.blob());
+export async function downloadLabelPng(machine: LabelMachine) {
+  const qrPng = await generateMachineQrPng(machine.id);
+  const labelPng = await renderLabelPng(machine, "standard", qrPng);
+  download(labelFileName(machine, "png"), labelPng);
 }
 
 type Step = "format" | "mode" | "preview";
@@ -308,7 +309,7 @@ export function PrintLabelButton({
   );
 }
 
-/** Einzelner PNG-Download — bewusst getrennt vom Etikettendruck. */
+/** Vollständiges Standard-Etikett als druckfertiges, verlustfreies PNG. */
 export function QrDownloadButtons({ machine }: { machine: LabelMachine }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -316,10 +317,12 @@ export function QrDownloadButtons({ machine }: { machine: LabelMachine }) {
         variant="outline"
         size="sm"
         onClick={() =>
-          void downloadQrPng(machine).catch(() => toast.error("PNG konnte nicht erzeugt werden."))
+          void downloadLabelPng(machine).catch(() =>
+            toast.error("Etikett konnte nicht als PNG erzeugt werden."),
+          )
         }
       >
-        <Download className="mr-2 h-4 w-4" /> QR-Code herunterladen (PNG)
+        <Download className="mr-2 h-4 w-4" /> Etikett als PNG herunterladen
       </Button>
     </div>
   );
