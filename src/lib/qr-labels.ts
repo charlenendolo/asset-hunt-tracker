@@ -126,7 +126,7 @@ export function printLabels(labels: string[], format: LabelFormat, mode: PrintMo
 </style></head><body><div class="sheet">
 ${labels.map((l) => `<div class="cell">${l}</div>`).join("")}
 </div>
-<script>window.onload=async function(){var images=Array.from(document.images);await Promise.all(images.map(function(img){if(img.complete&&img.naturalWidth>0)return Promise.resolve();if(img.decode)return img.decode();return new Promise(function(resolve,reject){img.onload=resolve;img.onerror=reject;});}));window.print();};<\/script>
+<script>window.onload=async function(){var images=Array.from(document.images);await Promise.all(images.map(function(img){if(img.complete&&img.naturalWidth>0)return Promise.resolve();if(img.decode)return img.decode();return new Promise(function(resolve,reject){img.onload=resolve;img.onerror=reject;});}));window.print();};${"</script>"}
 </body></html>`);
   win.document.close();
   return true;
