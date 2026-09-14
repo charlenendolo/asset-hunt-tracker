@@ -83,13 +83,29 @@ export const LABEL_CSS = `
 .ah-label *{box-sizing:border-box;}
 .ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;}
 .ah-label-svg{display:block;width:100%;height:100%;}
-.ah-info{box-sizing:border-box;width:100%;height:100%;overflow:hidden;color:#000;font-family:Inter,Arial,Helvetica,sans-serif;
-  display:flex;flex-direction:column;justify-content:center;gap:${STANDARD_LABEL_DESIGN.infoGapMm}mm;}
-.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt}pt;line-height:${STANDARD_LABEL_DESIGN.nameLineHeight};font-weight:${STANDARD_LABEL_DESIGN.nameWeight};display:-webkit-box;-webkit-line-clamp:2;
-  -webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+.ah-label-svg text{font-family:Inter,Arial,Helvetica,sans-serif;fill:#000;}
+.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt}pt;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
 .ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt}pt;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
 .ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt}pt;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
 `;
+
+function labelNameLines(machine: LabelMachine): string[] {
+  const words = labelName(machine).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (!line || candidate.length <= 24) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = word;
+      if (lines.length === 1) break;
+    }
+  }
+  if (lines.length < 2 && line) lines.push(line);
+  return lines.slice(0, 2).map((value) => (value.length > 27 ? `${value.slice(0, 26)}…` : value));
+}
 
 /**
  * Kanonische Etikettenvorlage. Dieses SVG wird unverändert in Vorschau,
@@ -99,19 +115,33 @@ export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng
   const { widthMm, heightMm } = LABEL_FORMATS[format];
   const infoX =
     STANDARD_LABEL_DESIGN.paddingXmm + STANDARD_LABEL_DESIGN.qrMm + STANDARD_LABEL_DESIGN.gapMm;
-  const infoWidth = widthMm - infoX - STANDARD_LABEL_DESIGN.paddingXmm;
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
+  const lines = labelNameLines(machine);
+  const ptMm = 25.4 / 72;
+  const nameLineMm = STANDARD_LABEL_DESIGN.namePt * ptMm * STANDARD_LABEL_DESIGN.nameLineHeight;
+  const codeLineMm = STANDARD_LABEL_DESIGN.codePt * ptMm * STANDARD_LABEL_DESIGN.codeLineHeight;
+  const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * ptMm;
+  const contentHeight =
+    lines.length * nameLineMm +
+    STANDARD_LABEL_DESIGN.infoGapMm * 2 +
+    codeLineMm +
+    brandLineMm;
+  const contentTop = (heightMm - contentHeight) / 2;
+  const nameSpans = lines
+    .map(
+      (line, index) =>
+        `<tspan x="${infoX}" dy="${index === 0 ? 0 : nameLineMm}">${escapeHtml(line)}</tspan>`,
+    )
+    .join("");
+  const codeY = contentTop + lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm;
+  const brandY = codeY + codeLineMm + STANDARD_LABEL_DESIGN.infoGapMm;
   return `<svg xmlns="http://www.w3.org/2000/svg" class="ah-label-svg" viewBox="0 0 ${widthMm} ${heightMm}" width="${widthMm}mm" height="${heightMm}mm" role="img" aria-label="Etikett ${code}">
     <rect width="${widthMm}" height="${heightMm}" fill="#fff"/>
     <image href="${escapeHtml(qrPng)}" x="${STANDARD_LABEL_DESIGN.paddingXmm}" y="${qrY}" width="${STANDARD_LABEL_DESIGN.qrMm}" height="${STANDARD_LABEL_DESIGN.qrMm}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>
-    <foreignObject x="${infoX}" y="${STANDARD_LABEL_DESIGN.paddingYmm}" width="${infoWidth}" height="${heightMm - STANDARD_LABEL_DESIGN.paddingYmm * 2}">
-      <div xmlns="http://www.w3.org/1999/xhtml" class="ah-info">
-        <div class="ah-name">${escapeHtml(labelName(machine))}</div>
-        <div class="ah-code">${code}</div>
-        <div class="ah-brand">${STANDARD_LABEL_DESIGN.brandText}</div>
-      </div>
-    </foreignObject>
+    <text class="ah-name" x="${infoX}" y="${contentTop}" dominant-baseline="hanging">${nameSpans}</text>
+    <text class="ah-code" x="${infoX}" y="${codeY}" dominant-baseline="hanging">${code}</text>
+    <text class="ah-brand" x="${infoX}" y="${brandY}" dominant-baseline="hanging">${STANDARD_LABEL_DESIGN.brandText.toUpperCase()}</text>
   </svg>`;
 }
 
