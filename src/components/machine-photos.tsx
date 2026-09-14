@@ -124,7 +124,10 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
       ) : (
         <ul className="grid grid-cols-3 gap-2">
           {items.map((p) => (
-            <li key={p.id} className="group relative overflow-hidden rounded-md border border-border">
+            <li
+              key={p.id}
+              className="group relative overflow-hidden rounded-md border border-border"
+            >
               {p.thumbUrl ? (
                 <img
                   src={p.thumbUrl}
@@ -142,7 +145,7 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
                   Hauptbild
                 </span>
               ) : null}
-              {identity.canManage ? (
+              {identity.canManageMachines ? (
                 <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1">
                   {!p.isPrimary ? (
                     <Button
@@ -173,7 +176,7 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
         </ul>
       )}
 
-      {identity.canManage ? (
+      {identity.canManageMachines ? (
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {items.length}/{MAX_PHOTOS} Fotos

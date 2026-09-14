@@ -11,7 +11,6 @@ import { localISODatePlusDays } from "@/lib/due-dates";
 import { listProfiles } from "@/lib/users.functions";
 import { getInspectionWarningDays } from "@/lib/settings.functions";
 
-
 const FIVE_MIN = 5 * 60 * 1000;
 
 /** Lightweight lists used for filters — small tables, cached long. */
@@ -27,7 +26,6 @@ export const categoriesQuery = queryOptions({
     return data ?? [];
   },
 });
-
 
 /**
  * Zubehör-Katalog für die Auswahl: eindeutige Bezeichnungen aus den bereits
@@ -52,6 +50,20 @@ export const accessoryNamesQuery = queryOptions({
       if (!seen.has(key)) seen.set(key, raw);
     }
     return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "de"));
+  },
+});
+
+export const machinePropertyCatalogQuery = queryOptions({
+  queryKey: ["machine-properties", "catalog"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machine_properties")
+      .select("id, name")
+      .order("name")
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
   },
 });
 
@@ -133,8 +145,6 @@ async function fetchAssignedSiteIds(): Promise<string[]> {
   return (data ?? []).map((s) => s.id);
 }
 
-
-
 export type MachineFilters = {
   search: string;
   categoryId: string;
@@ -151,9 +161,8 @@ export type MachineFilters = {
   inspectionWarningDays?: number;
 };
 
-
 export const MACHINE_LIST_SELECT =
-  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name)";
+  "id, asset_code, name, status, manufacturer, model, current_site_id, category_id, responsible_user_id, inspection_required, next_inspection_date, expected_return_at, category:machine_categories(id, name), site:sites(id, name, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name))";
 
 export function machinesQuery(filters: MachineFilters) {
   return queryOptions({
@@ -170,8 +179,19 @@ export function machinesQuery(filters: MachineFilters) {
       }
       if (filters.search.trim()) {
         const term = `%${filters.search.trim()}%`;
+        const { data: propertyMatches, error: propertyError } = await supabase
+          .from("machine_property_assignments")
+          .select("machine_id, property:machine_properties!inner(name)")
+          .ilike("property.name", term)
+          .limit(5000);
+        if (propertyError) throw propertyError;
+        const propertyMachineIds = [
+          ...new Set((propertyMatches ?? []).map((row) => row.machine_id)),
+        ];
+        const propertyClause =
+          propertyMachineIds.length > 0 ? `,id.in.(${propertyMachineIds.join(",")})` : "";
         q = q.or(
-          `name.ilike.${term},asset_code.ilike.${term},serial_number.ilike.${term},manufacturer.ilike.${term},model.ilike.${term}`,
+          `name.ilike.${term},asset_code.ilike.${term},serial_number.ilike.${term},manufacturer.ilike.${term},model.ilike.${term}${propertyClause}`,
         );
       }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
@@ -205,7 +225,6 @@ export function machinesQuery(filters: MachineFilters) {
         // Prüfpflichtig, aber ohne Termin — dürfen nicht unsichtbar bleiben.
         q = q.eq("inspection_required", true).is("next_inspection_date", null);
       } else if (filters.status === ASSIGNED_FILTER || filters.status === "available") {
-
         // „Zugewiesen" ist abgeleitet: verfügbar + Standorttyp Baustelle/Fahrzeug.
         const assignedSiteIds = await fetchAssignedSiteIds();
         q = q.in("status", machineStatusDbValues("available")).is("responsible_user_id", null);
@@ -213,14 +232,11 @@ export function machinesQuery(filters: MachineFilters) {
           if (assignedSiteIds.length === 0) return { rows: [], count: 0 };
           q = q.in("current_site_id", assignedSiteIds);
         } else if (assignedSiteIds.length > 0) {
-          q = q.or(
-            `current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`,
-          );
+          q = q.or(`current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`);
         }
       } else if (filters.status) {
         q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
       }
-
 
       const [column, direction] = filters.sort.split(":");
       q = q.order(column ?? "name", { ascending: direction !== "desc" });
@@ -268,7 +284,7 @@ export function machineDetailQuery(id: string) {
       const { data, error } = await supabase
         .from("machines")
         .select(
-          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name)",
+          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name))",
         )
         .eq("id", id)
         .maybeSingle();
@@ -282,13 +298,17 @@ export function machineRelationsQuery(id: string) {
   return queryOptions({
     queryKey: ["machine", id, "relations"],
     queryFn: async () => {
-      const [accessories, reservations, movements, defects, maintenance, photos] =
+      const [accessories, properties, reservations, movements, defects, maintenance, photos] =
         await Promise.all([
           supabase
             .from("accessories")
             .select("id, name, quantity, required")
             .eq("machine_id", id)
             .order("name"),
+          supabase
+            .from("machine_property_assignments")
+            .select("property:machine_properties(id, name)")
+            .eq("machine_id", id),
           supabase
             .from("reservations")
             .select(
@@ -326,13 +346,20 @@ export function machineRelationsQuery(id: string) {
             .order("is_primary", { ascending: false }),
         ]);
 
-      const firstError = [accessories, reservations, movements, defects, maintenance, photos].find(
-        (r) => r.error,
-      );
+      const firstError = [
+        accessories,
+        properties,
+        reservations,
+        movements,
+        defects,
+        maintenance,
+        photos,
+      ].find((r) => r.error);
       if (firstError?.error) throw firstError.error;
 
       return {
         accessories: accessories.data ?? [],
+        properties: (properties.data ?? []).flatMap((row) => (row.property ? [row.property] : [])),
         reservations: reservations.data ?? [],
         movements: movements.data ?? [],
         defects: defects.data ?? [],
@@ -439,7 +466,6 @@ export const reservationConflictsQuery = queryOptions({
     return data ?? [];
   },
 });
-
 
 export const maintenanceQuery = queryOptions({
   queryKey: ["maintenance", "list"],
@@ -656,7 +682,6 @@ export function inspectionCalendarQuery(fromISODate: string, toISODate: string) 
   });
 }
 
-
 /**
  * Überfällige Geräte (abgeleitet, kein gespeicherter Status): ausgeliehen und
  * expected_return_at in der Vergangenheit. Sichtbarkeit folgt der bestehenden
@@ -700,7 +725,8 @@ export function overdueMachinesQuery(userId: string | null, canSeeAll: boolean) 
 
       const nextReservation: Record<string, string> = {};
       for (const r of reservations ?? []) {
-        if (r.machine_id && !nextReservation[r.machine_id]) nextReservation[r.machine_id] = r.start_at;
+        if (r.machine_id && !nextReservation[r.machine_id])
+          nextReservation[r.machine_id] = r.start_at;
       }
       return { machines, nextReservation };
     },

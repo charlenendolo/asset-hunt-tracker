@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   BadgeCheck,
-
   Container,
   CalendarClock,
   CalendarDays,
@@ -59,12 +58,11 @@ function useIsActive() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
   const { isAdmin, role } = useCurrentProfile();
-  const personal = role !== "admin" && role !== "site_manager" && role !== "bauleiter";
+  const personal = !["admin", "site_manager", "warehouse_manager", "bauleiter"].includes(role);
 
   return (
     <nav className="flex flex-col gap-0.5">
       {NAV.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-
         <Link
           key={item.to}
           to={item.to}
@@ -82,7 +80,6 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </span>
         </Link>
       ))}
-
     </nav>
   );
 }
@@ -90,6 +87,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrator",
   site_manager: "Bauleiter",
+  warehouse_manager: "Lagerverwalter",
   user: "Mitarbeiter",
 };
 
@@ -170,10 +168,7 @@ export function AppShell({
       {/* Mobile drawer */}
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-foreground/20"
-            onClick={() => setMobileOpen(false)}
-          />
+          <div className="absolute inset-0 bg-foreground/20" onClick={() => setMobileOpen(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar shadow-xl">
             <div className="flex items-center justify-between px-5 py-5">
               <Logo size="fill" />

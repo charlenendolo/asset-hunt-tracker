@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
 import { AccessoryDraftList, type AccessoryDraft } from "@/components/accessory-picker";
+import { PropertyPicker } from "@/components/property-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { createMachine } from "@/lib/machines.functions";
@@ -46,7 +47,6 @@ type FormState = {
   lastInspectionDate: string;
   nextInspectionDate: string;
   purchaseDate: string;
-  purchasePrice: string;
 };
 
 const EMPTY: FormState = {
@@ -64,7 +64,6 @@ const EMPTY: FormState = {
   lastInspectionDate: "",
   nextInspectionDate: "",
   purchaseDate: "",
-  purchasePrice: "",
 };
 
 /** Anlage neuer Geräte — sichtbar für Administratoren und Bauleiter. */
@@ -72,7 +71,7 @@ export function AddMachineButton({ className }: { className?: string }) {
   const identity = useIdentity();
   const [open, setOpen] = useState(false);
 
-  if (identity.isLoading || !identity.canManage) return null;
+  if (identity.isLoading || !identity.canManageMachines) return null;
 
   return (
     <>
@@ -116,6 +115,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [accessories, setAccessories] = useState<AccessoryDraft[]>([]);
+  const [properties, setProperties] = useState<string[]>([]);
   const run = useServerFn(createMachine);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -140,7 +140,8 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
           lastInspectionDate: form.lastInspectionDate || null,
           nextInspectionDate: form.nextInspectionDate || null,
           purchaseDate: form.purchaseDate || null,
-          purchasePrice: form.purchasePrice ? Number(form.purchasePrice.replace(",", ".")) : null,
+          purchasePrice: null,
+          properties,
           accessories,
         },
       }),
@@ -149,6 +150,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
         qc.invalidateQueries({ queryKey: ["machines"] }),
         qc.invalidateQueries({ queryKey: ["planner"] }),
         qc.invalidateQueries({ queryKey: ["accessories", "names"] }),
+        qc.invalidateQueries({ queryKey: ["machine-properties"] }),
       ]);
       toast.success("Maschine wurde angelegt.");
       setCreated({ id: machine.id, name: machine.name });
@@ -191,6 +193,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                 onClick={() => {
                   setCreated(null);
                   setAccessories([]);
+                  setProperties([]);
                   setForm({ ...EMPTY, siteId: form.siteId, categoryId: form.categoryId });
                 }}
               >
@@ -237,10 +240,10 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                     {(categories.data ?? [])
                       .filter((c) => c.active !== false || c.id === form.categoryId)
                       .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
                   </select>
                 </Field>
                 <Field label="Standort" htmlFor="machine-site">
@@ -318,16 +321,6 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
               </Row>
 
               <Row>
-                <Field label="Anschaffungspreis (EUR)" htmlFor="purchase-price">
-                  <Input
-                    id="purchase-price"
-                    inputMode="decimal"
-                    value={form.purchasePrice}
-                    onChange={(e) => set("purchasePrice", e.target.value)}
-                    placeholder="z. B. 2450"
-                    className="h-11"
-                  />
-                </Field>
                 <div className="space-y-1.5">
                   <Label>Prüfung</Label>
                   <label className="flex h-11 items-center gap-3 rounded-md border border-border px-3">
@@ -338,6 +331,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                     <span className="text-sm">Prüfpflichtig (UVV)</span>
                   </label>
                 </div>
+                <div />
               </Row>
 
               {form.inspectionRequired ? (
@@ -372,6 +366,11 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
                   placeholder="Besonderheiten, Hinweise"
                 />
               </Field>
+
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+                <Label>Eigenschaften</Label>
+                <PropertyPicker values={properties} onChange={setProperties} />
+              </div>
 
               <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
                 <Label>Zubehör</Label>

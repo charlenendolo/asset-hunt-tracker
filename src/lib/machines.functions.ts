@@ -55,6 +55,7 @@ const createSchema = z.object({
   nextInspectionDate: optionalDate,
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
+  properties: z.array(z.string().trim().min(1).max(80)).max(30).optional().default([]),
   accessories: z
     .array(
       z.object({
@@ -72,10 +73,11 @@ export const createMachine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      message: "Nur Administratoren und Bauleiter dürfen Geräte anlegen.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(
+      context.supabase,
+      "Nur Administratoren, Bauleiter und Lagerverwalter dürfen Geräte anlegen.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const assetCode = data.assetCode.trim();
@@ -122,6 +124,20 @@ export const createMachine = createServerFn({ method: "POST" })
         throw new Error(
           "Maschine wurde nicht angelegt, weil das Zubehör nicht gespeichert werden konnte: " +
             (accessoryError as Error).message,
+        );
+      }
+    }
+
+    if (data.properties.length > 0) {
+      const { replaceMachineProperties } = await import("./machine-properties.server");
+      try {
+        await replaceMachineProperties(supabaseAdmin, inserted.id, data.properties);
+      } catch (propertyError) {
+        await supabaseAdmin.from("accessories").delete().eq("machine_id", inserted.id);
+        await supabaseAdmin.from("machines").delete().eq("id", inserted.id);
+        throw new Error(
+          "Maschine wurde nicht angelegt, weil die Eigenschaften nicht gespeichert werden konnten: " +
+            (propertyError as Error).message,
         );
       }
     }
@@ -335,10 +351,11 @@ const updateSchema = z.object({
   nextInspectionDate: optionalDate,
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
+  properties: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
 });
 
 /**
- * Stammdatenpflege durch Administratoren.
+ * Stammdatenpflege durch Administratoren, Bauleiter und Lagerverwalter.
  * Bewusst ohne Status, Verantwortlichkeit und Rückgabedatum — dafür bleiben
  * Ausleihe/Rückgabe und die administrative Zuweisung zuständig.
  * Ein Standortwechsel wird als Bewegung "transfer" protokolliert; reine
@@ -348,11 +365,8 @@ export const updateMachine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Nur Administratoren dürfen Gerätestammdaten bearbeiten.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst keine Gerätestammdaten bearbeiten.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: machine, error: readError } = await supabaseAdmin
@@ -402,6 +416,15 @@ export const updateMachine = createServerFn({ method: "POST" })
         to_site_id: nextSiteId,
         comment: "Standort über Gerätebearbeitung geändert",
       });
+    }
+
+    if (data.properties) {
+      const { replaceMachineProperties } = await import("./machine-properties.server");
+      try {
+        await replaceMachineProperties(supabaseAdmin, machine.id, data.properties);
+      } catch (propertyError) {
+        failSafely("Eigenschaften konnten nicht gespeichert werden.", propertyError, "properties");
+      }
     }
 
     return { ok: true as const };

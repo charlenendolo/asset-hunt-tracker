@@ -318,6 +318,57 @@ export type Database = {
           },
         ]
       }
+      machine_properties: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      machine_property_assignments: {
+        Row: {
+          created_at: string
+          machine_id: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          machine_id: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          machine_id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_property_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_property_assignments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "machine_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machines: {
         Row: {
           active: boolean

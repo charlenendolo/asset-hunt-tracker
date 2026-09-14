@@ -25,6 +25,7 @@ import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/usernam
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
   { value: "site_manager", label: "Bauleiter" },
+  { value: "warehouse_manager", label: "Lagerverwalter" },
   { value: "admin", label: "Administrator" },
 ] as const;
 
@@ -83,13 +84,12 @@ export function EditUserDialog({
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
   const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
-  const needsEmail = role !== "user";
+  const needsEmail = role === "site_manager" || role === "admin";
   const invalid =
     fullName.trim().length < 2 ||
     mailInvalid ||
     usernameInvalid ||
     (needsEmail && mail.trim().length === 0);
-
 
   return (
     <>
@@ -126,7 +126,9 @@ export function EditUserDialog({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
-              <p className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+              <p
+                className={`text-xs ${usernameInvalid ? "text-destructive" : "text-muted-foreground"}`}
+              >
                 {USERNAME_HINT}
               </p>
             </div>
@@ -136,7 +138,7 @@ export function EditUserDialog({
                 id={`e-mail-${user.id}`}
                 type="email"
                 className="h-11"
-                placeholder={role === "user" ? "Optional bei PIN-Zugang" : "Pflicht für Bauleiter"}
+                placeholder={needsEmail ? "Pflicht für Bauleiter/Admin" : "Optional"}
                 value={mail}
                 onChange={(e) => setMail(e.target.value)}
               />
@@ -176,11 +178,7 @@ export function EditUserDialog({
 }
 
 /** „Benutzer löschen“ — archiviert den Zugang, Historie bleibt erhalten. */
-export function DeleteUserDialog({
-  user,
-}: {
-  user: { id: string; full_name: string | null };
-}) {
+export function DeleteUserDialog({ user }: { user: { id: string; full_name: string | null } }) {
   const qc = useQueryClient();
   const check = useServerFn(getDeletionCheck);
   const remove = useServerFn(deleteEmployeeAccount);

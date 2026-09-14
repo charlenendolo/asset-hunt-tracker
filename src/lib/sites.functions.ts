@@ -48,7 +48,6 @@ export const createSite = createServerFn({ method: "POST" })
     return created;
   });
 
-
 const updateSiteSchema = z.object({
   siteId: z.string().uuid(),
   name: z.string().trim().min(2).max(120),

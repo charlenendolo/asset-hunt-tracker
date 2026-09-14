@@ -11,7 +11,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Die bestehenden RLS-Policies auf public.machine_photos bleiben unverändert.
  */
 const BUCKET = "machine-photos";
-const MANAGE_ROLES = ["admin", "site_manager", "manager", "bauleiter"];
+const MANAGE_ROLES = ["admin", "site_manager", "warehouse_manager", "manager", "bauleiter"];
 const MAX_PHOTOS = 8;
 const SIGNED_URL_TTL = 60 * 60;
 
@@ -27,7 +27,12 @@ function signedUrlMap(entries: SignedEntry[] | null) {
   return map;
 }
 
-async function requireManager(context: { supabase: any; userId: string }) {
+async function requireManager(context: {
+  supabase: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >;
+  userId: string;
+}) {
   const { data: profile } = await context.supabase.rpc("current_profile");
   const row = Array.isArray(profile) ? profile[0] : profile;
   const role = String(row?.role ?? "").toLowerCase();
@@ -146,7 +151,7 @@ export const createPhotoUploadTicket = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    await requireManager(context as { supabase: any; userId: string });
+    await requireManager(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { count } = await supabaseAdmin
@@ -187,7 +192,7 @@ export const confirmMachinePhoto = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    await requireManager(context as { supabase: any; userId: string });
+    await requireManager(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Pfad muss serverseitig zur Maschine gehören.
@@ -222,7 +227,7 @@ export const setPrimaryMachinePhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ photoId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await requireManager(context as { supabase: any; userId: string });
+    await requireManager(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: photo } = await supabaseAdmin
@@ -249,7 +254,7 @@ export const deleteMachinePhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ photoId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await requireManager(context as { supabase: any; userId: string });
+    await requireManager(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: photo } = await supabaseAdmin

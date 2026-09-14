@@ -32,6 +32,15 @@ export async function requireManager(
   return role;
 }
 
+/** Gerätebezogene Stammpflege: zusätzlich für Lagerverwalter. */
+export async function requireDeviceManager(supabase: unknown, message?: string): Promise<string> {
+  const role = await currentRole(supabase);
+  if (!["admin", "site_manager", "warehouse_manager"].includes(role)) {
+    throw new Error(message ?? "Dir fehlen die Rechte für diesen Vorgang.");
+  }
+  return role;
+}
+
 /**
  * Zero-Trust-Basisprüfung für jede authentifizierte Aktion.
  * Ein Zugriffstoken bleibt nach einer Deaktivierung bis zum Ablauf technisch

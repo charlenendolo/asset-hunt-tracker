@@ -32,12 +32,14 @@ export const Route = createFileRoute("/_authenticated/benutzer")({
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrator",
   site_manager: "Bauleiter",
+  warehouse_manager: "Lagerverwalter",
   user: "Mitarbeiter",
 };
 
 function roleTone(role: string) {
   if (role === "admin") return "primary" as const;
   if (role === "site_manager") return "warning" as const;
+  if (role === "warehouse_manager") return "success" as const;
   return "neutral" as const;
 }
 
@@ -79,13 +81,16 @@ function UsersPage() {
     );
   });
 
-  function accessLabel(row: { id: string; has_password?: boolean | null; username?: string | null }) {
+  function accessLabel(row: {
+    id: string;
+    has_password?: boolean | null;
+    username?: string | null;
+  }) {
     const pin = pinById.get(row.id);
     if (row.has_password) return { text: "Passwort aktiv", tone: "success" as const };
     if (pin) return { text: "Nur PIN – Passwort fehlt", tone: "warning" as const };
     return { text: "Kein Zugang", tone: "warning" as const };
   }
-
 
   return (
     <AppShell
@@ -111,6 +116,7 @@ function UsersPage() {
             <option value="all">Alle Rollen</option>
             <option value="admin">Administrator</option>
             <option value="site_manager">Bauleiter</option>
+            <option value="warehouse_manager">Lagerverwalter</option>
             <option value="user">Mitarbeiter</option>
           </select>
           <select
@@ -214,7 +220,6 @@ function UsersPage() {
                         </div>
                       </td>
                     ) : null}
-
                   </tr>
                 ))}
               </tbody>

@@ -7,8 +7,10 @@ export type Identity = {
   role: string;
   isAdmin: boolean;
   isSiteManager: boolean;
+  isWarehouseManager: boolean;
   /** Managers may act on machines they are not personally responsible for. */
   canManage: boolean;
+  canManageMachines: boolean;
   isLoading: boolean;
 };
 
@@ -23,6 +25,7 @@ export function useIdentity(): Identity {
   const isAdmin = normalized === "admin";
   const isSiteManager =
     normalized === "site_manager" || normalized === "bauleiter" || normalized === "manager";
+  const isWarehouseManager = normalized === "warehouse_manager";
 
   return {
     userId: profile?.id ?? user?.id ?? null,
@@ -30,7 +33,9 @@ export function useIdentity(): Identity {
     role: normalized,
     isAdmin,
     isSiteManager,
+    isWarehouseManager,
     canManage: isAdmin || isSiteManager,
+    canManageMachines: isAdmin || isSiteManager || isWarehouseManager,
     isLoading,
   };
 }
