@@ -123,10 +123,7 @@ export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng
   const codeLineMm = STANDARD_LABEL_DESIGN.codePt * ptMm * STANDARD_LABEL_DESIGN.codeLineHeight;
   const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * ptMm;
   const contentHeight =
-    lines.length * nameLineMm +
-    STANDARD_LABEL_DESIGN.infoGapMm * 2 +
-    codeLineMm +
-    brandLineMm;
+    lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm * 2 + codeLineMm + brandLineMm;
   const contentTop = (heightMm - contentHeight) / 2;
   const nameSpans = lines
     .map(
