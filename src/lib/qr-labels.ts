@@ -97,7 +97,8 @@ export const LABEL_CSS = `
  */
 export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
   const { widthMm, heightMm } = LABEL_FORMATS[format];
-  const infoX = STANDARD_LABEL_DESIGN.paddingXmm + STANDARD_LABEL_DESIGN.qrMm + STANDARD_LABEL_DESIGN.gapMm;
+  const infoX =
+    STANDARD_LABEL_DESIGN.paddingXmm + STANDARD_LABEL_DESIGN.qrMm + STANDARD_LABEL_DESIGN.gapMm;
   const infoWidth = widthMm - infoX - STANDARD_LABEL_DESIGN.paddingXmm;
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
