@@ -10,7 +10,7 @@ import { machineQrUrl } from "@/lib/app-url";
 /** Zentraler Helfer — jede QR-Erzeugung muss diesen verwenden. */
 export const getMachineQrUrl = (machineId: string): string => machineQrUrl(machineId);
 
-export type LabelFormat = "standard" | "compact";
+export type LabelFormat = "standard";
 export type PrintMode = "labelprinter" | "a4";
 
 export const LABEL_FORMATS: Record<
@@ -19,22 +19,15 @@ export const LABEL_FORMATS: Record<
 > = {
   standard: {
     key: "standard",
-    label: "Standard – 24 mm",
+    label: "Standard – 62 mm",
     hint: "QR + Maschinenname + Gerätenummer",
     widthMm: 62,
-    heightMm: 24,
-  },
-  compact: {
-    key: "compact",
-    label: "Kompakt – 24 mm",
-    hint: "QR + Gerätenummer",
-    widthMm: 38,
     heightMm: 24,
   },
 };
 
 export const PRINT_MODE_LABELS: Record<PrintMode, string> = {
-  labelprinter: "Etikettendrucker – 24 mm",
+  labelprinter: "Etikettendrucker – 62 × 24 mm",
   a4: "A4-Bogen",
 };
 
@@ -66,29 +59,19 @@ export const LABEL_CSS = `
   display:flex;align-items:center;gap:1.6mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
 .ah-label *{box-sizing:border-box;}
 .ah-label--standard{width:62mm;height:24mm;padding:1.4mm 2mm;}
-.ah-label--compact{width:38mm;height:24mm;padding:1.4mm 1.6mm;}
 .ah-qr{flex:none;width:21mm;height:21mm;background:#fff;}
-.ah-qr svg{display:block;width:100%;height:100%;shape-rendering:crispEdges;}
+.ah-qr img{display:block;width:21mm;height:21mm;object-fit:contain;image-rendering:pixelated;}
 .ah-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:.7mm;}
 .ah-name{font-size:8pt;line-height:1.1;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;
   -webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
 .ah-code{font-size:11pt;line-height:1;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
-.ah-label--compact .ah-code{font-size:10pt;}
 .ah-brand{font-size:5pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;line-height:1;color:#333;}
 `;
 
 /** Reines Label-Markup (ohne Styles) — Basis für Vorschau, Einzel- und Stapeldruck. */
-export function labelMarkup(
-  machine: LabelMachine,
-  format: LabelFormat,
-  qrSvg: string,
-): string {
+export function labelMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
-  const qr = `<div class="ah-qr">${qrSvg}</div>`;
-  if (format === "compact") {
-    return `<div class="ah-label ah-label--compact">${qr}
-      <div class="ah-info"><div class="ah-code">${code}</div></div></div>`;
-  }
+  const qr = `<div class="ah-qr"><img src="${escapeHtml(qrPng)}" alt="" width="512" height="512" /></div>`;
   return `<div class="ah-label ah-label--standard">${qr}
     <div class="ah-info">
       <div class="ah-name">${escapeHtml(labelName(machine))}</div>
@@ -110,7 +93,7 @@ export function sanitizeFilename(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export function qrFileName(machine: LabelMachine, extension: "svg" | "png"): string {
+export function qrFileName(machine: LabelMachine, extension: "png"): string {
   const code = sanitizeFilename((machine.asset_code ?? "geraet").trim() || "geraet");
   const name = sanitizeFilename(labelName(machine));
   return `${code}_${name}_QR.${extension}`;
@@ -120,11 +103,7 @@ export function qrFileName(machine: LabelMachine, extension: "svg" | "png"): str
  * Standardbasierter Browserdruck — kein Druckertreiber ist fest verdrahtet.
  * Eigenes Fenster, damit weder App-Navigation noch Dialog-Styles im Druck landen.
  */
-export function printLabels(
-  labels: string[],
-  format: LabelFormat,
-  mode: PrintMode,
-): boolean {
+export function printLabels(labels: string[], format: LabelFormat, mode: PrintMode): boolean {
   if (labels.length === 0) return false;
   const win = window.open("", "_blank", "width=720,height=820");
   if (!win) return false;
@@ -147,7 +126,7 @@ export function printLabels(
 </style></head><body><div class="sheet">
 ${labels.map((l) => `<div class="cell">${l}</div>`).join("")}
 </div>
-<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+<script>window.onload=async function(){var images=Array.from(document.images);await Promise.all(images.map(function(img){if(img.complete&&img.naturalWidth>0)return Promise.resolve();if(img.decode)return img.decode();return new Promise(function(resolve,reject){img.onload=resolve;img.onerror=reject;});}));window.print();};${"</script>"}
 </body></html>`);
   win.document.close();
   return true;

@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MachineQrLabel } from "@/components/machine-qr-label";
-import { useMachineQrSvgs } from "@/hooks/use-machine-qr";
+import { generateMachineQrPng, useMachineQrPngs } from "@/hooks/use-machine-qr";
 import {
   LABEL_FORMATS,
   PRINT_MODE_LABELS,
@@ -66,18 +66,8 @@ function download(name: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
-export async function downloadQrSvg(machine: LabelMachine, svg: string) {
-  download(qrFileName(machine, "svg"), new Blob([svg], { type: "image/svg+xml" }));
-}
-
 export async function downloadQrPng(machine: LabelMachine) {
-  const { default: QRCode } = await import("qrcode");
-  const dataUrl = await QRCode.toDataURL(getMachineQrUrl(machine.id), {
-    width: 1024,
-    margin: 2,
-    errorCorrectionLevel: "M",
-    color: { dark: "#000000", light: "#FFFFFF" },
-  });
+  const dataUrl = await generateMachineQrPng(machine.id);
   const res = await fetch(dataUrl);
   download(qrFileName(machine, "png"), await res.blob());
 }
@@ -115,26 +105,32 @@ export function LabelPrintDialog({
     () => (open && step === "preview" ? printable.slice(0, 1000).map((m) => m.id) : []),
     [open, step, printable],
   );
-  const { svgs, failed, isLoading } = useMachineQrSvgs(ids);
+  const { pngs, failed, isLoading } = useMachineQrPngs(ids);
 
-  const ready = printable.filter((m) => svgs[m.id]);
+  const ready = printable.filter((m) => pngs[m.id]);
   const preview = ready.slice(0, 12);
 
   function handlePrint() {
+    if (isLoading) {
+      toast.error("Die QR-Codes werden noch erzeugt. Bitte kurz warten.");
+      return;
+    }
     if (ready.length === 0) {
       toast.error("Keine druckbaren Etiketten vorhanden.");
       return;
     }
-    const ok = printLabels(
-      ready.map((m) => labelMarkup(m, format, svgs[m.id]!)),
-      format,
-      mode,
-    );
+    const labels = ready.flatMap((m) => {
+      const png = pngs[m.id];
+      return png ? [labelMarkup(m, format, png)] : [];
+    });
+    const ok = printLabels(labels, format, mode);
     if (!ok) {
       toast.error("Druckfenster wurde blockiert. Bitte Pop-ups für diese Seite erlauben.");
       return;
     }
-    toast.success(`${ready.length} Etikett${ready.length === 1 ? "" : "en"} an den Druck übergeben.`);
+    toast.success(
+      `${ready.length} Etikett${ready.length === 1 ? "" : "en"} an den Druck übergeben.`,
+    );
   }
 
   return (
@@ -235,14 +231,22 @@ export function LabelPrintDialog({
                   <p className="text-xs text-muted-foreground">Keine druckbaren Etiketten.</p>
                 ) : (
                   preview.map((m) => (
-                    <MachineQrLabel key={m.id} machine={m} format={format} qrSvg={svgs[m.id]} />
+                    <MachineQrLabel key={m.id} machine={m} format={format} qrPng={pngs[m.id]} />
                   ))
                 )}
               </div>
               {failed.length > 0 ? (
-                <p className="mt-2 text-xs text-status-defect">
-                  {failed.length} QR-Code konnte nicht erzeugt werden.
-                </p>
+                <div className="mt-2 text-xs text-status-defect">
+                  <p>{failed.length} QR-Code konnte nicht erzeugt werden:</p>
+                  <ul className="mt-1 list-inside list-disc">
+                    {printable
+                      .filter((machine) => failed.includes(machine.id))
+                      .slice(0, 8)
+                      .map((machine) => (
+                        <li key={machine.id}>{labelName(machine)}</li>
+                      ))}
+                  </ul>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -270,7 +274,7 @@ export function LabelPrintDialog({
               <Button variant="outline" onClick={() => setStep("mode")}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
               </Button>
-              <Button onClick={handlePrint} disabled={ready.length === 0}>
+              <Button onClick={handlePrint} disabled={isLoading || ready.length === 0}>
                 <Printer className="mr-2 h-4 w-4" /> Drucken
               </Button>
             </>
@@ -304,24 +308,10 @@ export function PrintLabelButton({
   );
 }
 
-/** Einzelner QR-Download (SVG/PNG) — bewusst getrennt vom Etikettendruck. */
-export function QrDownloadButtons({
-  machine,
-  svg,
-}: {
-  machine: LabelMachine;
-  svg: string | undefined;
-}) {
+/** Einzelner PNG-Download — bewusst getrennt vom Etikettendruck. */
+export function QrDownloadButtons({ machine }: { machine: LabelMachine }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!svg}
-        onClick={() => void downloadQrSvg(machine, svg!)}
-      >
-        <Download className="mr-2 h-4 w-4" /> QR-Code herunterladen (SVG)
-      </Button>
       <Button
         variant="outline"
         size="sm"
@@ -329,7 +319,7 @@ export function QrDownloadButtons({
           void downloadQrPng(machine).catch(() => toast.error("PNG konnte nicht erzeugt werden."))
         }
       >
-        <Download className="mr-2 h-4 w-4" /> PNG
+        <Download className="mr-2 h-4 w-4" /> QR-Code herunterladen (PNG)
       </Button>
     </div>
   );
