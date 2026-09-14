@@ -50,6 +50,8 @@ export const STANDARD_LABEL_DESIGN = {
   brandText: "Repenning · Geräte",
 } as const;
 
+const PT_TO_MM = 25.4 / 72;
+
 export const PRINT_MODE_LABELS: Record<PrintMode, string> = {
   labelprinter: "Etikettendrucker – 62 × 24 mm",
   a4: "A4-Bogen",
@@ -84,9 +86,9 @@ export const LABEL_CSS = `
 .ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;}
 .ah-label-svg{display:block;width:100%;height:100%;}
 .ah-label-svg text{font-family:Inter,Arial,Helvetica,sans-serif;fill:#000;}
-.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt}pt;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
-.ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt}pt;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
-.ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt}pt;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
+.ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt * PT_TO_MM}mm;font-weight:${STANDARD_LABEL_DESIGN.nameWeight};}
+.ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt * PT_TO_MM}mm;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
+.ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM}mm;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
 `;
 
 function labelNameLines(machine: LabelMachine): string[] {
@@ -118,10 +120,11 @@ export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
   const lines = labelNameLines(machine);
-  const ptMm = 25.4 / 72;
-  const nameLineMm = STANDARD_LABEL_DESIGN.namePt * ptMm * STANDARD_LABEL_DESIGN.nameLineHeight;
-  const codeLineMm = STANDARD_LABEL_DESIGN.codePt * ptMm * STANDARD_LABEL_DESIGN.codeLineHeight;
-  const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * ptMm;
+  const nameLineMm =
+    STANDARD_LABEL_DESIGN.namePt * PT_TO_MM * STANDARD_LABEL_DESIGN.nameLineHeight;
+  const codeLineMm =
+    STANDARD_LABEL_DESIGN.codePt * PT_TO_MM * STANDARD_LABEL_DESIGN.codeLineHeight;
+  const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM;
   const contentHeight =
     lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm * 2 + codeLineMm + brandLineMm;
   const contentTop = (heightMm - contentHeight) / 2;
