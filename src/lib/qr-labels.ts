@@ -79,30 +79,44 @@ function escapeHtml(value: string): string {
 
 /** Monochromes, industrielles Etikett — identisches Markup in Vorschau und Druck. */
 export const LABEL_CSS = `
-.ah-label{box-sizing:border-box;background:#fff;color:#000;font-family:Inter,Arial,Helvetica,sans-serif;
-  display:flex;align-items:center;gap:${STANDARD_LABEL_DESIGN.gapMm}mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
+.ah-label{box-sizing:border-box;background:#fff;color:#000;overflow:hidden;break-inside:avoid;page-break-inside:avoid;}
 .ah-label *{box-sizing:border-box;}
-.ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;padding:${STANDARD_LABEL_DESIGN.paddingYmm}mm ${STANDARD_LABEL_DESIGN.paddingXmm}mm;}
-.ah-qr{flex:none;width:${STANDARD_LABEL_DESIGN.qrMm}mm;height:${STANDARD_LABEL_DESIGN.qrMm}mm;background:#fff;}
-.ah-qr img{display:block;width:${STANDARD_LABEL_DESIGN.qrMm}mm;height:${STANDARD_LABEL_DESIGN.qrMm}mm;object-fit:contain;image-rendering:pixelated;}
-.ah-info{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center;gap:${STANDARD_LABEL_DESIGN.infoGapMm}mm;}
+.ah-label--standard{width:${LABEL_FORMATS.standard.widthMm}mm;height:${LABEL_FORMATS.standard.heightMm}mm;}
+.ah-label-svg{display:block;width:100%;height:100%;}
+.ah-info{box-sizing:border-box;width:100%;height:100%;overflow:hidden;color:#000;font-family:Inter,Arial,Helvetica,sans-serif;
+  display:flex;flex-direction:column;justify-content:center;gap:${STANDARD_LABEL_DESIGN.infoGapMm}mm;}
 .ah-name{font-size:${STANDARD_LABEL_DESIGN.namePt}pt;line-height:${STANDARD_LABEL_DESIGN.nameLineHeight};font-weight:${STANDARD_LABEL_DESIGN.nameWeight};display:-webkit-box;-webkit-line-clamp:2;
   -webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
 .ah-code{font-size:${STANDARD_LABEL_DESIGN.codePt}pt;line-height:${STANDARD_LABEL_DESIGN.codeLineHeight};font-weight:${STANDARD_LABEL_DESIGN.codeWeight};letter-spacing:${STANDARD_LABEL_DESIGN.codeLetterSpacingEm}em;white-space:nowrap;}
 .ah-brand{font-size:${STANDARD_LABEL_DESIGN.brandPt}pt;letter-spacing:${STANDARD_LABEL_DESIGN.brandLetterSpacingEm}em;text-transform:uppercase;font-weight:${STANDARD_LABEL_DESIGN.brandWeight};line-height:1;color:${STANDARD_LABEL_DESIGN.brandColor};}
 `;
 
+/**
+ * Kanonische Etikettenvorlage. Dieses SVG wird unverändert in Vorschau,
+ * Druck und PNG-Export verwendet.
+ */
+export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
+  const { widthMm, heightMm } = LABEL_FORMATS[format];
+  const infoX = STANDARD_LABEL_DESIGN.paddingXmm + STANDARD_LABEL_DESIGN.qrMm + STANDARD_LABEL_DESIGN.gapMm;
+  const infoWidth = widthMm - infoX - STANDARD_LABEL_DESIGN.paddingXmm;
+  const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
+  const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="ah-label-svg" viewBox="0 0 ${widthMm} ${heightMm}" width="${widthMm}mm" height="${heightMm}mm" role="img" aria-label="Etikett ${code}">
+    <rect width="${widthMm}" height="${heightMm}" fill="#fff"/>
+    <image href="${escapeHtml(qrPng)}" x="${STANDARD_LABEL_DESIGN.paddingXmm}" y="${qrY}" width="${STANDARD_LABEL_DESIGN.qrMm}" height="${STANDARD_LABEL_DESIGN.qrMm}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>
+    <foreignObject x="${infoX}" y="${STANDARD_LABEL_DESIGN.paddingYmm}" width="${infoWidth}" height="${heightMm - STANDARD_LABEL_DESIGN.paddingYmm * 2}">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="ah-info">
+        <div class="ah-name">${escapeHtml(labelName(machine))}</div>
+        <div class="ah-code">${code}</div>
+        <div class="ah-brand">${STANDARD_LABEL_DESIGN.brandText}</div>
+      </div>
+    </foreignObject>
+  </svg>`;
+}
+
 /** Reines Label-Markup (ohne Styles) — Basis für Vorschau, Einzel- und Stapeldruck. */
 export function labelMarkup(machine: LabelMachine, format: LabelFormat, qrPng: string): string {
-  const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
-  const qr = `<div class="ah-qr"><img src="${escapeHtml(qrPng)}" alt="" width="512" height="512" /></div>`;
-  return `<div class="ah-label ah-label--standard">${qr}
-    <div class="ah-info">
-      <div class="ah-name">${escapeHtml(labelName(machine))}</div>
-      <div class="ah-code">${code}</div>
-      <div class="ah-brand">${STANDARD_LABEL_DESIGN.brandText}</div>
-    </div>
-  </div>`;
+  return `<div class="ah-label ah-label--${format}">${labelSvgMarkup(machine, format, qrPng)}</div>`;
 }
 
 export function sanitizeFilename(value: string): string {
