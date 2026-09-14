@@ -111,6 +111,10 @@ export function LabelPrintDialog({
   const preview = ready.slice(0, 12);
 
   function handlePrint() {
+    if (isLoading) {
+      toast.error("Die QR-Codes werden noch erzeugt. Bitte kurz warten.");
+      return;
+    }
     if (ready.length === 0) {
       toast.error("Keine druckbaren Etiketten vorhanden.");
       return;
@@ -230,9 +234,17 @@ export function LabelPrintDialog({
                 )}
               </div>
               {failed.length > 0 ? (
-                <p className="mt-2 text-xs text-status-defect">
-                  {failed.length} QR-Code konnte nicht erzeugt werden.
-                </p>
+                <div className="mt-2 text-xs text-status-defect">
+                  <p>{failed.length} QR-Code konnte nicht erzeugt werden:</p>
+                  <ul className="mt-1 list-inside list-disc">
+                    {printable
+                      .filter((machine) => failed.includes(machine.id))
+                      .slice(0, 8)
+                      .map((machine) => (
+                        <li key={machine.id}>{labelName(machine)}</li>
+                      ))}
+                  </ul>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -260,7 +272,7 @@ export function LabelPrintDialog({
               <Button variant="outline" onClick={() => setStep("mode")}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
               </Button>
-              <Button onClick={handlePrint} disabled={ready.length === 0}>
+               <Button onClick={handlePrint} disabled={isLoading || ready.length === 0}>
                 <Printer className="mr-2 h-4 w-4" /> Drucken
               </Button>
             </>
@@ -294,7 +306,7 @@ export function PrintLabelButton({
   );
 }
 
-/** Einzelner QR-Download (SVG/PNG) — bewusst getrennt vom Etikettendruck. */
+/** Einzelner PNG-Download — bewusst getrennt vom Etikettendruck. */
 export function QrDownloadButtons({
   machine,
 }: {

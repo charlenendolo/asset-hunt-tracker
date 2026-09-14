@@ -83,14 +83,22 @@ function QrPreviewDialog({
               </DialogDescription>
             </DialogHeader>
             <div className="mx-auto h-56 w-56 rounded-lg border border-border bg-white p-3">
-               {png ? <img src={png} alt="QR-Code zum Gerät" width={512} height={512} className="h-full w-full" /> : null}
+              {png ? (
+                <img
+                  src={png}
+                  alt="QR-Code zum Gerät"
+                  width={512}
+                  height={512}
+                  className="h-full w-full"
+                />
+              ) : null}
             </div>
             <p className="break-all text-center text-xs text-muted-foreground">
               {getMachineQrUrl(machine.id)}
             </p>
             <div className="flex flex-col gap-2">
               <PrintLabelButton machine={machine} />
-               <QrDownloadButtons machine={machine} />
+              <QrDownloadButtons machine={machine} />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>

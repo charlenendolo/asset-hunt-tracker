@@ -27,7 +27,7 @@ export const LABEL_FORMATS: Record<
 };
 
 export const PRINT_MODE_LABELS: Record<PrintMode, string> = {
-  labelprinter: "Etikettendrucker – 24 mm",
+  labelprinter: "Etikettendrucker – 62 × 24 mm",
   a4: "A4-Bogen",
 };
 
@@ -97,7 +97,7 @@ export function sanitizeFilename(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export function qrFileName(machine: LabelMachine, extension: "svg" | "png"): string {
+export function qrFileName(machine: LabelMachine, extension: "png"): string {
   const code = sanitizeFilename((machine.asset_code ?? "geraet").trim() || "geraet");
   const name = sanitizeFilename(labelName(machine));
   return `${code}_${name}_QR.${extension}`;

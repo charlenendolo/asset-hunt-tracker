@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 
 import { QrCode as QrIcon, Maximize2 } from "lucide-react";
 
@@ -12,20 +11,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PrintLabelButton } from "@/components/label-print";
+import { generateMachineQrPng } from "@/hooks/use-machine-qr";
 import { isTemporaryBaseUrl } from "@/lib/app-url";
 import { getMachineQrUrl } from "@/lib/qr-labels";
 
-function useQrDataUrl(value: string, size: number) {
+function useMachineQrPng(machineId: string) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    if (!value) return;
-    QRCode.toDataURL(value, {
-      width: size,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#101828", light: "#FFFFFF" },
-    })
+    if (!machineId) return;
+    generateMachineQrPng(machineId)
       .then((url) => {
         if (active) setSrc(url);
       })
@@ -35,20 +30,20 @@ function useQrDataUrl(value: string, size: number) {
     return () => {
       active = false;
     };
-  }, [value, size]);
+  }, [machineId]);
   return src;
 }
 
 export function QrImage({
-  value,
+  machineId,
   size = 220,
   className,
 }: {
-  value: string;
+  machineId: string;
   size?: number;
   className?: string;
 }) {
-  const src = useQrDataUrl(value, size * 2);
+  const src = useMachineQrPng(machineId);
   if (!src) {
     return (
       <div
@@ -91,7 +86,7 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
           className="rounded-lg border border-border bg-white p-2"
           aria-label="QR-Code vergrößern"
         >
-          <QrImage value={url} size={128} />
+           <QrImage machineId={machine.id} size={128} />
         </button>
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -119,7 +114,7 @@ export function MachineQrSection({ machine }: { machine: Machine }) {
           </DialogHeader>
           <div className="flex flex-col items-center gap-4">
             <div className="rounded-xl border border-border bg-white p-4">
-              <QrImage value={url} size={240} />
+               <QrImage machineId={machine.id} size={240} />
             </div>
             <p className="break-all text-center text-xs text-muted-foreground">{url}</p>
             <PrintLabelButton machine={machine} className="w-full" variant="default" size="default" />
