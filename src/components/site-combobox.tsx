@@ -70,7 +70,7 @@ export function SiteCombobox({
     [rows, typeFilter],
   );
   const selected = rows.find((s) => s.id === value) ?? null;
-  const canCreate = allowCreate && identity.canManage;
+  const canCreate = allowCreate && identity.canManageMachines;
 
   const grouped = useMemo(
     () =>

@@ -30,6 +30,7 @@ import {
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
   { value: "site_manager", label: "Bauleiter" },
+  { value: "warehouse_manager", label: "Lagerverwalter" },
   { value: "admin", label: "Administrator" },
 ] as const;
 

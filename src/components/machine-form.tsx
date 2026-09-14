@@ -72,7 +72,7 @@ export function AddMachineButton({ className }: { className?: string }) {
   const identity = useIdentity();
   const [open, setOpen] = useState(false);
 
-  if (identity.isLoading || !identity.canManage) return null;
+  if (identity.isLoading || !identity.canManageMachines) return null;
 
   return (
     <>

@@ -12,11 +12,8 @@ export const setMachineProperties = createServerFn({ method: "POST" })
     z.object({ machineId: z.string().uuid(), names: propertyNames }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Nur Administratoren dürfen Eigenschaften bearbeiten.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst keine Eigenschaften bearbeiten.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { replaceMachineProperties } = await import("./machine-properties.server");
     try {

@@ -78,7 +78,7 @@ export function MachineAccessories({ machineId }: { machineId: string }) {
   });
 
   const rows = (relations.data?.accessories ?? []) as Row[];
-  const canManage = identity.canManage;
+  const canManage = identity.canManageMachines;
 
   if (relations.isLoading) return <Skeleton className="h-16 w-full" />;
 

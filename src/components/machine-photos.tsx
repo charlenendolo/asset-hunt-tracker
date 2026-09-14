@@ -142,7 +142,7 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
                   Hauptbild
                 </span>
               ) : null}
-              {identity.canManage ? (
+              {identity.canManageMachines ? (
                 <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1">
                   {!p.isPrimary ? (
                     <Button
@@ -173,7 +173,7 @@ export function MachinePhotos({ machineId }: { machineId: string }) {
         </ul>
       )}
 
-      {identity.canManage ? (
+      {identity.canManageMachines ? (
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {items.length}/{MAX_PHOTOS} Fotos

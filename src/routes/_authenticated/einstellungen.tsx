@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/einstellungen")({
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrator",
   site_manager: "Bauleiter",
+  warehouse_manager: "Lagerverwalter",
   user: "Mitarbeiter",
 };
 

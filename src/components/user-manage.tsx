@@ -25,6 +25,7 @@ import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/usernam
 const ROLE_OPTIONS = [
   { value: "user", label: "Mitarbeiter" },
   { value: "site_manager", label: "Bauleiter" },
+  { value: "warehouse_manager", label: "Lagerverwalter" },
   { value: "admin", label: "Administrator" },
 ] as const;
 
@@ -83,7 +84,7 @@ export function EditUserDialog({
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
   const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
-  const needsEmail = role !== "user";
+  const needsEmail = role === "site_manager" || role === "admin";
   const invalid =
     fullName.trim().length < 2 ||
     mailInvalid ||

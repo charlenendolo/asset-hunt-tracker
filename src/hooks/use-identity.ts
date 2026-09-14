@@ -10,6 +10,7 @@ export type Identity = {
   isWarehouseManager: boolean;
   /** Managers may act on machines they are not personally responsible for. */
   canManage: boolean;
+  canManageMachines: boolean;
   isLoading: boolean;
 };
 
@@ -33,7 +34,8 @@ export function useIdentity(): Identity {
     isAdmin,
     isSiteManager,
     isWarehouseManager,
-    canManage: isAdmin || isSiteManager || isWarehouseManager,
+    canManage: isAdmin || isSiteManager,
+    canManageMachines: isAdmin || isSiteManager || isWarehouseManager,
     isLoading,
   };
 }

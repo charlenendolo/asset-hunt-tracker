@@ -72,10 +72,11 @@ export const createMachine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      message: "Nur Administratoren und Bauleiter dürfen Geräte anlegen.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(
+      context.supabase,
+      "Nur Administratoren, Bauleiter und Lagerverwalter dürfen Geräte anlegen.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const assetCode = data.assetCode.trim();

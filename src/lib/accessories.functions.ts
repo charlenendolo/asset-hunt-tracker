@@ -26,10 +26,8 @@ export const addMachineAccessories = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => addSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      message: "Nur Administratoren und Bauleiter dürfen Zubehör pflegen.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst kein Zubehör pflegen.");
     const { insertAccessories } = await import("./accessories.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return insertAccessories(supabaseAdmin, data.machineId, data.items);
@@ -45,10 +43,8 @@ export const updateMachineAccessory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      message: "Nur Administratoren und Bauleiter dürfen Zubehör pflegen.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst kein Zubehör pflegen.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("accessories")
@@ -62,10 +58,8 @@ export const deleteMachineAccessory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      message: "Nur Administratoren und Bauleiter dürfen Zubehör entfernen.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst kein Zubehör entfernen.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("accessories").delete().eq("id", data.id);
     if (error) failSafely("Zubehör konnte nicht entfernt werden.", error, "accessories");
