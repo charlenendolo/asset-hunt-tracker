@@ -28,7 +28,9 @@ export function isSyntheticEmail(email: string | null | undefined): boolean {
 
 /** Prüft Format und Einmaligkeit (Groß-/Kleinschreibung egal). */
 async function assertUsernameFree(
-  admin: { from: (t: "profiles") => any },
+  admin: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
   username: string,
   exceptUserId?: string,
 ) {
@@ -58,7 +60,7 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const username = data.username?.trim() ? normalizeUsername(data.username) : null;
-    if (username) await assertUsernameFree(supabaseAdmin as never, username);
+    if (username) await assertUsernameFree(supabaseAdmin, username);
 
     const realEmail = data.email?.trim() ? data.email.trim() : null;
     // Placeholder is replaced by the stable pin+<auth uuid> address right after creation.
@@ -167,7 +169,7 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
       if (!next) {
         patch.username = null;
       } else {
-        await assertUsernameFree(supabaseAdmin as never, next, data.userId);
+        await assertUsernameFree(supabaseAdmin, next, data.userId);
         patch.username = next;
       }
     }
