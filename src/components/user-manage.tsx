@@ -138,7 +138,7 @@ export function EditUserDialog({
                 id={`e-mail-${user.id}`}
                 type="email"
                 className="h-11"
-                placeholder={role === "user" ? "Optional bei PIN-Zugang" : "Pflicht für Bauleiter"}
+                placeholder={needsEmail ? "Pflicht für Bauleiter/Admin" : "Optional"}
                 value={mail}
                 onChange={(e) => setMail(e.target.value)}
               />

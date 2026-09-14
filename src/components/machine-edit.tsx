@@ -105,7 +105,6 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
     lastInspectionDate: machine.last_inspection_date ?? "",
     nextInspectionDate: machine.next_inspection_date ?? "",
     purchaseDate: machine.purchase_date ?? "",
-    purchasePrice: machine.purchase_price != null ? String(machine.purchase_price) : "",
   });
   const [properties, setProperties] = useState(
     (machine.properties ?? []).flatMap((item) => (item.property ? [item.property.name] : [])),

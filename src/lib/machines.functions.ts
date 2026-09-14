@@ -355,7 +355,7 @@ const updateSchema = z.object({
 });
 
 /**
- * Stammdatenpflege durch Administratoren.
+ * Stammdatenpflege durch Administratoren, Bauleiter und Lagerverwalter.
  * Bewusst ohne Status, Verantwortlichkeit und Rückgabedatum — dafür bleiben
  * Ausleihe/Rückgabe und die administrative Zuweisung zuständig.
  * Ein Standortwechsel wird als Bewegung "transfer" protokolliert; reine
@@ -365,11 +365,8 @@ export const updateMachine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Nur Administratoren dürfen Gerätestammdaten bearbeiten.",
-    });
+    const { requireDeviceManager } = await import("./roles.server");
+    await requireDeviceManager(context.supabase, "Du darfst keine Gerätestammdaten bearbeiten.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: machine, error: readError } = await supabaseAdmin

@@ -25,13 +25,7 @@ import { OverdueNotice } from "@/components/overdue-badge";
 import { isOverdue } from "@/lib/overdue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { machineDetailQuery, machineRelationsQuery } from "@/lib/queries";
-import {
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-  formatExpectedReturn,
-  textOrDash,
-} from "@/lib/format";
+import { formatDate, formatDateTime, formatExpectedReturn, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import {
   machineStatusKey,
@@ -412,7 +406,9 @@ function MachineDetailPage() {
                 site: m.site ? { location_type: m.site.location_type } : null,
               }}
             />
-            {identity.isAdmin ? <EditMachineButton className="mt-3 w-full" machine={m} /> : null}
+            {identity.canManageMachines ? (
+              <EditMachineButton className="mt-3 w-full" machine={m} />
+            ) : null}
             {identity.isAdmin ? (
               <ChangeSiteButton
                 className="mt-3 w-full"

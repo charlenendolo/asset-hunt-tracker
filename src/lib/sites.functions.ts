@@ -11,7 +11,7 @@ import { SITE_TYPE_ORDER } from "@/lib/site-types";
  * serverseitig über das eigene Profil geprüft und erst danach der
  * Service-Role-Client geladen.
  */
-const MANAGE_ROLES = ["admin", "site_manager", "warehouse_manager", "manager", "bauleiter"];
+const MANAGE_ROLES = ["admin", "site_manager", "manager", "bauleiter"];
 
 const createSiteSchema = z.object({
   name: z.string().trim().min(2).max(120),

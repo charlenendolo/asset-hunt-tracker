@@ -148,7 +148,7 @@ export function CreateUserDialog() {
                 id="u-mail"
                 type="email"
                 className="h-11"
-                placeholder="Nur für Büro/Admin nötig"
+                placeholder="Nur für Bauleiter/Admin nötig"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
