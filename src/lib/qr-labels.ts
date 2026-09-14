@@ -120,10 +120,8 @@ export function labelSvgMarkup(machine: LabelMachine, format: LabelFormat, qrPng
   const code = escapeHtml((machine.asset_code ?? "").trim() || "OHNE NUMMER");
   const qrY = (heightMm - STANDARD_LABEL_DESIGN.qrMm) / 2;
   const lines = labelNameLines(machine);
-  const nameLineMm =
-    STANDARD_LABEL_DESIGN.namePt * PT_TO_MM * STANDARD_LABEL_DESIGN.nameLineHeight;
-  const codeLineMm =
-    STANDARD_LABEL_DESIGN.codePt * PT_TO_MM * STANDARD_LABEL_DESIGN.codeLineHeight;
+  const nameLineMm = STANDARD_LABEL_DESIGN.namePt * PT_TO_MM * STANDARD_LABEL_DESIGN.nameLineHeight;
+  const codeLineMm = STANDARD_LABEL_DESIGN.codePt * PT_TO_MM * STANDARD_LABEL_DESIGN.codeLineHeight;
   const brandLineMm = STANDARD_LABEL_DESIGN.brandPt * PT_TO_MM;
   const contentHeight =
     lines.length * nameLineMm + STANDARD_LABEL_DESIGN.infoGapMm * 2 + codeLineMm + brandLineMm;
