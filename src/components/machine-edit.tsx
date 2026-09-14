@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
+import { PropertyPicker } from "@/components/property-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { updateMachine } from "@/lib/machines.functions";
@@ -38,6 +39,7 @@ export type EditableMachine = {
   next_inspection_date: string | null;
   purchase_date: string | null;
   purchase_price: number | null;
+  properties?: Array<{ property: { id: string; name: string } | null }>;
 };
 
 /** Stammdatenbearbeitung — ausschließlich für Administratoren. */
@@ -105,6 +107,9 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
     purchaseDate: machine.purchase_date ?? "",
     purchasePrice: machine.purchase_price != null ? String(machine.purchase_price) : "",
   });
+  const [properties, setProperties] = useState(
+    (machine.properties ?? []).flatMap((item) => (item.property ? [item.property.name] : [])),
+  );
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -128,7 +133,8 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
           lastInspectionDate: form.lastInspectionDate || null,
           nextInspectionDate: form.nextInspectionDate || null,
           purchaseDate: form.purchaseDate || null,
-          purchasePrice: form.purchasePrice ? Number(form.purchasePrice.replace(",", ".")) : null,
+          purchasePrice: machine.purchase_price,
+          properties,
         },
       }),
     onSuccess: async () => {
@@ -136,6 +142,7 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
         qc.invalidateQueries({ queryKey: ["machines"] }),
         qc.invalidateQueries({ queryKey: ["machine", machine.id] }),
         qc.invalidateQueries({ queryKey: ["machine-history", machine.id] }),
+        qc.invalidateQueries({ queryKey: ["machine-properties"] }),
       ]);
       toast.success("Gerät wurde aktualisiert.");
       onClose();
@@ -242,8 +249,7 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
             </Field>
           </Row>
 
-          <Row>
-            <Field label="Anschaffungsdatum" htmlFor="edit-purchase-date">
+          <Field label="Anschaffungsdatum" htmlFor="edit-purchase-date">
               <Input
                 id="edit-purchase-date"
                 type="date"
@@ -251,17 +257,12 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
                 onChange={(e) => set("purchaseDate", e.target.value)}
                 className="h-11"
               />
-            </Field>
-            <Field label="Anschaffungspreis (EUR)" htmlFor="edit-purchase-price">
-              <Input
-                id="edit-purchase-price"
-                inputMode="decimal"
-                value={form.purchasePrice}
-                onChange={(e) => set("purchasePrice", e.target.value)}
-                className="h-11"
-              />
-            </Field>
-          </Row>
+          </Field>
+
+          <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+            <Label>Eigenschaften</Label>
+            <PropertyPicker values={properties} onChange={setProperties} />
+          </div>
 
           <div className="space-y-1.5">
             <Label>Prüfung</Label>

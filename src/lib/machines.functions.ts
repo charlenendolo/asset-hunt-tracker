@@ -55,6 +55,7 @@ const createSchema = z.object({
   nextInspectionDate: optionalDate,
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
+  properties: z.array(z.string().trim().min(1).max(80)).max(30).optional().default([]),
   accessories: z
     .array(
       z.object({
@@ -123,6 +124,20 @@ export const createMachine = createServerFn({ method: "POST" })
         throw new Error(
           "Maschine wurde nicht angelegt, weil das Zubehör nicht gespeichert werden konnte: " +
             (accessoryError as Error).message,
+        );
+      }
+    }
+
+    if (data.properties.length > 0) {
+      const { replaceMachineProperties } = await import("./machine-properties.server");
+      try {
+        await replaceMachineProperties(supabaseAdmin, inserted.id, data.properties);
+      } catch (propertyError) {
+        await supabaseAdmin.from("accessories").delete().eq("machine_id", inserted.id);
+        await supabaseAdmin.from("machines").delete().eq("id", inserted.id);
+        throw new Error(
+          "Maschine wurde nicht angelegt, weil die Eigenschaften nicht gespeichert werden konnten: " +
+            (propertyError as Error).message,
         );
       }
     }
@@ -336,6 +351,7 @@ const updateSchema = z.object({
   nextInspectionDate: optionalDate,
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
+  properties: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
 });
 
 /**
@@ -403,6 +419,16 @@ export const updateMachine = createServerFn({ method: "POST" })
         to_site_id: nextSiteId,
         comment: "Standort über Gerätebearbeitung geändert",
       });
+    }
+
+
+    if (data.properties) {
+      const { replaceMachineProperties } = await import("./machine-properties.server");
+      try {
+        await replaceMachineProperties(supabaseAdmin, machine.id, data.properties);
+      } catch (propertyError) {
+        failSafely("Eigenschaften konnten nicht gespeichert werden.", propertyError, "properties");
+      }
     }
 
     return { ok: true as const };
