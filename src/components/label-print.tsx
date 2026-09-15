@@ -14,6 +14,7 @@ import {
 import { MachineQrLabel } from "@/components/machine-qr-label";
 import { generateMachineQrPng, useMachineQrPngs } from "@/hooks/use-machine-qr";
 import { renderLabelPng } from "@/lib/label-png";
+import { buildLabelZip } from "@/lib/label-zip";
 import {
   LABEL_FORMATS,
   PRINT_MODE_LABELS,
