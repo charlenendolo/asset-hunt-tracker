@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer, X } from "lucide-react";
+import {
+  Search,
+  Container,
+  ChevronLeft,
+  ChevronRight,
+  ImageOff,
+  Printer,
+  X,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
@@ -40,15 +50,54 @@ import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { PropertyTags } from "@/components/machine-properties";
 
+const SORT_FIELDS = [
+  { value: "name", label: "Name" },
+  { value: "asset_code", label: "Gerätenummer" },
+  { value: "status", label: "Status" },
+  { value: "created_at", label: "Hinzugefügt" },
+] as const;
+
+type MachinesSearch = {
+  q?: string;
+  categoryId?: string;
+  siteId?: string;
+  locationType?: string;
+  status?: string;
+  sort?: string;
+  dir?: "asc" | "desc";
+  page?: number;
+  mine?: true;
+};
+
 export const Route = createFileRoute("/_authenticated/maschinen/")({
-  validateSearch: (search: Record<string, unknown>) => {
-    const status = typeof search["status"] === "string" ? search["status"] : "";
-    const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+  validateSearch: (search: Record<string, unknown>): MachinesSearch => {
+    const str = (key: string) => (typeof search[key] === "string" ? (search[key] as string) : "");
+    const status = str("status");
+    const siteId = str("siteId");
+    const categoryId = str("categoryId");
+    const locationType = str("locationType");
+    const q = str("q");
+    const sortRaw = str("sort");
+    const sort = SORT_FIELDS.some((f) => f.value === sortRaw) ? sortRaw : "";
+    const dir =
+      str("dir") === "desc"
+        ? ("desc" as const)
+        : str("dir") === "asc"
+          ? ("asc" as const)
+          : undefined;
+    const pageRaw = Number(search["page"]);
+    const page = Number.isFinite(pageRaw) && pageRaw > 1 ? Math.floor(pageRaw) : undefined;
     // Nur ein Boolean-Flag: die Identität kommt immer aus der Session, nie aus der URL.
     const mine = search["mine"] === true || search["mine"] === "true";
     return {
+      ...(q ? { q } : {}),
+      ...(categoryId ? { categoryId } : {}),
       ...(status ? { status } : {}),
       ...(siteId ? { siteId } : {}),
+      ...(locationType ? { locationType } : {}),
+      ...(sort ? { sort } : {}),
+      ...(dir ? { dir } : {}),
+      ...(page ? { page } : {}),
       ...(mine ? { mine: true as const } : {}),
     };
   },
@@ -96,26 +145,44 @@ function Select({
 
 function MachinesPage() {
   const urlSearch = Route.useSearch();
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [siteId, setSiteId] = useState(urlSearch.siteId ?? "");
-  const [locationType, setLocationType] = useState("");
-  const [status, setStatus] = useState(urlSearch.status ?? "");
+  const navigate = Route.useNavigate();
 
-  const [sort, setSort] = useState("name:asc");
-  const [page, setPage] = useState(1);
+  // Die URL ist die einzige Quelle für Suche, Filter, Sortierung und Seite —
+  // deshalb bleibt der Listenzustand beim Zurückspringen aus einem Gerät erhalten.
+  const search = urlSearch.q ?? "";
+  const categoryId = urlSearch.categoryId ?? "";
+  const siteId = urlSearch.siteId ?? "";
+  const locationType = urlSearch.locationType ?? "";
+  const status = urlSearch.status ?? "";
+  const sortField = urlSearch.sort ?? "name";
+  const sortDir = urlSearch.dir ?? "asc";
+  const sort = `${sortField}:${sortDir}`;
+  const page = urlSearch.page ?? 1;
+
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
 
-  // Zurück/Vorwärts im Browser bzw. Klick auf eine Standortkarte übernehmen.
-  const urlStatus = urlSearch.status ?? "";
-  const urlSiteId = urlSearch.siteId ?? "";
-  useEffect(() => {
-    setStatus(urlStatus);
-    setSiteId(urlSiteId);
-    setPage(1);
-  }, [urlStatus, urlSiteId]);
+  function patchSearch(
+    patch: { [K in keyof MachinesSearch]?: MachinesSearch[K] | undefined },
+    resetPage = true,
+  ) {
+    void navigate({
+      search: (prev) => {
+        const next = { ...prev, ...patch } as Record<string, unknown>;
+        if (resetPage) delete next["page"];
+        for (const key of Object.keys(next)) {
+          if (next[key] === "" || next[key] === undefined) delete next[key];
+        }
+        return next as MachinesSearch;
+      },
+      replace: true,
+    });
+  }
+
+  function setPage(next: number) {
+    patchSearch(next > 1 ? { page: next } : {}, true);
+  }
 
   // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
   const mineActive = urlSearch.mine === true;
@@ -168,6 +235,12 @@ function MachinesPage() {
   const hasFilters = !!(search || categoryId || siteId || locationType || status || mineActive);
   const isLoadingList = machines.isLoading || (mineActive && !mineUserId);
 
+  // Landet die Seite nach einer Filteränderung außerhalb des Ergebnisses, zurück auf 1.
+  useEffect(() => {
+    if (!machines.isFetching && page > pageCount) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageCount, machines.isFetching]);
+
   const canSelect = identity.isAdmin;
   const selectedIds = Object.keys(selected);
   const selectedMachines = useMemo(
@@ -186,13 +259,6 @@ function MachinesPage() {
       else delete next[id];
       return next;
     });
-  }
-
-  function reset<T>(setter: (v: T) => void) {
-    return (v: T) => {
-      setter(v);
-      setPage(1);
-    };
   }
 
   return (
@@ -226,7 +292,7 @@ function MachinesPage() {
             <button
               type="button"
               aria-label="Standortfilter entfernen"
-              onClick={() => reset(setSiteId)("")}
+              onClick={() => patchSearch({ siteId: "" })}
               className="rounded-full p-0.5 transition-colors hover:bg-primary/15"
             >
               <X className="h-3.5 w-3.5" />
@@ -256,12 +322,16 @@ function MachinesPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => reset(setSearch)(e.target.value)}
+            onChange={(e) => patchSearch({ q: e.target.value })}
             placeholder="Suche nach Name, Code, Seriennummer …"
             className="h-10 bg-card pl-9"
           />
         </div>
-        <Select label="Kategorie" value={categoryId} onChange={reset(setCategoryId)}>
+        <Select
+          label="Kategorie"
+          value={categoryId}
+          onChange={(v) => patchSearch({ categoryId: v })}
+        >
           <option value="">Alle Kategorien</option>
           {(categories.data ?? []).map((c) => (
             <option key={c.id} value={c.id}>
@@ -272,10 +342,7 @@ function MachinesPage() {
         <Select
           label="Standorttyp"
           value={locationType}
-          onChange={(v) => {
-            reset(setLocationType)(v);
-            setSiteId("");
-          }}
+          onChange={(v) => patchSearch({ locationType: v, siteId: "" })}
         >
           <option value="">Alle Standorttypen</option>
           {SITE_TYPE_ORDER.map((t) => (
@@ -286,14 +353,14 @@ function MachinesPage() {
         </Select>
         <SiteCombobox
           value={siteId}
-          onChange={reset(setSiteId)}
+          onChange={(v) => patchSearch({ siteId: v })}
           typeFilter={locationType}
           emptyLabel="Alle Standorte"
           allowCreate={false}
           className="h-10 bg-card"
         />
 
-        <Select label="Status" value={status} onChange={reset(setStatus)}>
+        <Select label="Status" value={status} onChange={(v) => patchSearch({ status: v })}>
           <option value="">Alle Status</option>
           {MACHINE_STATUS_ORDER.map((k) => (
             <option key={k} value={MACHINE_STATUS_DB_VALUES[k]}>
@@ -304,12 +371,35 @@ function MachinesPage() {
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
           <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
         </Select>
-        <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
-          <option value="name:asc">Name (A–Z)</option>
-          <option value="name:desc">Name (Z–A)</option>
-          <option value="asset_code:asc">Gerätenummer aufsteigend</option>
-          <option value="created_at:desc">Zuletzt hinzugefügt</option>
-        </Select>
+        <div className="flex min-w-0 gap-2">
+          <Select
+            label="Sortierfeld"
+            value={sortField}
+            onChange={(v) => patchSearch({ sort: v, dir: sortDir })}
+          >
+            {SORT_FIELDS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </Select>
+          <Button
+            variant="outline"
+            className="h-10 shrink-0"
+            aria-label={sortDir === "asc" ? "Absteigend sortieren" : "Aufsteigend sortieren"}
+            title={sortDir === "asc" ? "Aufsteigend" : "Absteigend"}
+            onClick={() =>
+              patchSearch({ sort: sortField, dir: sortDir === "asc" ? "desc" : "asc" })
+            }
+          >
+            {sortDir === "asc" ? (
+              <ArrowUp className="h-4 w-4" strokeWidth={2} />
+            ) : (
+              <ArrowDown className="h-4 w-4" strokeWidth={2} />
+            )}
+            <span className="ml-1 text-xs">{sortDir === "asc" ? "A–Z" : "Z–A"}</span>
+          </Button>
+        </div>
       </div>
 
       {machines.isError ? (
@@ -509,7 +599,7 @@ function MachinesPage() {
                 variant="outline"
                 className="h-10"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
               >
                 <ChevronLeft className="h-4 w-4" /> Zurück
               </Button>
@@ -517,7 +607,7 @@ function MachinesPage() {
                 variant="outline"
                 className="h-10"
                 disabled={page >= pageCount}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage(page + 1)}
               >
                 Weiter <ChevronRight className="h-4 w-4" />
               </Button>

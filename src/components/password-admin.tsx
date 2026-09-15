@@ -19,32 +19,40 @@ import { appBaseUrl } from "@/lib/app-url";
 import { sendPasswordReset, setTemporaryPassword } from "@/lib/password.functions";
 import { checkPassword, passwordChecks } from "@/lib/password-policy";
 
-/**
- * Admin-Aktionen für Zugänge mit E-Mail/Passwort.
- * Standard ist der Reset-Link; das temporäre Passwort ist die Ausweichoption
- * und wird nach dem Setzen weder angezeigt noch gespeichert.
- */
-export function PasswordAdminActions({ userId, email }: { userId: string; email: string | null }) {
-  const [open, setOpen] = useState(false);
-  const [pw, setPw] = useState("");
-  const [confirm, setConfirm] = useState("");
-
+/** Reset-Link an die hinterlegte E-Mail senden (Admin-Aktion, serverseitig geprüft). */
+export function useSendResetLink(userId: string) {
   const sendReset = useServerFn(sendPasswordReset);
-  const setTemp = useServerFn(setTemporaryPassword);
-
-  const reset = useMutation({
+  return useMutation({
     mutationFn: async () =>
       sendReset({ data: { userId, redirectTo: `${appBaseUrl()}/passwort-neu` } }),
     onSuccess: (r) => toast.success(`Reset-Link an ${(r as { email: string }).email} gesendet.`),
     onError: (e: Error) => toast.error(e.message || "Reset-Link konnte nicht gesendet werden."),
   });
+}
+
+/**
+ * Admin-Dialog zum Setzen eines neuen Passworts.
+ * Das Passwort wird weder angezeigt noch gespeichert; Sitzungen werden beendet.
+ */
+export function PasswordChangeDialog({
+  userId,
+  open,
+  onOpenChange,
+}: {
+  userId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const setTemp = useServerFn(setTemporaryPassword);
 
   const temp = useMutation({
     mutationFn: async () => setTemp({ data: { userId, password: pw } }),
     onSuccess: () => {
       setPw("");
       setConfirm("");
-      setOpen(false);
+      onOpenChange(false);
       toast.success("Passwort geändert. Alle aktiven Sitzungen wurden beendet.");
     },
     onError: (e: Error) => toast.error(e.message || "Passwort konnte nicht gesetzt werden."),
@@ -63,6 +71,75 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
     }
     temp.mutate();
   }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Passwort ändern</DialogTitle>
+          <DialogDescription>
+            Das neue Passwort ersetzt das bisherige und wird nirgends gespeichert oder angezeigt.
+            Alle aktiven Sitzungen dieser Person werden beendet.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="space-y-3" onSubmit={submitTemp}>
+          <div className="space-y-1.5">
+            <Label htmlFor={`temp-pw-${userId}`}>Neues Passwort</Label>
+            <Input
+              id={`temp-pw-${userId}`}
+              type="password"
+              autoComplete="new-password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`temp-pw2-${userId}`}>Passwort bestätigen</Label>
+            <Input
+              id={`temp-pw2-${userId}`}
+              type="password"
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+            />
+          </div>
+          <ul className="space-y-0.5 text-xs">
+            {passwordChecks(pw).map((r) => (
+              <li
+                key={r.label}
+                className={r.ok ? "text-primary" : "text-muted-foreground"}
+                aria-checked={r.ok}
+                role="checkbox"
+              >
+                {r.ok ? "✓" : "•"} {r.label}
+              </li>
+            ))}
+            <li
+              className={
+                confirm.length > 0 && pw === confirm ? "text-primary" : "text-muted-foreground"
+              }
+            >
+              {confirm.length > 0 && pw === confirm ? "✓" : "•"} Passwörter stimmen überein
+            </li>
+          </ul>
+          <DialogFooter>
+            <Button type="submit" disabled={temp.isPending}>
+              {temp.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Passwort setzen
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Kompakte Passwort-Aktionen (Reset-Link + Passwort ändern) für Detailansichten. */
+export function PasswordAdminActions({ userId, email }: { userId: string; email: string | null }) {
+  const [open, setOpen] = useState(false);
+  const reset = useSendResetLink(userId);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -87,67 +164,7 @@ export function PasswordAdminActions({ userId, email }: { userId: string; email:
         <KeyRound className="mr-2 h-4 w-4" strokeWidth={1.75} />
         Passwort ändern
       </Button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Passwort ändern</DialogTitle>
-            <DialogDescription>
-              Das neue Passwort ersetzt das bisherige und wird nirgends gespeichert oder angezeigt.
-              Alle aktiven Sitzungen dieser Person werden beendet.
-            </DialogDescription>
-          </DialogHeader>
-          <form className="space-y-3" onSubmit={submitTemp}>
-            <div className="space-y-1.5">
-              <Label htmlFor={`temp-pw-${userId}`}>Neues Passwort</Label>
-              <Input
-                id={`temp-pw-${userId}`}
-                type="password"
-                autoComplete="new-password"
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`temp-pw2-${userId}`}>Passwort bestätigen</Label>
-              <Input
-                id={`temp-pw2-${userId}`}
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-            </div>
-            <ul className="space-y-0.5 text-xs">
-              {passwordChecks(pw).map((r) => (
-                <li
-                  key={r.label}
-                  className={r.ok ? "text-primary" : "text-muted-foreground"}
-                  aria-checked={r.ok}
-                  role="checkbox"
-                >
-                  {r.ok ? "✓" : "•"} {r.label}
-                </li>
-              ))}
-              <li
-                className={
-                  confirm.length > 0 && pw === confirm ? "text-primary" : "text-muted-foreground"
-                }
-              >
-                {confirm.length > 0 && pw === confirm ? "✓" : "•"} Passwörter stimmen überein
-              </li>
-            </ul>
-            <DialogFooter>
-              <Button type="submit" disabled={temp.isPending}>
-                {temp.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Passwort setzen
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <PasswordChangeDialog userId={userId} open={open} onOpenChange={setOpen} />
     </div>
   );
 }

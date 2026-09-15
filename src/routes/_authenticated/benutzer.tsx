@@ -1,21 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Users } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowDown, ArrowUp, Users } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
-import { CreateUserDialog, PinAccessActions, UserRowActions } from "@/components/user-admin";
-import { DeleteUserDialog, EditUserDialog } from "@/components/user-manage";
-import { Input } from "@/components/ui/input";
+import { CreateUserDialog } from "@/components/user-admin";
+import { UserRowMenu } from "@/components/user-row-menu";
 import { useIdentity } from "@/hooks/use-identity";
 import { listAccountEmails } from "@/lib/users.functions";
-import { listPinAccess } from "@/lib/pin-auth.functions";
-import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/benutzer")({
   head: () => ({
@@ -36,12 +35,21 @@ const ROLE_LABELS: Record<string, string> = {
   user: "Mitarbeiter",
 };
 
+const ROLE_ORDER: Record<string, number> = {
+  admin: 0,
+  site_manager: 1,
+  warehouse_manager: 2,
+  user: 3,
+};
+
 function roleTone(role: string) {
   if (role === "admin") return "primary" as const;
   if (role === "site_manager") return "warning" as const;
   if (role === "warehouse_manager") return "success" as const;
   return "neutral" as const;
 }
+
+type SortKey = "name" | "username" | "role" | "status" | "created";
 
 function UsersPage() {
   const identity = useIdentity();
@@ -50,6 +58,9 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortAsc, setSortAsc] = useState(true);
+
   const fetchEmails = useServerFn(listAccountEmails);
   const emails = useQuery({
     queryKey: ["account-emails"],
@@ -57,39 +68,83 @@ function UsersPage() {
     staleTime: 60_000,
     queryFn: async () => fetchEmails(),
   });
-  const emailById = new Map((emails.data ?? []).map((e) => [e.id, e.email]));
-  const fetchPinAccess = useServerFn(listPinAccess);
-  const pinAccess = useQuery({
-    queryKey: ["pin-access"],
-    enabled: isAdmin,
-    staleTime: 30_000,
-    queryFn: async () => fetchPinAccess(),
-  });
-  const pinById = new Map((pinAccess.data ?? []).map((p) => [p.user_id, p.enabled]));
+  const emailById = useMemo(
+    () => new Map((emails.data ?? []).map((e) => [e.id, e.email])),
+    [emails.data],
+  );
 
   const q = search.trim().toLowerCase();
-  const rows = (profiles.data ?? []).filter((p) => {
-    if (roleFilter !== "all" && (p.role ?? "user") !== roleFilter) return false;
-    if (statusFilter === "active" && !p.active) return false;
-    if (statusFilter === "inactive" && p.active) return false;
-    if (!q) return true;
-    const mail = (emailById.get(p.id) ?? "").toLowerCase();
-    return (
-      (p.full_name ?? "").toLowerCase().includes(q) ||
-      (p.username ?? "").toLowerCase().includes(q) ||
-      mail.includes(q)
-    );
-  });
+  const rows = useMemo(() => {
+    const list = (profiles.data ?? []).filter((p) => {
+      if (roleFilter !== "all" && (p.role ?? "user") !== roleFilter) return false;
+      if (statusFilter === "active" && !p.active) return false;
+      if (statusFilter === "inactive" && p.active) return false;
+      if (!q) return true;
+      const mail = (emailById.get(p.id) ?? "").toLowerCase();
+      return (
+        (p.full_name ?? "").toLowerCase().includes(q) ||
+        (p.username ?? "").toLowerCase().includes(q) ||
+        mail.includes(q)
+      );
+    });
 
-  function accessLabel(row: {
-    id: string;
-    has_password?: boolean | null;
-    username?: string | null;
+    const dir = sortAsc ? 1 : -1;
+    const collator = new Intl.Collator("de", { sensitivity: "base" });
+    return [...list].sort((a, b) => {
+      if (sortKey === "username") return dir * collator.compare(a.username ?? "", b.username ?? "");
+      if (sortKey === "role")
+        return dir * ((ROLE_ORDER[a.role ?? "user"] ?? 9) - (ROLE_ORDER[b.role ?? "user"] ?? 9));
+      if (sortKey === "status") return dir * (Number(b.active) - Number(a.active));
+      if (sortKey === "created")
+        return (
+          dir * (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
+        );
+      return dir * collator.compare(a.full_name ?? "", b.full_name ?? "");
+    });
+  }, [profiles.data, roleFilter, statusFilter, q, emailById, sortKey, sortAsc]);
+
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) setSortAsc((v) => !v);
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  }
+
+  function SortHeader({
+    sortId,
+    children,
+    className,
+  }: {
+    sortId: SortKey;
+    children: React.ReactNode;
+    className?: string;
   }) {
-    const pin = pinById.get(row.id);
+    const active = sortKey === sortId;
+    return (
+      <th className={`px-4 py-3 ${className ?? ""}`}>
+        <button
+          type="button"
+          onClick={() => toggleSort(sortId)}
+          className="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={`Nach ${String(children)} sortieren`}
+        >
+          {children}
+          {active ? (
+            sortAsc ? (
+              <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5" strokeWidth={2} />
+            )
+          ) : null}
+        </button>
+      </th>
+    );
+  }
+
+  function accessLabel(row: { has_password?: boolean | null }) {
     if (row.has_password) return { text: "Passwort aktiv", tone: "success" as const };
-    if (pin) return { text: "Nur PIN – Passwort fehlt", tone: "warning" as const };
-    return { text: "Kein Zugang", tone: "warning" as const };
+    return { text: "Kein Passwort", tone: "warning" as const };
   }
 
   return (
@@ -102,7 +157,7 @@ function UsersPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Input
             className="h-10 w-full sm:max-w-xs"
-            placeholder="Name, Benutzername oder E-Mail suchen"
+            placeholder="Benutzer suchen …"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Benutzer suchen"
@@ -131,6 +186,7 @@ function UsersPage() {
           </select>
         </div>
       ) : null}
+
       {profiles.isError ? (
         <ErrorState message={(profiles.error as Error)?.message} />
       ) : profiles.isLoading ? (
@@ -138,8 +194,8 @@ function UsersPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<Users className="h-7 w-7" strokeWidth={1.5} />}
-          title="Noch keine Benutzer vorhanden."
-          description="Benutzer erscheinen hier, sobald sie sich registriert haben."
+          title="Keine Benutzer gefunden."
+          description="Passe Suche oder Filter an."
         />
       ) : (
         <>
@@ -147,28 +203,33 @@ function UsersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                  <th className="px-4 py-3">Name</th>
-                  {isAdmin ? <th className="px-4 py-3">Benutzername</th> : null}
-                  <th className="px-4 py-3">Rolle</th>
+                  <SortHeader sortId="name">Name</SortHeader>
+                  {isAdmin ? <SortHeader sortId="username">Benutzername</SortHeader> : null}
                   {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
+                  <SortHeader sortId="role">Rolle</SortHeader>
                   {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Angelegt</th>
-                  {isAdmin ? <th className="px-4 py-3 text-right">Verwaltung</th> : null}
+                  <SortHeader sortId="status">Status</SortHeader>
+                  <SortHeader sortId="created">Angelegt</SortHeader>
+                  {isAdmin ? <th className="w-12 px-4 py-3 text-right">Aktionen</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {rows.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-4 py-3 font-medium text-foreground">
+                  <tr key={p.id} className="transition-colors hover:bg-accent/40">
+                    <td className="px-4 py-2.5 font-medium text-foreground">
                       {textOrDash(p.full_name)}
                     </td>
                     {isAdmin ? (
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                         {textOrDash(p.username)}
                       </td>
                     ) : null}
-                    <td className="px-4 py-3">
+                    {isAdmin ? (
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        {textOrDash(emailById.get(p.id) ?? null)}
+                      </td>
+                    ) : null}
+                    <td className="px-4 py-2.5">
                       {p.role ? (
                         <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
                       ) : (
@@ -176,48 +237,30 @@ function UsersPage() {
                       )}
                     </td>
                     {isAdmin ? (
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {emailById.get(p.id) ? (
-                          emailById.get(p.id)
-                        ) : (
-                          <span className="text-muted-foreground">–</span>
-                        )}
-                      </td>
-                    ) : null}
-                    {isAdmin ? (
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2.5">
                         <Pill tone={accessLabel(p).tone}>{accessLabel(p).text}</Pill>
                       </td>
                     ) : null}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <Pill tone={p.active ? "success" : "neutral"}>
                         {p.active ? "Aktiv" : "Deaktiviert"}
                       </Pill>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(p.created_at)}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      {formatDate(p.created_at)}
+                    </td>
                     {isAdmin ? (
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col items-end gap-2">
-                          <UserRowActions
-                            user={{ id: p.id, role: p.role ?? "user", active: p.active ?? true }}
-                            email={emailById.get(p.id) ?? null}
-                            pinEnabled={pinById.get(p.id) ?? false}
-                          />
-                          <PinAccessActions userId={p.id} />
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            <EditUserDialog
-                              user={{
-                                id: p.id,
-                                full_name: p.full_name,
-                                username: p.username,
-                                role: p.role ?? "user",
-                                active: p.active ?? true,
-                              }}
-                              email={emailById.get(p.id) ?? null}
-                            />
-                            <DeleteUserDialog user={{ id: p.id, full_name: p.full_name }} />
-                          </div>
-                        </div>
+                      <td className="px-4 py-2.5 text-right">
+                        <UserRowMenu
+                          user={{
+                            id: p.id,
+                            full_name: p.full_name,
+                            username: p.username ?? null,
+                            role: p.role ?? "user",
+                            active: p.active ?? true,
+                          }}
+                          email={emailById.get(p.id) ?? null}
+                        />
                       </td>
                     ) : null}
                   </tr>
@@ -236,11 +279,27 @@ function UsersPage() {
                   <p className="truncate text-sm font-medium text-foreground">
                     {textOrDash(p.full_name)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{formatDate(p.created_at)}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {textOrDash(p.username)} · {p.active ? "Aktiv" : "Deaktiviert"}
+                  </p>
                 </div>
-                {p.role ? (
-                  <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
-                ) : null}
+                <div className="flex shrink-0 items-center gap-1">
+                  {p.role ? (
+                    <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                  ) : null}
+                  {isAdmin ? (
+                    <UserRowMenu
+                      user={{
+                        id: p.id,
+                        full_name: p.full_name,
+                        username: p.username ?? null,
+                        role: p.role ?? "user",
+                        active: p.active ?? true,
+                      }}
+                      email={emailById.get(p.id) ?? null}
+                    />
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
