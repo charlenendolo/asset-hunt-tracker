@@ -194,7 +194,9 @@ function LabelsPage() {
             onClick={() => setOpen(true)}
           >
             <Printer className="mr-2 h-4 w-4" />
-            Etiketten drucken
+            {selectedIds.length > 0
+              ? `${selectedIds.length} QR-Etikett${selectedIds.length === 1 ? "" : "en"} drucken`
+              : "QR-Etiketten drucken"}
           </Button>
         }
       />
