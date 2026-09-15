@@ -429,3 +429,194 @@ export const updateMachine = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+/* ------------------------------------------------------------------ *
+ * Lebenszyklus: Deaktivieren / Reaktivieren / Löschen
+ * Ausschließlich Administratoren. Die Rollenprüfung erfolgt serverseitig
+ * frisch über current_profile() — Frontend-Zustand wird nie vertraut.
+ * ------------------------------------------------------------------ */
+
+const PHOTO_BUCKET = "machine-photos";
+const thumbPathFor = (path: string) => path.replace(/(\.[a-z0-9]+)$/i, "_thumb$1");
+
+async function requireAdminForLifecycle(supabase: unknown) {
+  const { requireManager } = await import("./roles.server");
+  await requireManager(supabase, {
+    adminOnly: true,
+    message: "Nur Administratoren dürfen Geräte deaktivieren oder löschen.",
+  });
+}
+
+const setActiveSchema = z.object({
+  machineId: z.string().uuid(),
+  active: z.boolean(),
+  comment: z.string().trim().max(2000).nullable().optional(),
+});
+
+/** Archivieren bzw. Reaktivieren eines Geräts — Historie bleibt erhalten. */
+export const setMachineActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => setActiveSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await requireAdminForLifecycle(context.supabase);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machine, error: readError } = await supabaseAdmin
+      .from("machines")
+      .select("id, active, status, current_site_id, responsible_user_id")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (readError || !machine) throw new Error("Gerät konnte nicht geladen werden.");
+    if ((machine.active ?? true) === data.active) {
+      throw new Error(
+        data.active ? "Das Gerät ist bereits aktiv." : "Das Gerät ist bereits deaktiviert.",
+      );
+    }
+
+    if (!data.active) {
+      if (machine.responsible_user_id) {
+        throw new Error(
+          "Das Gerät befindet sich in der Obhut eines Mitarbeiters. Bitte zuerst die Rückgabe erfassen.",
+        );
+      }
+      const { count: pendingHandovers } = await supabaseAdmin
+        .from("machine_handovers")
+        .select("id", { count: "exact", head: true })
+        .eq("machine_id", machine.id)
+        .eq("status", "pending");
+      if ((pendingHandovers ?? 0) > 0) {
+        throw new Error("Für dieses Gerät läuft noch eine Geräteübergabe. Bitte zuerst klären.");
+      }
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("machines")
+      .update({ active: data.active })
+      .eq("id", machine.id)
+      .eq("active", machine.active ?? true);
+    if (updateError) failSafely("Änderung fehlgeschlagen.", updateError, "machines");
+
+    const trail = data.active
+      ? "Gerät reaktiviert (administrativ)"
+      : "Gerät deaktiviert / archiviert (administrativ)";
+    await supabaseAdmin.from("movements").insert({
+      machine_id: machine.id,
+      movement_type: "assignment",
+      performed_by: context.userId,
+      responsible_user_id: null,
+      from_site_id: machine.current_site_id,
+      to_site_id: machine.current_site_id,
+      comment: data.comment ? `${trail} · ${data.comment}` : trail,
+    });
+
+    return { ok: true as const, active: data.active };
+  });
+
+const machineIdSchema = z.object({ machineId: z.string().uuid() });
+
+/**
+ * Prüft vor dem endgültigen Löschen, ob Betriebshistorie oder eine laufende
+ * Obhut bestehen. Historie wird niemals stillschweigend mitgelöscht.
+ */
+export const getMachineDeletionCheck = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => machineIdSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await requireAdminForLifecycle(context.supabase);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machine } = await supabaseAdmin
+      .from("machines")
+      .select("id, name, asset_code, active, responsible_user_id")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (!machine) throw new Error("Gerät konnte nicht geladen werden.");
+
+    const countOf = async (table: "movements" | "machine_handovers" | "reservations" | "defects" | "maintenance") => {
+      const { count } = await supabaseAdmin
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("machine_id", machine.id);
+      return count ?? 0;
+    };
+
+    const [movements, handovers, reservations, defects, maintenance] = await Promise.all([
+      countOf("movements"),
+      countOf("machine_handovers"),
+      countOf("reservations"),
+      countOf("defects"),
+      countOf("maintenance"),
+    ]);
+
+    const inCustody = !!machine.responsible_user_id;
+    const history = movements + handovers + reservations + defects + maintenance;
+
+    return {
+      machineId: machine.id,
+      name: machine.name,
+      assetCode: machine.asset_code,
+      active: machine.active ?? true,
+      inCustody,
+      movements,
+      handovers,
+      reservations,
+      defects,
+      maintenance,
+      hasHistory: history > 0,
+      canDelete: !inCustody && history === 0,
+    };
+  });
+
+/**
+ * Endgültiges Löschen — nur für fehlerhaft angelegte Datensätze ohne
+ * Betriebshistorie. Alles andere wird deaktiviert/archiviert.
+ */
+export const deleteMachine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => machineIdSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await requireAdminForLifecycle(context.supabase);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: machine } = await supabaseAdmin
+      .from("machines")
+      .select("id, responsible_user_id")
+      .eq("id", data.machineId)
+      .maybeSingle();
+    if (!machine) throw new Error("Gerät konnte nicht geladen werden.");
+    if (machine.responsible_user_id) {
+      throw new Error(
+        "Das Gerät befindet sich in der Obhut eines Mitarbeiters. Bitte zuerst die Rückgabe erfassen.",
+      );
+    }
+
+    const tables = ["movements", "machine_handovers", "reservations", "defects", "maintenance"] as const;
+    for (const table of tables) {
+      const { count } = await supabaseAdmin
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("machine_id", machine.id);
+      if ((count ?? 0) > 0) {
+        throw new Error(
+          "Dieses Gerät hat bereits Betriebshistorie. Bitte deaktivieren/archivieren statt löschen — so bleibt die Nachvollziehbarkeit erhalten.",
+        );
+      }
+    }
+
+    const { data: photos } = await supabaseAdmin
+      .from("machine_photos")
+      .select("id, storage_path")
+      .eq("machine_id", machine.id);
+    const paths = (photos ?? []).flatMap((p) => [p.storage_path, thumbPathFor(p.storage_path)]);
+    if (paths.length > 0) {
+      await supabaseAdmin.storage.from(PHOTO_BUCKET).remove(paths);
+    }
+    await supabaseAdmin.from("machine_photos").delete().eq("machine_id", machine.id);
+    await supabaseAdmin.from("machine_property_assignments").delete().eq("machine_id", machine.id);
+    await supabaseAdmin.from("accessories").delete().eq("machine_id", machine.id);
+
+    const { error } = await supabaseAdmin.from("machines").delete().eq("id", machine.id);
+    if (error) failSafely("Gerät konnte nicht gelöscht werden.", error, "machines");
+
+    return { ok: true as const };
+  });
