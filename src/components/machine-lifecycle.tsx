@@ -17,11 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity } from "@/hooks/use-identity";
-import {
-  deleteMachine,
-  getMachineDeletionCheck,
-  setMachineActive,
-} from "@/lib/machines.functions";
+import { deleteMachine, getMachineDeletionCheck, setMachineActive } from "@/lib/machines.functions";
 
 type LifecycleMachine = {
   id: string;
@@ -117,13 +113,7 @@ function ReactivateButton({ machine }: { machine: LifecycleMachine }) {
   );
 }
 
-function ArchiveDialog({
-  machine,
-  onClose,
-}: {
-  machine: LifecycleMachine;
-  onClose: () => void;
-}) {
+function ArchiveDialog({ machine, onClose }: { machine: LifecycleMachine; onClose: () => void }) {
   const refresh = useRefreshLists(machine.id);
   const run = useServerFn(setMachineActive);
   const [comment, setComment] = useState("");
@@ -175,7 +165,12 @@ function ArchiveDialog({
             {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Deaktivieren
           </Button>
-          <Button variant="ghost" className="w-full" disabled={mutation.isPending} onClick={onClose}>
+          <Button
+            variant="ghost"
+            className="w-full"
+            disabled={mutation.isPending}
+            onClick={onClose}
+          >
             Abbrechen
           </Button>
         </DialogFooter>
@@ -261,7 +256,12 @@ function DeleteDialog({ machine, onClose }: { machine: LifecycleMachine; onClose
             {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Endgültig löschen
           </Button>
-          <Button variant="ghost" className="w-full" disabled={mutation.isPending} onClick={onClose}>
+          <Button
+            variant="ghost"
+            className="w-full"
+            disabled={mutation.isPending}
+            onClick={onClose}
+          >
             Abbrechen
           </Button>
         </DialogFooter>

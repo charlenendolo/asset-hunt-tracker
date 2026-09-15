@@ -466,7 +466,6 @@ function MachineDetailPage() {
             />
           </Section>
 
-
           {identity.isAdmin ? (
             <MachineQrSection machine={{ id: m.id, name: m.name, asset_code: m.asset_code }} />
           ) : null}

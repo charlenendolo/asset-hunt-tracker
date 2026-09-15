@@ -532,7 +532,9 @@ export const getMachineDeletionCheck = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!machine) throw new Error("Gerät konnte nicht geladen werden.");
 
-    const countOf = async (table: "movements" | "machine_handovers" | "reservations" | "defects" | "maintenance") => {
+    const countOf = async (
+      table: "movements" | "machine_handovers" | "reservations" | "defects" | "maintenance",
+    ) => {
       const { count } = await supabaseAdmin
         .from(table)
         .select("id", { count: "exact", head: true })
@@ -590,7 +592,13 @@ export const deleteMachine = createServerFn({ method: "POST" })
       );
     }
 
-    const tables = ["movements", "machine_handovers", "reservations", "defects", "maintenance"] as const;
+    const tables = [
+      "movements",
+      "machine_handovers",
+      "reservations",
+      "defects",
+      "maintenance",
+    ] as const;
     for (const table of tables) {
       const { count } = await supabaseAdmin
         .from(table)
