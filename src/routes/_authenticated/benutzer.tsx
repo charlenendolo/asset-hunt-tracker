@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { RoleBadge, ROLE_LABELS } from "@/components/role-badge";
+import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { profilesQuery } from "@/lib/queries";
@@ -155,10 +156,10 @@ function UsersPage() {
             onChange={(e) => setRoleFilter(e.target.value)}
           >
             <option value="all">Alle Rollen</option>
-            <option value="admin">{ROLE_LABELS.admin}</option>
-            <option value="site_manager">{ROLE_LABELS.site_manager}</option>
-            <option value="warehouse_manager">{ROLE_LABELS.warehouse_manager}</option>
-            <option value="user">{ROLE_LABELS.user}</option>
+            <option value="admin">{ROLE_LABELS["admin"]}</option>
+            <option value="site_manager">{ROLE_LABELS["site_manager"]}</option>
+            <option value="warehouse_manager">{ROLE_LABELS["warehouse_manager"]}</option>
+            <option value="user">{ROLE_LABELS["user"]}</option>
           </select>
           <select
             aria-label="Nach Status filtern"
