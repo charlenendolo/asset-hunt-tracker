@@ -172,10 +172,13 @@ export function machinesQuery(filters: MachineFilters) {
     queryKey: ["machines", filters],
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // Der Archiv-Filter zeigt bewusst die deaktivierten Geräte statt des
+      // aktiven Bestands; alle übrigen Filter bleiben unverändert.
+      const archived = filters.status === ARCHIVED_FILTER;
       let q = supabase
         .from("machines")
         .select(MACHINE_LIST_SELECT, { count: "exact" })
-        .eq("active", true);
+        .eq("active", !archived);
 
       if (filters.responsibleUserId) {
         q = q.eq("responsible_user_id", filters.responsibleUserId);
