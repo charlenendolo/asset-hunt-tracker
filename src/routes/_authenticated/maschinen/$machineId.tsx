@@ -171,6 +171,14 @@ function MachineDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
+          {m.active === false ? (
+            <div className="rounded-lg border border-border bg-muted/50 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">Gerät ist deaktiviert</p>
+              <p className="text-xs text-muted-foreground">
+                Dieses Gerät gehört nicht mehr zum aktiven Bestand. Die Historie bleibt erhalten.
+              </p>
+            </div>
+          ) : null}
           {isOverdue(m) ? (
             <OverdueNotice
               expectedReturnAt={m.expected_return_at}
