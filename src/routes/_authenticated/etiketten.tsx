@@ -121,7 +121,8 @@ function LabelsPage() {
   const [siteId, setSiteId] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Record<string, true>>({});
+  // Auswahl bleibt über Seitenwechsel, Suche und Filter hinweg erhalten.
+  const [selected, setSelected] = useState<Record<string, LabelMachine>>({});
   const [open, setOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
 
@@ -150,12 +151,13 @@ function LabelsPage() {
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const selectedIds = Object.keys(selected);
+  // Druckreihenfolge = Listenreihenfolge (Gerätenummer aufsteigend).
   const selectedMachines = useMemo(
     () =>
-      rows
-        .filter((m) => selected[m.id])
-        .map((m) => ({ id: m.id, name: m.name, asset_code: m.asset_code })),
-    [rows, selected],
+      Object.values(selected).sort((a, b) =>
+        (a.asset_code ?? "").localeCompare(b.asset_code ?? "", "de", { numeric: true }),
+      ),
+    [selected],
   );
   const allVisibleSelected = rows.length > 0 && rows.every((m) => selected[m.id]);
 
@@ -192,7 +194,9 @@ function LabelsPage() {
             onClick={() => setOpen(true)}
           >
             <Printer className="mr-2 h-4 w-4" />
-            Etiketten drucken
+            {selectedIds.length > 0
+              ? `${selectedIds.length} QR-Etikett${selectedIds.length === 1 ? "" : "en"} drucken`
+              : "QR-Etiketten drucken"}
           </Button>
         }
       />
@@ -264,7 +268,8 @@ function LabelsPage() {
               if (allVisibleSelected) {
                 for (const m of rows) delete next[m.id];
               } else {
-                for (const m of rows) next[m.id] = true;
+                for (const m of rows)
+                  next[m.id] = { id: m.id, name: m.name, asset_code: m.asset_code };
               }
               return next;
             })
@@ -282,7 +287,7 @@ function LabelsPage() {
           Auswahl aufheben
         </Button>
         <p className="text-xs text-muted-foreground">
-          {selectedIds.length} Maschine{selectedIds.length === 1 ? "" : "n"} ausgewählt ·{" "}
+          {selectedIds.length} Gerät{selectedIds.length === 1 ? "" : "e"} ausgewählt ·{" "}
           {formatNumber(total)} Geräte gefunden
         </p>
       </div>
@@ -290,13 +295,12 @@ function LabelsPage() {
       {selectedIds.length > 0 ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
           <p className="text-sm font-medium text-foreground">
-            {selectedIds.length} Maschine{selectedIds.length === 1 ? "" : "n"} ausgewählt
-            {selectedMachines.length < selectedIds.length
-              ? ` · ${selectedMachines.length} auf dieser Seite druckbar`
-              : ""}
+            {selectedIds.length} Etikett{selectedIds.length === 1 ? "" : "en"} ausgewählt · Auswahl
+            bleibt über Seiten und Filter erhalten
           </p>
           <Button size="sm" onClick={() => setOpen(true)}>
-            <Printer className="mr-2 h-4 w-4" /> Etiketten drucken
+            <Printer className="mr-2 h-4 w-4" />
+            {selectedIds.length} QR-Etikett{selectedIds.length === 1 ? "" : "en"} drucken
           </Button>
         </div>
       ) : null}
@@ -324,7 +328,7 @@ function LabelsPage() {
                 onCheckedChange={(checked) =>
                   setSelected((prev) => {
                     const next = { ...prev };
-                    if (checked) next[m.id] = true;
+                    if (checked) next[m.id] = { id: m.id, name: m.name, asset_code: m.asset_code };
                     else delete next[m.id];
                     return next;
                   })
