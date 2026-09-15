@@ -106,6 +106,9 @@ export const INSPECTION_DUE_FILTER = "inspection_due";
 /** Prüfpflichtige Geräte ohne hinterlegten Prüftermin. */
 export const INSPECTION_MISSING_FILTER = "inspection_missing";
 
+/** Deaktivierte/archivierte Geräte (machines.active = false) — nur für Admins. */
+export const ARCHIVED_FILTER = "archived";
+
 /** Konfigurierbare Vorwarnzeit für Prüfungen (gilt für alle Nutzer). */
 export const inspectionWarningDaysQuery = queryOptions({
   queryKey: ["settings", "inspection_warning_days"],
@@ -169,10 +172,13 @@ export function machinesQuery(filters: MachineFilters) {
     queryKey: ["machines", filters],
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // Der Archiv-Filter zeigt bewusst die deaktivierten Geräte statt des
+      // aktiven Bestands; alle übrigen Filter bleiben unverändert.
+      const archived = filters.status === ARCHIVED_FILTER;
       let q = supabase
         .from("machines")
         .select(MACHINE_LIST_SELECT, { count: "exact" })
-        .eq("active", true);
+        .eq("active", !archived);
 
       if (filters.responsibleUserId) {
         q = q.eq("responsible_user_id", filters.responsibleUserId);
@@ -234,7 +240,7 @@ export function machinesQuery(filters: MachineFilters) {
         } else if (assignedSiteIds.length > 0) {
           q = q.or(`current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`);
         }
-      } else if (filters.status) {
+      } else if (filters.status && !archived) {
         q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
       }
 

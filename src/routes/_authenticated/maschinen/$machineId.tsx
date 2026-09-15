@@ -8,6 +8,7 @@ import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialo
 import { ReassignResponsibleButton } from "@/components/reassign-responsible";
 import { EditMachineButton } from "@/components/machine-edit";
 import { ChangeSiteButton } from "@/components/change-site";
+import { MachineLifecycleActions } from "@/components/machine-lifecycle";
 import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
@@ -170,6 +171,14 @@ function MachineDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
+          {m.active === false ? (
+            <div className="rounded-lg border border-border bg-muted/50 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">Gerät ist deaktiviert</p>
+              <p className="text-xs text-muted-foreground">
+                Dieses Gerät gehört nicht mehr zum aktiven Bestand. Die Historie bleibt erhalten.
+              </p>
+            </div>
+          ) : null}
           {isOverdue(m) ? (
             <OverdueNotice
               expectedReturnAt={m.expected_return_at}
@@ -444,6 +453,15 @@ function MachineDetailPage() {
                 name: m.name,
                 asset_code: m.asset_code,
                 current_site_id: m.current_site_id,
+              }}
+            />
+            <MachineLifecycleActions
+              className="mt-3 border-t border-border pt-3"
+              machine={{
+                id: m.id,
+                name: m.name,
+                asset_code: m.asset_code,
+                active: m.active,
               }}
             />
           </Section>

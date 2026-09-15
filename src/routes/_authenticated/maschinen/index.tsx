@@ -34,6 +34,7 @@ import {
   OVERDUE_FILTER,
   INSPECTION_DUE_FILTER,
   INSPECTION_MISSING_FILTER,
+  ARCHIVED_FILTER,
 } from "@/lib/queries";
 import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
 
@@ -370,6 +371,7 @@ function MachinesPage() {
           <option value={OVERDUE_FILTER}>Überfällig</option>
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
           <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
+          {identity.isAdmin ? <option value={ARCHIVED_FILTER}>Archiviert</option> : null}
         </Select>
         <div className="flex min-w-0 gap-2">
           <Select
