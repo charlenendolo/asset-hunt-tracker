@@ -106,6 +106,9 @@ export const INSPECTION_DUE_FILTER = "inspection_due";
 /** Prüfpflichtige Geräte ohne hinterlegten Prüftermin. */
 export const INSPECTION_MISSING_FILTER = "inspection_missing";
 
+/** Deaktivierte/archivierte Geräte (machines.active = false) — nur für Admins. */
+export const ARCHIVED_FILTER = "archived";
+
 /** Konfigurierbare Vorwarnzeit für Prüfungen (gilt für alle Nutzer). */
 export const inspectionWarningDaysQuery = queryOptions({
   queryKey: ["settings", "inspection_warning_days"],
