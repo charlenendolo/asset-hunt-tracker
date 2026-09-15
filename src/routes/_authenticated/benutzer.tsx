@@ -91,15 +91,13 @@ function UsersPage() {
     const dir = sortAsc ? 1 : -1;
     const collator = new Intl.Collator("de", { sensitivity: "base" });
     return [...list].sort((a, b) => {
-      if (sortKey === "username")
-        return dir * collator.compare(a.username ?? "", b.username ?? "");
+      if (sortKey === "username") return dir * collator.compare(a.username ?? "", b.username ?? "");
       if (sortKey === "role")
         return dir * ((ROLE_ORDER[a.role ?? "user"] ?? 9) - (ROLE_ORDER[b.role ?? "user"] ?? 9));
       if (sortKey === "status") return dir * (Number(b.active) - Number(a.active));
       if (sortKey === "created")
         return (
-          dir *
-          (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
+          dir * (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
         );
       return dir * collator.compare(a.full_name ?? "", b.full_name ?? "");
     });
@@ -248,7 +246,9 @@ function UsersPage() {
                         {p.active ? "Aktiv" : "Deaktiviert"}
                       </Pill>
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{formatDate(p.created_at)}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">
+                      {formatDate(p.created_at)}
+                    </td>
                     {isAdmin ? (
                       <td className="px-4 py-2.5 text-right">
                         <UserRowMenu

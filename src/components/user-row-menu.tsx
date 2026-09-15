@@ -46,7 +46,11 @@ export function UserRowMenu({ user, email }: { user: ManagedUser; email: string 
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label={`Aktionen für ${user.full_name ?? "Benutzer"}`}>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label={`Aktionen für ${user.full_name ?? "Benutzer"}`}
+          >
             <MoreVertical className="h-4 w-4" strokeWidth={1.75} />
           </Button>
         </DropdownMenuTrigger>
@@ -58,10 +62,7 @@ export function UserRowMenu({ user, email }: { user: ManagedUser; email: string 
             <KeyRound className="mr-2 h-4 w-4" strokeWidth={1.75} /> Passwort ändern
           </DropdownMenuItem>
           {email ? (
-            <DropdownMenuItem
-              disabled={sendReset.isPending}
-              onSelect={() => sendReset.mutate()}
-            >
+            <DropdownMenuItem disabled={sendReset.isPending} onSelect={() => sendReset.mutate()}>
               <Mail className="mr-2 h-4 w-4" strokeWidth={1.75} /> Reset-Link senden
             </DropdownMenuItem>
           ) : null}

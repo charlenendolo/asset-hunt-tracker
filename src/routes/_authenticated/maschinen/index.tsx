@@ -79,7 +79,12 @@ export const Route = createFileRoute("/_authenticated/maschinen/")({
     const q = str("q");
     const sortRaw = str("sort");
     const sort = SORT_FIELDS.some((f) => f.value === sortRaw) ? sortRaw : "";
-    const dir = str("dir") === "desc" ? ("desc" as const) : str("dir") === "asc" ? ("asc" as const) : undefined;
+    const dir =
+      str("dir") === "desc"
+        ? ("desc" as const)
+        : str("dir") === "asc"
+          ? ("asc" as const)
+          : undefined;
     const pageRaw = Number(search["page"]);
     const page = Number.isFinite(pageRaw) && pageRaw > 1 ? Math.floor(pageRaw) : undefined;
     // Nur ein Boolean-Flag: die Identität kommt immer aus der Session, nie aus der URL.
@@ -255,7 +260,6 @@ function MachinesPage() {
       return next;
     });
   }
-
 
   return (
     <AppShell
