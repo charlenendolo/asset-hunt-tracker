@@ -447,7 +447,17 @@ function MachineDetailPage() {
                 current_site_id: m.current_site_id,
               }}
             />
+            <MachineLifecycleActions
+              className="mt-3 border-t border-border pt-3"
+              machine={{
+                id: m.id,
+                name: m.name,
+                asset_code: m.asset_code,
+                active: m.active,
+              }}
+            />
           </Section>
+
 
           {identity.isAdmin ? (
             <MachineQrSection machine={{ id: m.id, name: m.name, asset_code: m.asset_code }} />
