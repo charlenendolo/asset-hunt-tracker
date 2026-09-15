@@ -151,12 +151,13 @@ function LabelsPage() {
   const total = machines.data?.count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const selectedIds = Object.keys(selected);
+  // Druckreihenfolge = Listenreihenfolge (Gerätenummer aufsteigend).
   const selectedMachines = useMemo(
     () =>
-      rows
-        .filter((m) => selected[m.id])
-        .map((m) => ({ id: m.id, name: m.name, asset_code: m.asset_code })),
-    [rows, selected],
+      Object.values(selected).sort((a, b) =>
+        (a.asset_code ?? "").localeCompare(b.asset_code ?? "", "de", { numeric: true }),
+      ),
+    [selected],
   );
   const allVisibleSelected = rows.length > 0 && rows.every((m) => selected[m.id]);
 
