@@ -240,7 +240,7 @@ export function machinesQuery(filters: MachineFilters) {
         } else if (assignedSiteIds.length > 0) {
           q = q.or(`current_site_id.is.null,current_site_id.not.in.(${assignedSiteIds.join(",")})`);
         }
-      } else if (filters.status) {
+      } else if (filters.status && !archived) {
         q = q.in("status", machineStatusDbValues(machineStatusKey(filters.status)));
       }
 
