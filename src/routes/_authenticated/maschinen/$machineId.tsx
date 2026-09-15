@@ -8,6 +8,7 @@ import { CloseDefectButton, ReportDefectButton } from "@/components/defect-dialo
 import { ReassignResponsibleButton } from "@/components/reassign-responsible";
 import { EditMachineButton } from "@/components/machine-edit";
 import { ChangeSiteButton } from "@/components/change-site";
+import { MachineLifecycleActions } from "@/components/machine-lifecycle";
 import { CancelReservationButton } from "@/components/cancel-reservation";
 import { useIdentity } from "@/hooks/use-identity";
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
