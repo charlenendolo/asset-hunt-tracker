@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { ChangePasswordForm } from "@/components/change-password";
+import { RoleBadge } from "@/components/role-badge";
 import { Pill } from "@/components/status-badge";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Button } from "@/components/ui/button";
@@ -36,13 +37,6 @@ export const Route = createFileRoute("/_authenticated/einstellungen")({
   }),
   component: SettingsPage,
 });
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrator",
-  site_manager: "Bauleiter",
-  warehouse_manager: "Lagerverwalter",
-  user: "Mitarbeiter",
-};
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -119,7 +113,7 @@ function InspectionWarningSetting() {
 }
 
 function SettingsPage() {
-  const { profile, user, isLoading, isAdmin } = useCurrentProfile();
+  const { profile, user, isLoading } = useCurrentProfile();
   const identity = useIdentity();
   const categories = useQuery(categoriesQuery);
 
@@ -134,14 +128,7 @@ function SettingsPage() {
             <div>
               <Row label="Name" value={textOrDash(profile?.full_name)} />
               <Row label="E-Mail" value={textOrDash(user?.email ?? null)} />
-              <Row
-                label="Rolle"
-                value={
-                  <Pill tone={isAdmin ? "primary" : "neutral"}>
-                    {ROLE_LABELS[profile?.role ?? ""] ?? textOrDash(profile?.role)}
-                  </Pill>
-                }
-              />
+              <Row label="Rolle" value={<RoleBadge role={profile?.role} />} />
               <Row
                 label="Status"
                 value={

@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, Users } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
+import { RoleBadge, ROLE_LABELS } from "@/components/role-badge";
 import { Pill } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -28,26 +29,12 @@ export const Route = createFileRoute("/_authenticated/benutzer")({
   component: UsersPage,
 });
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrator",
-  site_manager: "Bauleiter",
-  warehouse_manager: "Lagerverwalter",
-  user: "Mitarbeiter",
-};
-
 const ROLE_ORDER: Record<string, number> = {
   admin: 0,
   site_manager: 1,
   warehouse_manager: 2,
   user: 3,
 };
-
-function roleTone(role: string) {
-  if (role === "admin") return "primary" as const;
-  if (role === "site_manager") return "warning" as const;
-  if (role === "warehouse_manager") return "success" as const;
-  return "neutral" as const;
-}
 
 type SortKey = "name" | "username" | "role" | "status" | "created";
 
@@ -169,10 +156,10 @@ function UsersPage() {
             onChange={(e) => setRoleFilter(e.target.value)}
           >
             <option value="all">Alle Rollen</option>
-            <option value="admin">Administrator</option>
-            <option value="site_manager">Bauleiter</option>
-            <option value="warehouse_manager">Lagerverwalter</option>
-            <option value="user">Mitarbeiter</option>
+            <option value="admin">{ROLE_LABELS["admin"]}</option>
+            <option value="site_manager">{ROLE_LABELS["site_manager"]}</option>
+            <option value="warehouse_manager">{ROLE_LABELS["warehouse_manager"]}</option>
+            <option value="user">{ROLE_LABELS["user"]}</option>
           </select>
           <select
             aria-label="Nach Status filtern"
@@ -230,11 +217,7 @@ function UsersPage() {
                       </td>
                     ) : null}
                     <td className="px-4 py-2.5">
-                      {p.role ? (
-                        <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
-                      ) : (
-                        <span className="text-muted-foreground">–</span>
-                      )}
+                      <RoleBadge role={p.role} />
                     </td>
                     {isAdmin ? (
                       <td className="px-4 py-2.5">
@@ -284,9 +267,7 @@ function UsersPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {p.role ? (
-                    <Pill tone={roleTone(p.role)}>{ROLE_LABELS[p.role] ?? p.role}</Pill>
-                  ) : null}
+                  <RoleBadge role={p.role} />
                   {isAdmin ? (
                     <UserRowMenu
                       user={{

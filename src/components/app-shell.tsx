@@ -23,6 +23,7 @@ import { useCurrentProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggleButton } from "@/components/theme-switch";
+import { RoleBadge } from "@/components/role-badge";
 
 type NavItem = {
   to: string;
@@ -84,13 +85,6 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Administrator",
-  site_manager: "Bauleiter",
-  warehouse_manager: "Lagerverwalter",
-  user: "Mitarbeiter",
-};
-
 function UserBlock() {
   const { profile, user, role, isLoading } = useCurrentProfile();
   const navigate = useNavigate();
@@ -119,9 +113,7 @@ function UserBlock() {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {isLoading ? "" : (ROLE_LABEL[role] ?? "Mitarbeiter")}
-        </p>
+        {isLoading ? null : <RoleBadge role={role} className="mt-0.5" />}
       </div>
       <ThemeToggleButton />
       <button
