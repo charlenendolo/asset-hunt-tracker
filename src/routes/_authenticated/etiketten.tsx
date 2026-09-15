@@ -121,7 +121,8 @@ function LabelsPage() {
   const [siteId, setSiteId] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Record<string, true>>({});
+  // Auswahl bleibt über Seitenwechsel, Suche und Filter hinweg erhalten.
+  const [selected, setSelected] = useState<Record<string, LabelMachine>>({});
   const [open, setOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
 
