@@ -7,14 +7,23 @@ import { getMachineQrUrl } from "@/lib/qr-labels";
  * Verlustfreier Druck-QR als PNG. 512 px entsprechen bei 21 mm Kantenlänge
  * deutlich mehr als 300 DPI; ohne Skalierung oder Screenshot-Rasterisierung.
  */
+const qrCache = new Map<string, Promise<string>>();
+
 export async function generateMachineQrPng(machineId: string): Promise<string> {
-  return QRCode.toDataURL(getMachineQrUrl(machineId), {
+  const cached = qrCache.get(machineId);
+  if (cached) return cached;
+  const promise = QRCode.toDataURL(getMachineQrUrl(machineId), {
     type: "image/png",
     width: 512,
     errorCorrectionLevel: "M",
     margin: 2,
     color: { dark: "#000000", light: "#FFFFFF" },
+  }).catch((error: unknown) => {
+    qrCache.delete(machineId);
+    throw error;
   });
+  qrCache.set(machineId, promise);
+  return promise;
 }
 
 export function useMachineQrPngs(machineIds: string[]): {
