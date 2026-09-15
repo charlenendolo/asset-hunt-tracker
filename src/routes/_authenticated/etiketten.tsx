@@ -327,7 +327,7 @@ function LabelsPage() {
                 onCheckedChange={(checked) =>
                   setSelected((prev) => {
                     const next = { ...prev };
-                    if (checked) next[m.id] = true;
+                    if (checked) next[m.id] = { id: m.id, name: m.name, asset_code: m.asset_code };
                     else delete next[m.id];
                     return next;
                   })
