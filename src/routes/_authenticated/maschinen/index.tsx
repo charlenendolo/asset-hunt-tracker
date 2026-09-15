@@ -158,22 +158,25 @@ function MachinesPage() {
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
 
-  function patchSearch(patch: Partial<MachinesSearch>, resetPage = true) {
+  function patchSearch(
+    patch: { [K in keyof MachinesSearch]?: MachinesSearch[K] | undefined },
+    resetPage = true,
+  ) {
     void navigate({
       search: (prev) => {
-        const next = { ...prev, ...patch } as MachinesSearch;
-        if (resetPage) delete next.page;
-        for (const key of Object.keys(next) as (keyof MachinesSearch)[]) {
+        const next = { ...prev, ...patch } as Record<string, unknown>;
+        if (resetPage) delete next["page"];
+        for (const key of Object.keys(next)) {
           if (next[key] === "" || next[key] === undefined) delete next[key];
         }
-        return next;
+        return next as MachinesSearch;
       },
       replace: true,
     });
   }
 
   function setPage(next: number) {
-    patchSearch(next > 1 ? { page: next } : { page: undefined }, false);
+    patchSearch(next > 1 ? { page: next } : {}, true);
   }
 
   // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
@@ -592,7 +595,7 @@ function MachinesPage() {
                 variant="outline"
                 className="h-10"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
               >
                 <ChevronLeft className="h-4 w-4" /> Zurück
               </Button>
@@ -600,7 +603,7 @@ function MachinesPage() {
                 variant="outline"
                 className="h-10"
                 disabled={page >= pageCount}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage(page + 1)}
               >
                 Weiter <ChevronRight className="h-4 w-4" />
               </Button>
