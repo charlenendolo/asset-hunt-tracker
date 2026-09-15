@@ -266,7 +266,8 @@ function LabelsPage() {
               if (allVisibleSelected) {
                 for (const m of rows) delete next[m.id];
               } else {
-                for (const m of rows) next[m.id] = true;
+                for (const m of rows)
+                  next[m.id] = { id: m.id, name: m.name, asset_code: m.asset_code };
               }
               return next;
             })
