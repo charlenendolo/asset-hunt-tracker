@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Printer, Download, AlertTriangle, ArrowLeft } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Printer, Download, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
