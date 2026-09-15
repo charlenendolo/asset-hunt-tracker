@@ -34,6 +34,7 @@ import {
   OVERDUE_FILTER,
   INSPECTION_DUE_FILTER,
   INSPECTION_MISSING_FILTER,
+  ARCHIVED_FILTER,
 } from "@/lib/queries";
 import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
 
