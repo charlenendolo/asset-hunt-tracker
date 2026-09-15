@@ -40,15 +40,49 @@ import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { PropertyTags } from "@/components/machine-properties";
 
+const SORT_FIELDS = [
+  { value: "name", label: "Name" },
+  { value: "asset_code", label: "Gerätenummer" },
+  { value: "status", label: "Status" },
+  { value: "created_at", label: "Hinzugefügt" },
+] as const;
+
+type MachinesSearch = {
+  q?: string;
+  categoryId?: string;
+  siteId?: string;
+  locationType?: string;
+  status?: string;
+  sort?: string;
+  dir?: "asc" | "desc";
+  page?: number;
+  mine?: true;
+};
+
 export const Route = createFileRoute("/_authenticated/maschinen/")({
-  validateSearch: (search: Record<string, unknown>) => {
-    const status = typeof search["status"] === "string" ? search["status"] : "";
-    const siteId = typeof search["siteId"] === "string" ? search["siteId"] : "";
+  validateSearch: (search: Record<string, unknown>): MachinesSearch => {
+    const str = (key: string) => (typeof search[key] === "string" ? (search[key] as string) : "");
+    const status = str("status");
+    const siteId = str("siteId");
+    const categoryId = str("categoryId");
+    const locationType = str("locationType");
+    const q = str("q");
+    const sortRaw = str("sort");
+    const sort = SORT_FIELDS.some((f) => f.value === sortRaw) ? sortRaw : "";
+    const dir = str("dir") === "desc" ? ("desc" as const) : str("dir") === "asc" ? ("asc" as const) : undefined;
+    const pageRaw = Number(search["page"]);
+    const page = Number.isFinite(pageRaw) && pageRaw > 1 ? Math.floor(pageRaw) : undefined;
     // Nur ein Boolean-Flag: die Identität kommt immer aus der Session, nie aus der URL.
     const mine = search["mine"] === true || search["mine"] === "true";
     return {
+      ...(q ? { q } : {}),
+      ...(categoryId ? { categoryId } : {}),
       ...(status ? { status } : {}),
       ...(siteId ? { siteId } : {}),
+      ...(locationType ? { locationType } : {}),
+      ...(sort ? { sort } : {}),
+      ...(dir ? { dir } : {}),
+      ...(page ? { page } : {}),
       ...(mine ? { mine: true as const } : {}),
     };
   },
@@ -96,26 +130,41 @@ function Select({
 
 function MachinesPage() {
   const urlSearch = Route.useSearch();
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [siteId, setSiteId] = useState(urlSearch.siteId ?? "");
-  const [locationType, setLocationType] = useState("");
-  const [status, setStatus] = useState(urlSearch.status ?? "");
+  const navigate = Route.useNavigate();
 
-  const [sort, setSort] = useState("name:asc");
-  const [page, setPage] = useState(1);
+  // Die URL ist die einzige Quelle für Suche, Filter, Sortierung und Seite —
+  // deshalb bleibt der Listenzustand beim Zurückspringen aus einem Gerät erhalten.
+  const search = urlSearch.q ?? "";
+  const categoryId = urlSearch.categoryId ?? "";
+  const siteId = urlSearch.siteId ?? "";
+  const locationType = urlSearch.locationType ?? "";
+  const status = urlSearch.status ?? "";
+  const sortField = urlSearch.sort ?? "name";
+  const sortDir = urlSearch.dir ?? "asc";
+  const sort = `${sortField}:${sortDir}`;
+  const page = urlSearch.page ?? 1;
+
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
 
-  // Zurück/Vorwärts im Browser bzw. Klick auf eine Standortkarte übernehmen.
-  const urlStatus = urlSearch.status ?? "";
-  const urlSiteId = urlSearch.siteId ?? "";
-  useEffect(() => {
-    setStatus(urlStatus);
-    setSiteId(urlSiteId);
-    setPage(1);
-  }, [urlStatus, urlSiteId]);
+  function patchSearch(patch: Partial<MachinesSearch>, resetPage = true) {
+    void navigate({
+      search: (prev) => {
+        const next = { ...prev, ...patch } as MachinesSearch;
+        if (resetPage) delete next.page;
+        for (const key of Object.keys(next) as (keyof MachinesSearch)[]) {
+          if (next[key] === "" || next[key] === undefined) delete next[key];
+        }
+        return next;
+      },
+      replace: true,
+    });
+  }
+
+  function setPage(next: number) {
+    patchSearch({ page: next > 1 ? next : undefined }, false);
+  }
 
   // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
   const mineActive = urlSearch.mine === true;
@@ -168,6 +217,12 @@ function MachinesPage() {
   const hasFilters = !!(search || categoryId || siteId || locationType || status || mineActive);
   const isLoadingList = machines.isLoading || (mineActive && !mineUserId);
 
+  // Landet die Seite nach einer Filteränderung außerhalb des Ergebnisses, zurück auf 1.
+  useEffect(() => {
+    if (!machines.isFetching && page > pageCount) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageCount, machines.isFetching]);
+
   const canSelect = identity.isAdmin;
   const selectedIds = Object.keys(selected);
   const selectedMachines = useMemo(
@@ -188,12 +243,6 @@ function MachinesPage() {
     });
   }
 
-  function reset<T>(setter: (v: T) => void) {
-    return (v: T) => {
-      setter(v);
-      setPage(1);
-    };
-  }
 
   return (
     <AppShell
