@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Container, ChevronLeft, ChevronRight, ImageOff, Printer, X } from "lucide-react";
+import {
+  Search,
+  Container,
+  ChevronLeft,
+  ChevronRight,
+  ImageOff,
+  Printer,
+  X,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 
 import { usePrimaryPhotos } from "@/hooks/use-primary-photos";
 import { AppShell } from "@/components/app-shell";
@@ -163,7 +173,7 @@ function MachinesPage() {
   }
 
   function setPage(next: number) {
-    patchSearch({ page: next > 1 ? next : undefined }, false);
+    patchSearch(next > 1 ? { page: next } : { page: undefined }, false);
   }
 
   // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
