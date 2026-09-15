@@ -132,7 +132,9 @@ export function LabelPrintDialog({
     if (ready.length === 0) return;
     setZipProgress({ done: 0, total: ready.length });
     try {
-      const zip = await buildLabelZip(ready, FORMAT, (done, total) => setZipProgress({ done, total }));
+      const zip = await buildLabelZip(ready, FORMAT, (done, total) =>
+        setZipProgress({ done, total }),
+      );
       download(`Etiketten_${ready.length}.zip`, zip);
       toast.success(`${ready.length} Etiketten als PNG-ZIP heruntergeladen.`);
     } catch {
