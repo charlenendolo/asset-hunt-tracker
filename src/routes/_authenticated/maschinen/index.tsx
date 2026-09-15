@@ -275,7 +275,7 @@ function MachinesPage() {
             <button
               type="button"
               aria-label="Standortfilter entfernen"
-              onClick={() => reset(setSiteId)("")}
+              onClick={() => patchSearch({ siteId: "" })}
               className="rounded-full p-0.5 transition-colors hover:bg-primary/15"
             >
               <X className="h-3.5 w-3.5" />
@@ -305,12 +305,16 @@ function MachinesPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => reset(setSearch)(e.target.value)}
+            onChange={(e) => patchSearch({ q: e.target.value })}
             placeholder="Suche nach Name, Code, Seriennummer …"
             className="h-10 bg-card pl-9"
           />
         </div>
-        <Select label="Kategorie" value={categoryId} onChange={reset(setCategoryId)}>
+        <Select
+          label="Kategorie"
+          value={categoryId}
+          onChange={(v) => patchSearch({ categoryId: v })}
+        >
           <option value="">Alle Kategorien</option>
           {(categories.data ?? []).map((c) => (
             <option key={c.id} value={c.id}>
@@ -321,10 +325,7 @@ function MachinesPage() {
         <Select
           label="Standorttyp"
           value={locationType}
-          onChange={(v) => {
-            reset(setLocationType)(v);
-            setSiteId("");
-          }}
+          onChange={(v) => patchSearch({ locationType: v, siteId: "" })}
         >
           <option value="">Alle Standorttypen</option>
           {SITE_TYPE_ORDER.map((t) => (
@@ -335,14 +336,14 @@ function MachinesPage() {
         </Select>
         <SiteCombobox
           value={siteId}
-          onChange={reset(setSiteId)}
+          onChange={(v) => patchSearch({ siteId: v })}
           typeFilter={locationType}
           emptyLabel="Alle Standorte"
           allowCreate={false}
           className="h-10 bg-card"
         />
 
-        <Select label="Status" value={status} onChange={reset(setStatus)}>
+        <Select label="Status" value={status} onChange={(v) => patchSearch({ status: v })}>
           <option value="">Alle Status</option>
           {MACHINE_STATUS_ORDER.map((k) => (
             <option key={k} value={MACHINE_STATUS_DB_VALUES[k]}>
@@ -353,12 +354,35 @@ function MachinesPage() {
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
           <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
         </Select>
-        <Select label="Sortierung" value={sort} onChange={reset(setSort)}>
-          <option value="name:asc">Name (A–Z)</option>
-          <option value="name:desc">Name (Z–A)</option>
-          <option value="asset_code:asc">Gerätenummer aufsteigend</option>
-          <option value="created_at:desc">Zuletzt hinzugefügt</option>
-        </Select>
+        <div className="flex min-w-0 gap-2">
+          <Select
+            label="Sortierfeld"
+            value={sortField}
+            onChange={(v) => patchSearch({ sort: v, dir: sortDir })}
+          >
+            {SORT_FIELDS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </Select>
+          <Button
+            variant="outline"
+            className="h-10 shrink-0"
+            aria-label={sortDir === "asc" ? "Absteigend sortieren" : "Aufsteigend sortieren"}
+            title={sortDir === "asc" ? "Aufsteigend" : "Absteigend"}
+            onClick={() =>
+              patchSearch({ sort: sortField, dir: sortDir === "asc" ? "desc" : "asc" })
+            }
+          >
+            {sortDir === "asc" ? (
+              <ArrowUp className="h-4 w-4" strokeWidth={2} />
+            ) : (
+              <ArrowDown className="h-4 w-4" strokeWidth={2} />
+            )}
+            <span className="ml-1 text-xs">{sortDir === "asc" ? "A–Z" : "Z–A"}</span>
+          </Button>
+        </div>
       </div>
 
       {machines.isError ? (
