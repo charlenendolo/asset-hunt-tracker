@@ -195,7 +195,7 @@ function ActionDialog({
           : null;
         return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
       }
-      return doReturn({ data: { ...payload, pin: pinNeeded ? pin : null } });
+      return doReturn({ data: payload });
     },
     onSuccess: async () => {
       await refresh();
@@ -203,19 +203,16 @@ function ActionDialog({
         mode === "checkout" ? "Gerät erfolgreich ausgeliehen." : "Gerät erfolgreich zurückgegeben.",
       );
       setComment("");
-      setPin("");
       onClose();
     },
     onError: (error: Error) => {
-      setPin("");
       toast.error(error.message || "Vorgang fehlgeschlagen. Bitte erneut versuchen.");
     },
   });
 
   const accessories = relations.data?.accessories ?? [];
   const commentRequired = mode === "return" && (!complete || condition !== "good");
-  const blocked =
-    (commentRequired && !comment.trim()) || (pinNeeded && !/^\d{4}$/.test(pin));
+  const blocked = commentRequired && !comment.trim();
 
 
   return (
@@ -337,28 +334,6 @@ function ActionDialog({
             />
           </div>
 
-          {pinNeeded ? (
-            <div className="space-y-2 rounded-lg border border-border bg-muted/40 px-4 py-4">
-              <Label htmlFor="return-pin" className="text-sm font-semibold">
-                Rückgabe mit PIN bestätigen
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Bitte gib deinen 4-stelligen PIN ein.
-              </p>
-              <input
-                id="return-pin"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="••••"
-                className="h-14 w-full rounded-md border border-input bg-background px-4 text-center text-2xl tracking-[0.6em]"
-              />
-            </div>
-          ) : null}
         </div>
 
 
