@@ -44,7 +44,9 @@ function UsersPage() {
   const profiles = useQuery(profilesQuery);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Standard: nur aktive Benutzer. Archivierte/gelöschte Zugänge bleiben für die
+  // Historie erhalten, erscheinen aber nur über den expliziten Filter.
+  const [statusFilter, setStatusFilter] = useState("active");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -167,9 +169,9 @@ function UsersPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">Alle Status</option>
-            <option value="active">Aktiv</option>
-            <option value="inactive">Deaktiviert</option>
+            <option value="active">Nur aktive Benutzer</option>
+            <option value="inactive">Archivierte/gelöschte Benutzer</option>
+            <option value="all">Alle Benutzer</option>
           </select>
         </div>
       ) : null}

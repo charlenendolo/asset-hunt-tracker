@@ -184,7 +184,7 @@ export const requestHandover = createServerFn({ method: "POST" })
     if (!CHECKED_OUT.includes(status) && status !== "defective") {
       throw new Error("Dieses Gerät kann derzeit nicht übergeben werden.");
     }
-    if (!receiver || receiver.active === false) {
+    if (!receiver || receiver.active !== true) {
       throw new Error("Die ausgewählte Person ist nicht aktiv.");
     }
 
