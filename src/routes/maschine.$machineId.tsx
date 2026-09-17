@@ -130,6 +130,9 @@ function QrMachinePage() {
               status: machine.data.status,
               current_site_id: machine.data.current_site_id,
               responsible_user_id: machine.data.responsible_user_id,
+              responsible: machine.data.responsible
+                ? { full_name: machine.data.responsible.full_name }
+                : null,
               site: machine.data.site ? { location_type: machine.data.site.location_type } : null,
             }}
           />

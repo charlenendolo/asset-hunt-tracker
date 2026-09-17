@@ -151,10 +151,10 @@ export const getMachineHistory = createServerFn({ method: "POST" })
         kind,
         title,
         subject: responsible ?? performer,
-        // Bei Selbstbedienung (QR) sind Handelnder und Obhut identisch —
-        // dann keine doppelte Nennung. Administrative Zuweisungen bleiben
-        // dadurch klar unterscheidbar.
-        actor: performer && performer !== responsible ? performer : null,
+        // Bei der Rückgabe werden beide Identitäten immer genannt: wer das
+        // Gerät in Obhut hatte und wer es tatsächlich zurückgegeben hat.
+        // Sonst nur nennen, wenn Handelnder und Obhut unterschiedlich sind.
+        actor: kind === "return" ? (performer ?? responsible) : performer && performer !== responsible ? performer : null,
         fromSite: mv.from_site?.name ?? null,
         toSite: mv.to_site?.name ?? null,
         detail: details.length > 0 ? details.join(" · ") : null,
