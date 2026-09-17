@@ -154,13 +154,14 @@ function ActionDialog({
   machine,
   onClose,
   actorName,
-  requiresPin,
+  custodianName,
 }: {
   mode: "checkout" | "return" | null;
   machine: MachineLike;
   onClose: () => void;
   actorName: string;
-  requiresPin: boolean;
+  /** Gesetzt, wenn eine andere Person das Gerät aktuell in Obhut hat. */
+  custodianName: string | null;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
 
@@ -172,9 +173,8 @@ function ActionDialog({
   const [comment, setComment] = useState("");
   const [expectedDate, setExpectedDate] = useState("");
   const [expectedTime, setExpectedTime] = useState("");
-  const [pin, setPin] = useState("");
 
-  const pinNeeded = mode === "return" && requiresPin;
+  const thirdParty = mode === "return" && !!custodianName;
 
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
