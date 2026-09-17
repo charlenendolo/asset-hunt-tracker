@@ -226,10 +226,20 @@ function ActionDialog({
         </DialogHeader>
 
         <div className="space-y-5">
+          {thirdParty ? (
+            <div className="rounded-lg border border-status-borrowed/25 bg-status-borrowed/8 px-4 py-3 text-sm text-status-borrowed">
+              <p className="font-medium">Dieses Gerät ist aktuell {custodianName} zugeordnet.</p>
+              <p className="mt-1">Du gibst dieses Gerät für {custodianName} zurück.</p>
+            </div>
+          ) : null}
+
           <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">Mitarbeiter</p>
+            <p className="text-muted-foreground">
+              {thirdParty ? "Rückgabe durch" : "Mitarbeiter"}
+            </p>
             <p className="font-medium text-foreground">{actorName}</p>
           </div>
+
 
           <div className="space-y-1.5">
             <Label htmlFor="site">{mode === "checkout" ? "Standort" : "Rückgabe-Standort"}</Label>
