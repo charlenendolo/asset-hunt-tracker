@@ -8,7 +8,6 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PinLoginForm } from "@/components/pin-login-form";
 import { passwordLogin } from "@/lib/login.functions";
 
 const SAFE_PATH = /^\/[A-Za-z0-9\-_/]*$/;
@@ -50,7 +49,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPin, setShowPin] = useState(false);
   const login = useServerFn(passwordLogin);
 
   // Client-only: eine bestehende Session leitet weiter (kein SSR-Zweig -> keine Hydration-Mismatch).
