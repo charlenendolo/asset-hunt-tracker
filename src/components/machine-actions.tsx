@@ -354,7 +354,11 @@ function ActionDialog({
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {mode === "checkout" ? "Ausleihe bestätigen" : "Rückgabe bestätigen"}
+            {mode === "checkout"
+              ? "Ausleihe bestätigen"
+              : thirdParty
+                ? "Trotzdem zurückgeben"
+                : "Rückgabe bestätigen"}
           </Button>
           <Button
             variant="ghost"
