@@ -31,6 +31,8 @@ type MachineLike = {
   status: string | null;
   current_site_id: string | null;
   responsible_user_id: string | null;
+  /** Aktuelle Obhut — für den Hinweis bei Rückgabe für andere. */
+  responsible?: { full_name?: string | null } | null;
   /** Standorttyp — nötig für den abgeleiteten Status „Zugewiesen". */
   site?: { location_type?: string | null } | null;
 };
@@ -80,8 +82,7 @@ export function MachineActions({
         </p>
       ) : null}
 
-      {(statusKey === "borrowed" || (statusKey === "defect" && machine.responsible_user_id)) &&
-      (isResponsible || identity.canManage) ? (
+      {statusKey === "borrowed" || (statusKey === "defect" && machine.responsible_user_id) ? (
         <Button className="h-12 w-full text-base" onClick={() => setOpen("return")}>
           <RotateCcw className="mr-2 h-4 w-4" /> Gerät zurückgeben
         </Button>
