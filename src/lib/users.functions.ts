@@ -400,9 +400,8 @@ export const listProfiles = createServerFn({ method: "GET" })
     if (isAdmin !== true) {
       // Nicht-Admins sehen ausschließlich aktive Zugänge. `active` ist eine
       // privilegierte Spalte, daher wird hier serverseitig gefiltert.
-      const { supabaseAdmin: adminForDirectory } = await import(
-        "@/integrations/supabase/client.server"
-      );
+      const { supabaseAdmin: adminForDirectory } =
+        await import("@/integrations/supabase/client.server");
       const { data, error } = await adminForDirectory
         .from("profiles")
         .select("id, full_name, created_at")

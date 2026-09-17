@@ -21,7 +21,7 @@ function safeRedirect(value: unknown): string | undefined {
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const value = safeRedirect(search['redirect']);
+    const value = safeRedirect(search["redirect"]);
     return value ? { redirect: value } : {};
   },
   head: () => ({
@@ -75,9 +75,7 @@ function AuthPage() {
       if (sessionError) throw new Error("Anmeldung nicht möglich. Bitte erneut versuchen.");
       navigate({ href: returnTo ?? "/dashboard", replace: true });
     } catch (err) {
-      setError(
-        (err as Error)?.message?.trim() || "Benutzername/E-Mail oder Passwort ist falsch.",
-      );
+      setError((err as Error)?.message?.trim() || "Benutzername/E-Mail oder Passwort ist falsch.");
     } finally {
       setLoading(false);
     }
@@ -138,7 +136,6 @@ function AuthPage() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
             </Button>
           </form>
-
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Interne Geräte- und Maschinenverwaltung
@@ -147,4 +144,3 @@ function AuthPage() {
     </div>
   );
 }
-
