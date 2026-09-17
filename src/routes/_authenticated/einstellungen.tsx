@@ -142,18 +142,14 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-xl border border-border bg-card p-5">
-          <h2 className="mb-1 text-sm font-medium text-foreground">Sicherheit</h2>
+          <h2 className="mb-1 text-sm font-medium text-foreground">Passwort ändern</h2>
           {isLoading ? (
             <Skeleton className="h-40 w-full" />
-          ) : isPinOnlyEmail(user?.email ?? null) ? (
-            <p className="py-2 text-sm text-muted-foreground">
-              Dein Zugang läuft über den Mitarbeiter-Login mit Name und PIN. Ein Passwort gibt es
-              hier nicht — deinen PIN kannst du beim Login ändern.
-            </p>
           ) : (
             <>
               <p className="mb-3 text-sm text-muted-foreground">
-                Passwort ändern für deinen E-Mail-Zugang.
+                Ändere hier dein eigenes Passwort. Danach meldest du dich mit dem neuen Passwort
+                erneut an.
               </p>
               <ChangePasswordForm />
             </>
