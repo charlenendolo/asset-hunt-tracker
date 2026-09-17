@@ -14,7 +14,9 @@ import { checkPassword, PASSWORD_MIN } from "@/lib/password-policy";
  * Client verifiziert wurde. is_admin() prüft bereits role='admin' UND active.
  */
 
-async function assertActiveAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
+async function assertActiveAdmin(supabase: {
+  rpc: (fn: "is_admin") => Promise<{ data: unknown }>;
+}) {
   const { data } = await supabase.rpc("is_admin");
   if (data !== true) throw new Error("Nur aktive Administratoren dürfen Passwörter zurücksetzen.");
 }
@@ -53,6 +55,10 @@ export const changeOwnPassword = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    // Deaktivierte Zugänge dürfen keine Kontoänderungen mehr vornehmen.
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
+
     const { data: me } = await context.supabase.auth.getUser();
     const email = me?.user?.email ?? null;
     if (!email) {
@@ -81,7 +87,12 @@ export const changeOwnPassword = createServerFn({ method: "POST" })
       console.error("[password] update failed", error.message);
       throw new Error("Passwort konnte nicht geändert werden. Bitte später erneut versuchen.");
     }
-    return { ok: true };
+
+    // Alle bestehenden Sitzungen werden beendet — auch auf fremden Geräten.
+    // Die Person meldet sich danach mit dem neuen Passwort neu an.
+    const { revokeAllSessions } = await import("./auth-admin.server");
+    const sessionsRevoked = await revokeAllSessions(context.userId);
+    return { ok: true, sessionsRevoked };
   });
 
 /** Admin: Reset-Link an die echte E-Mail-Adresse senden (Standardweg). */
@@ -123,7 +134,6 @@ export const setTemporaryPassword = createServerFn({ method: "POST" })
     // künftig mit ihrem Benutzernamen an.
     const { data: target } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (!target?.user) throw new Error("Benutzer wurde nicht gefunden.");
-
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,

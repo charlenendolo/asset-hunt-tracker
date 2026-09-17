@@ -52,7 +52,9 @@ function EventRow({ event }: { event: MachineHistoryEvent }) {
         <p className="text-xs text-muted-foreground">{when}</p>
         <p className="text-sm font-medium text-foreground">{event.title}</p>
         {event.subject ? (
-          <p className="truncate text-sm text-muted-foreground">{event.subject}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {event.kind === "return" ? `Vorherige Obhut: ${event.subject}` : event.subject}
+          </p>
         ) : null}
         {siteChanged ? (
           <p className="truncate text-xs text-muted-foreground">
@@ -63,7 +65,7 @@ function EventRow({ event }: { event: MachineHistoryEvent }) {
         ) : null}
         {event.actor ? (
           <p className="truncate text-xs text-muted-foreground">
-            Durchgeführt von: {event.actor}
+            {event.kind === "return" ? "Zurückgegeben durch" : "Durchgeführt von"}: {event.actor}
           </p>
         ) : null}
         {event.detail ? (

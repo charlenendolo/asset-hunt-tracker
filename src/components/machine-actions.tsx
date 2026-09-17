@@ -31,6 +31,8 @@ type MachineLike = {
   status: string | null;
   current_site_id: string | null;
   responsible_user_id: string | null;
+  /** Aktuelle Obhut — für den Hinweis bei Rückgabe für andere. */
+  responsible?: { full_name?: string | null } | null;
   /** Standorttyp — nötig für den abgeleiteten Status „Zugewiesen". */
   site?: { location_type?: string | null } | null;
 };
@@ -63,6 +65,9 @@ export function MachineActions({
 
   const statusKey = effectiveStatusKey(machine);
   const isResponsible = !!identity.userId && machine.responsible_user_id === identity.userId;
+  const custodianName = machine.responsible_user_id
+    ? (machine.responsible?.full_name ?? "einer anderen Person")
+    : null;
 
   if (identity.isLoading) return null;
 
@@ -80,8 +85,7 @@ export function MachineActions({
         </p>
       ) : null}
 
-      {(statusKey === "borrowed" || (statusKey === "defect" && machine.responsible_user_id)) &&
-      (isResponsible || identity.canManage) ? (
+      {statusKey === "borrowed" || (statusKey === "defect" && machine.responsible_user_id) ? (
         <Button className="h-12 w-full text-base" onClick={() => setOpen("return")}>
           <RotateCcw className="mr-2 h-4 w-4" /> Gerät zurückgeben
         </Button>
@@ -96,9 +100,11 @@ export function MachineActions({
         />
       ) : null}
 
-      {statusKey === "borrowed" && !isResponsible && !identity.canManage ? (
+      {statusKey === "borrowed" && !isResponsible ? (
         <p className="rounded-lg border border-status-borrowed/25 bg-status-borrowed/8 px-4 py-3 text-sm text-status-borrowed">
-          Dieses Gerät ist derzeit ausgeliehen.
+          {custodianName
+            ? `Dieses Gerät ist aktuell ${custodianName} zugeordnet. Du kannst es für diese Person zurückgeben.`
+            : "Dieses Gerät ist derzeit ausgeliehen."}
         </p>
       ) : null}
 
@@ -137,7 +143,7 @@ export function MachineActions({
         machine={machine}
         onClose={() => setOpen(null)}
         actorName={identity.displayName}
-        requiresPin={!identity.canManage}
+        custodianName={isResponsible ? null : custodianName}
       />
     </div>
   );
@@ -148,13 +154,14 @@ function ActionDialog({
   machine,
   onClose,
   actorName,
-  requiresPin,
+  custodianName,
 }: {
   mode: "checkout" | "return" | null;
   machine: MachineLike;
   onClose: () => void;
   actorName: string;
-  requiresPin: boolean;
+  /** Gesetzt, wenn eine andere Person das Gerät aktuell in Obhut hat. */
+  custodianName: string | null;
 }) {
   const relations = useQuery({ ...machineRelationsQuery(machine.id), enabled: !!mode });
 
@@ -166,13 +173,11 @@ function ActionDialog({
   const [comment, setComment] = useState("");
   const [expectedDate, setExpectedDate] = useState("");
   const [expectedTime, setExpectedTime] = useState("");
-  const [pin, setPin] = useState("");
 
-  const pinNeeded = mode === "return" && requiresPin;
+  const thirdParty = mode === "return" && !!custodianName;
 
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
-
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -189,7 +194,7 @@ function ActionDialog({
           : null;
         return doCheckout({ data: { ...payload, expectedReturnAt: expected } });
       }
-      return doReturn({ data: { ...payload, pin: pinNeeded ? pin : null } });
+      return doReturn({ data: payload });
     },
     onSuccess: async () => {
       await refresh();
@@ -197,20 +202,16 @@ function ActionDialog({
         mode === "checkout" ? "Gerät erfolgreich ausgeliehen." : "Gerät erfolgreich zurückgegeben.",
       );
       setComment("");
-      setPin("");
       onClose();
     },
     onError: (error: Error) => {
-      setPin("");
       toast.error(error.message || "Vorgang fehlgeschlagen. Bitte erneut versuchen.");
     },
   });
 
   const accessories = relations.data?.accessories ?? [];
   const commentRequired = mode === "return" && (!complete || condition !== "good");
-  const blocked =
-    (commentRequired && !comment.trim()) || (pinNeeded && !/^\d{4}$/.test(pin));
-
+  const blocked = commentRequired && !comment.trim();
 
   return (
     <Dialog open={!!mode} onOpenChange={(o) => (!o && !mutation.isPending ? onClose() : undefined)}>
@@ -223,8 +224,15 @@ function ActionDialog({
         </DialogHeader>
 
         <div className="space-y-5">
+          {thirdParty ? (
+            <div className="rounded-lg border border-status-borrowed/25 bg-status-borrowed/8 px-4 py-3 text-sm text-status-borrowed">
+              <p className="font-medium">Dieses Gerät ist aktuell {custodianName} zugeordnet.</p>
+              <p className="mt-1">Du gibst dieses Gerät für {custodianName} zurück.</p>
+            </div>
+          ) : null}
+
           <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">Mitarbeiter</p>
+            <p className="text-muted-foreground">{thirdParty ? "Rückgabe durch" : "Mitarbeiter"}</p>
             <p className="font-medium text-foreground">{actorName}</p>
           </div>
 
@@ -330,31 +338,7 @@ function ActionDialog({
               }
             />
           </div>
-
-          {pinNeeded ? (
-            <div className="space-y-2 rounded-lg border border-border bg-muted/40 px-4 py-4">
-              <Label htmlFor="return-pin" className="text-sm font-semibold">
-                Rückgabe mit PIN bestätigen
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Bitte gib deinen 4-stelligen PIN ein.
-              </p>
-              <input
-                id="return-pin"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="••••"
-                className="h-14 w-full rounded-md border border-input bg-background px-4 text-center text-2xl tracking-[0.6em]"
-              />
-            </div>
-          ) : null}
         </div>
-
 
         <DialogFooter className="mt-2 flex-col gap-2 sm:flex-col">
           <Button
@@ -363,7 +347,11 @@ function ActionDialog({
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {mode === "checkout" ? "Ausleihe bestätigen" : "Rückgabe bestätigen"}
+            {mode === "checkout"
+              ? "Ausleihe bestätigen"
+              : thirdParty
+                ? "Trotzdem zurückgeben"
+                : "Rückgabe bestätigen"}
           </Button>
           <Button
             variant="ghost"
