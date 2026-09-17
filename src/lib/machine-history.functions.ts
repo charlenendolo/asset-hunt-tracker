@@ -154,7 +154,12 @@ export const getMachineHistory = createServerFn({ method: "POST" })
         // Bei der Rückgabe werden beide Identitäten immer genannt: wer das
         // Gerät in Obhut hatte und wer es tatsächlich zurückgegeben hat.
         // Sonst nur nennen, wenn Handelnder und Obhut unterschiedlich sind.
-        actor: kind === "return" ? (performer ?? responsible) : performer && performer !== responsible ? performer : null,
+        actor:
+          kind === "return"
+            ? (performer ?? responsible)
+            : performer && performer !== responsible
+              ? performer
+              : null,
         fromSite: mv.from_site?.name ?? null,
         toSite: mv.to_site?.name ?? null,
         detail: details.length > 0 ? details.join(" · ") : null,

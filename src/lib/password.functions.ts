@@ -14,7 +14,9 @@ import { checkPassword, PASSWORD_MIN } from "@/lib/password-policy";
  * Client verifiziert wurde. is_admin() prüft bereits role='admin' UND active.
  */
 
-async function assertActiveAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
+async function assertActiveAdmin(supabase: {
+  rpc: (fn: "is_admin") => Promise<{ data: unknown }>;
+}) {
   const { data } = await supabase.rpc("is_admin");
   if (data !== true) throw new Error("Nur aktive Administratoren dürfen Passwörter zurücksetzen.");
 }
@@ -132,7 +134,6 @@ export const setTemporaryPassword = createServerFn({ method: "POST" })
     // künftig mit ihrem Benutzernamen an.
     const { data: target } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (!target?.user) throw new Error("Benutzer wurde nicht gefunden.");
-
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       password: data.password,

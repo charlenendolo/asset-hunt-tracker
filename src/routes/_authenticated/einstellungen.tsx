@@ -17,7 +17,6 @@ import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery, inspectionWarningDaysQuery } from "@/lib/queries";
 import { DEFAULT_INSPECTION_WARNING_DAYS } from "@/lib/due-dates";
 import { setInspectionWarningDays } from "@/lib/settings.functions";
-import { isPinOnlyEmail } from "@/lib/password-policy";
 import { textOrDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/einstellungen")({

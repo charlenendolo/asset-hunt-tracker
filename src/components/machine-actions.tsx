@@ -179,7 +179,6 @@ function ActionDialog({
   const doCheckout = useServerFn(checkoutMachine);
   const doReturn = useServerFn(returnMachine);
 
-
   const mutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -214,7 +213,6 @@ function ActionDialog({
   const commentRequired = mode === "return" && (!complete || condition !== "good");
   const blocked = commentRequired && !comment.trim();
 
-
   return (
     <Dialog open={!!mode} onOpenChange={(o) => (!o && !mutation.isPending ? onClose() : undefined)}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-md">
@@ -234,12 +232,9 @@ function ActionDialog({
           ) : null}
 
           <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">
-              {thirdParty ? "Rückgabe durch" : "Mitarbeiter"}
-            </p>
+            <p className="text-muted-foreground">{thirdParty ? "Rückgabe durch" : "Mitarbeiter"}</p>
             <p className="font-medium text-foreground">{actorName}</p>
           </div>
-
 
           <div className="space-y-1.5">
             <Label htmlFor="site">{mode === "checkout" ? "Standort" : "Rückgabe-Standort"}</Label>
@@ -343,9 +338,7 @@ function ActionDialog({
               }
             />
           </div>
-
         </div>
-
 
         <DialogFooter className="mt-2 flex-col gap-2 sm:flex-col">
           <Button

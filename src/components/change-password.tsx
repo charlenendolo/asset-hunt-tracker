@@ -62,8 +62,7 @@ export function ChangePasswordForm() {
 
   const submit = useServerFn(changeOwnPassword);
   const mutation = useMutation({
-    mutationFn: async () =>
-      submit({ data: { currentPassword: current, newPassword: next } }),
+    mutationFn: async () => submit({ data: { currentPassword: current, newPassword: next } }),
     onSuccess: async () => {
       setCurrent("");
       setNext("");
@@ -120,7 +119,11 @@ export function ChangePasswordForm() {
         {checks.map((c) => (
           <li
             key={c.label}
-            className={c.ok ? "flex items-center gap-1.5 text-primary" : "flex items-center gap-1.5 text-muted-foreground"}
+            className={
+              c.ok
+                ? "flex items-center gap-1.5 text-primary"
+                : "flex items-center gap-1.5 text-muted-foreground"
+            }
           >
             {c.ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
             {c.label}
@@ -128,7 +131,11 @@ export function ChangePasswordForm() {
         ))}
         {confirm.length > 0 ? (
           <li
-            className={matches ? "flex items-center gap-1.5 text-primary" : "flex items-center gap-1.5 text-destructive"}
+            className={
+              matches
+                ? "flex items-center gap-1.5 text-primary"
+                : "flex items-center gap-1.5 text-destructive"
+            }
           >
             {matches ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
             Passwörter stimmen überein
