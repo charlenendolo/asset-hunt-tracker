@@ -53,6 +53,10 @@ export const changeOwnPassword = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    // Deaktivierte Zugänge dürfen keine Kontoänderungen mehr vornehmen.
+    const { requireActiveUser } = await import("./roles.server");
+    await requireActiveUser(context.supabase);
+
     const { data: me } = await context.supabase.auth.getUser();
     const email = me?.user?.email ?? null;
     if (!email) {
@@ -81,7 +85,12 @@ export const changeOwnPassword = createServerFn({ method: "POST" })
       console.error("[password] update failed", error.message);
       throw new Error("Passwort konnte nicht geändert werden. Bitte später erneut versuchen.");
     }
-    return { ok: true };
+
+    // Alle bestehenden Sitzungen werden beendet — auch auf fremden Geräten.
+    // Die Person meldet sich danach mit dem neuen Passwort neu an.
+    const { revokeAllSessions } = await import("./auth-admin.server");
+    const sessionsRevoked = await revokeAllSessions(context.userId);
+    return { ok: true, sessionsRevoked };
   });
 
 /** Admin: Reset-Link an die echte E-Mail-Adresse senden (Standardweg). */
