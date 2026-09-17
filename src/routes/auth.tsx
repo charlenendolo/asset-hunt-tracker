@@ -8,7 +8,6 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PinLoginForm } from "@/components/pin-login-form";
 import { passwordLogin } from "@/lib/login.functions";
 
 const SAFE_PATH = /^\/[A-Za-z0-9\-_/]*$/;
@@ -22,7 +21,7 @@ function safeRedirect(value: unknown): string | undefined {
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const value = safeRedirect(search['redirect']);
+    const value = safeRedirect(search["redirect"]);
     return value ? { redirect: value } : {};
   },
   head: () => ({
@@ -50,7 +49,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPin, setShowPin] = useState(false);
   const login = useServerFn(passwordLogin);
 
   // Client-only: eine bestehende Session leitet weiter (kein SSR-Zweig -> keine Hydration-Mismatch).
@@ -77,9 +75,7 @@ function AuthPage() {
       if (sessionError) throw new Error("Anmeldung nicht möglich. Bitte erneut versuchen.");
       navigate({ href: returnTo ?? "/dashboard", replace: true });
     } catch (err) {
-      setError(
-        (err as Error)?.message?.trim() || "Benutzername/E-Mail oder Passwort ist falsch.",
-      );
+      setError((err as Error)?.message?.trim() || "Benutzername/E-Mail oder Passwort ist falsch.");
     } finally {
       setLoading(false);
     }
@@ -140,35 +136,6 @@ function AuthPage() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
             </Button>
           </form>
-
-          {/* Übergangslösung: Zugänge ohne Passwort melden sich weiterhin per PIN an. */}
-          <div className="mt-6 border-t border-border pt-4">
-            {showPin ? (
-              <>
-                <p className="mb-4 text-xs text-muted-foreground">
-                  Anmeldung mit PIN (nur für Zugänge ohne Passwort).
-                </p>
-                <PinLoginForm
-                  onSignedIn={() => navigate({ href: returnTo ?? "/dashboard", replace: true })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPin(false)}
-                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4"
-                >
-                  Zurück zur Anmeldung mit Passwort
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowPin(true)}
-                className="text-xs text-muted-foreground underline underline-offset-4"
-              >
-                Noch kein Passwort? Mit PIN anmelden
-              </button>
-            )}
-          </div>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Interne Geräte- und Maschinenverwaltung
@@ -177,4 +144,3 @@ function AuthPage() {
     </div>
   );
 }
-

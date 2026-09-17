@@ -37,9 +37,7 @@ export type HandoverRow = {
   note: string | null;
 };
 
-type AdminClient = Awaited<
-  typeof import("@/integrations/supabase/client.server")
->["supabaseAdmin"];
+type AdminClient = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
 /** Abgelaufene Anfragen werden vor jedem Lesen/Handeln träge geschlossen. */
 async function expireStale(admin: AdminClient) {
@@ -169,11 +167,7 @@ export const requestHandover = createServerFn({ method: "POST" })
         .select("id, status, active, responsible_user_id")
         .eq("id", data.machineId)
         .maybeSingle(),
-      supabaseAdmin
-        .from("profiles")
-        .select("id, active")
-        .eq("id", data.toUserId)
-        .maybeSingle(),
+      supabaseAdmin.from("profiles").select("id, active").eq("id", data.toUserId).maybeSingle(),
     ]);
 
     if (!machine || !machine.active) throw new Error("Gerät nicht gefunden.");
@@ -184,7 +178,7 @@ export const requestHandover = createServerFn({ method: "POST" })
     if (!CHECKED_OUT.includes(status) && status !== "defective") {
       throw new Error("Dieses Gerät kann derzeit nicht übergeben werden.");
     }
-    if (!receiver || receiver.active === false) {
+    if (!receiver || receiver.active !== true) {
       throw new Error("Die ausgewählte Person ist nicht aktiv.");
     }
 
