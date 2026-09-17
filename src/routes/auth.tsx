@@ -141,34 +141,6 @@ function AuthPage() {
             </Button>
           </form>
 
-          {/* Übergangslösung: Zugänge ohne Passwort melden sich weiterhin per PIN an. */}
-          <div className="mt-6 border-t border-border pt-4">
-            {showPin ? (
-              <>
-                <p className="mb-4 text-xs text-muted-foreground">
-                  Anmeldung mit PIN (nur für Zugänge ohne Passwort).
-                </p>
-                <PinLoginForm
-                  onSignedIn={() => navigate({ href: returnTo ?? "/dashboard", replace: true })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPin(false)}
-                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4"
-                >
-                  Zurück zur Anmeldung mit Passwort
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowPin(true)}
-                className="text-xs text-muted-foreground underline underline-offset-4"
-              >
-                Noch kein Passwort? Mit PIN anmelden
-              </button>
-            )}
-          </div>
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Interne Geräte- und Maschinenverwaltung
