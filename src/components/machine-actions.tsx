@@ -65,6 +65,9 @@ export function MachineActions({
 
   const statusKey = effectiveStatusKey(machine);
   const isResponsible = !!identity.userId && machine.responsible_user_id === identity.userId;
+  const custodianName = machine.responsible_user_id
+    ? (machine.responsible?.full_name ?? "einer anderen Person")
+    : null;
 
   if (identity.isLoading) return null;
 
@@ -97,9 +100,11 @@ export function MachineActions({
         />
       ) : null}
 
-      {statusKey === "borrowed" && !isResponsible && !identity.canManage ? (
+      {statusKey === "borrowed" && !isResponsible ? (
         <p className="rounded-lg border border-status-borrowed/25 bg-status-borrowed/8 px-4 py-3 text-sm text-status-borrowed">
-          Dieses Gerät ist derzeit ausgeliehen.
+          {custodianName
+            ? `Dieses Gerät ist aktuell ${custodianName} zugeordnet. Du kannst es für diese Person zurückgeben.`
+            : "Dieses Gerät ist derzeit ausgeliehen."}
         </p>
       ) : null}
 
@@ -138,7 +143,7 @@ export function MachineActions({
         machine={machine}
         onClose={() => setOpen(null)}
         actorName={identity.displayName}
-        requiresPin={!identity.canManage}
+        custodianName={isResponsible ? null : custodianName}
       />
     </div>
   );
