@@ -9,7 +9,6 @@ import {
   Wrench,
   ArrowRight,
   History,
-  QrCode,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -291,11 +290,7 @@ function UserDashboard() {
 
       <section className="mt-8">
         <h2 className="mb-3 text-base font-medium text-foreground">Schnellaktionen</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="flex min-h-16 items-center gap-3 rounded-xl border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground">
-            <QrCode className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-            <span>Gerät per QR öffnen – Scanner folgt, nutze bis dahin die Kamera-App.</span>
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <Link
             to="/maschinen"
             search={{ mine: true }}

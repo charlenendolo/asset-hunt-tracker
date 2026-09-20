@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, QrCode, MessageSquare, BadgeCheck, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { MachineActions } from "@/components/machine-actions";
@@ -89,27 +89,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="min-w-0">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-0.5 truncate text-sm font-medium text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function FuturePlaceholder({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-dashed border-border px-4 py-3.5">
-      <span className="mt-0.5 text-muted-foreground">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <Pill className="ml-auto shrink-0">Geplant</Pill>
     </div>
   );
 }
@@ -481,36 +460,6 @@ function MachineDetailPage() {
 
           <Section title="Fotos">
             <MachinePhotos machineId={m.id} />
-          </Section>
-
-          <Section title="Weitere Module">
-            <div className="space-y-2">
-              <FuturePlaceholder
-                icon={<FileText className="h-4 w-4" strokeWidth={1.75} />}
-                title="Dokumente"
-                description="Ablage von Lieferscheinen und Verträgen."
-              />
-              <FuturePlaceholder
-                icon={<BadgeCheck className="h-4 w-4" strokeWidth={1.75} />}
-                title="Prüfnachweise"
-                description="UVV- und Prüfbescheinigungen."
-              />
-              <FuturePlaceholder
-                icon={<BookOpen className="h-4 w-4" strokeWidth={1.75} />}
-                title="Handbücher"
-                description="Bedienungsanleitungen und Datenblätter."
-              />
-              <FuturePlaceholder
-                icon={<QrCode className="h-4 w-4" strokeWidth={1.75} />}
-                title="QR-Code"
-                description="Kennzeichnung und Scan-Workflows."
-              />
-              <FuturePlaceholder
-                icon={<MessageSquare className="h-4 w-4" strokeWidth={1.75} />}
-                title="Kommentare"
-                description="Notizen zum Gerät im Team."
-              />
-            </div>
           </Section>
         </div>
       </div>
