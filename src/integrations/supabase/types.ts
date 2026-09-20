@@ -599,6 +599,7 @@ export type Database = {
           id: string
           role: string
           username: string | null
+          vehicle_site_id: string | null
         }
         Insert: {
           active?: boolean
@@ -607,6 +608,7 @@ export type Database = {
           id: string
           role?: string
           username?: string | null
+          vehicle_site_id?: string | null
         }
         Update: {
           active?: boolean
@@ -615,8 +617,17 @@ export type Database = {
           id?: string
           role?: string
           username?: string | null
+          vehicle_site_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_vehicle_site_id_fkey"
+            columns: ["vehicle_site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -720,6 +731,7 @@ export type Database = {
           full_name: string
           id: string
           role: string
+          vehicle_site_id: string
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
