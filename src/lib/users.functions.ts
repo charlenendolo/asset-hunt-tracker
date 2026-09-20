@@ -441,7 +441,7 @@ export const listProfiles = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, username, role, active, created_at")
+      .select("id, full_name, username, role, active, created_at, vehicle_site_id")
       .order("full_name");
     if (error) throw new Error("Benutzer konnten nicht geladen werden.");
 
