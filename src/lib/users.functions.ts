@@ -143,7 +143,10 @@ const updateSchema = z.object({
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
   username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
   // Optionales zugeordnetes Fahrzeug (Standort-ID) — "" entfernt die Zuordnung.
-  vehicleSiteId: z.union([z.string().uuid(), z.literal("")]).nullable().optional(),
+  vehicleSiteId: z
+    .union([z.string().uuid(), z.literal("")])
+    .nullable()
+    .optional(),
 });
 
 export const updateEmployeeAccount = createServerFn({ method: "POST" })

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   CircleCheck,
-
   Container,
   CalendarClock,
   TriangleAlert,
@@ -46,7 +45,6 @@ import {
   isInspectionDateMissing,
 } from "@/lib/due-dates";
 
-
 import {
   MACHINE_STATUS_LABELS,
   MACHINE_STATUS_ORDER,
@@ -55,7 +53,6 @@ import {
   labelFor,
   DEFECT_SEVERITY_LABELS,
   MOVEMENT_TYPE_LABELS,
-  
 } from "@/lib/status";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -333,9 +330,7 @@ function ManagerDashboard() {
   const maintenance = useQuery(maintenanceQuery);
   const movements = useQuery({ ...recentMovementsQuery, enabled: isAdmin });
   const managerIdentity = useIdentity();
-  const overdue = useQuery(
-    overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage),
-  );
+  const overdue = useQuery(overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage));
   const overdueMachines = overdue.data?.machines ?? [];
 
   const byStatus = (key: string) => {
@@ -376,7 +371,6 @@ function ManagerDashboard() {
     ).length,
   };
   const missingInspectionDates = inspectionMachines.filter(isInspectionDateMissing);
-
 
   const greeting = profile?.full_name ? `Guten Tag ${profile.full_name}` : "Guten Tag";
 
@@ -522,13 +516,11 @@ function ManagerDashboard() {
         ) : null}
       </div>
 
-
       <OverdueSection
         machines={overdueMachines}
         nextReservation={overdue.data?.nextReservation ?? {}}
         loading={overdue.isLoading}
       />
-
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <Card
