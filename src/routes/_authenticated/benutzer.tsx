@@ -243,6 +243,7 @@ function UsersPage() {
                             username: p.username ?? null,
                             role: p.role ?? "user",
                             active: p.active ?? true,
+                            vehicle_site_id: p.vehicle_site_id ?? null,
                           }}
                           email={emailById.get(p.id) ?? null}
                         />
@@ -278,6 +279,7 @@ function UsersPage() {
                         username: p.username ?? null,
                         role: p.role ?? "user",
                         active: p.active ?? true,
+                        vehicle_site_id: p.vehicle_site_id ?? null,
                       }}
                       email={emailById.get(p.id) ?? null}
                     />

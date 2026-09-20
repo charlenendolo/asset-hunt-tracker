@@ -142,6 +142,11 @@ const updateSchema = z.object({
   fullName: z.string().trim().min(2).max(120).optional(),
   email: z.union([z.string().trim().email().max(255), z.literal("")]).optional(),
   username: z.union([z.string().trim().max(64), z.literal("")]).optional(),
+  // Optionales zugeordnetes Fahrzeug (Standort-ID) — "" entfernt die Zuordnung.
+  vehicleSiteId: z
+    .union([z.string().uuid(), z.literal("")])
+    .nullable()
+    .optional(),
 });
 
 export const updateEmployeeAccount = createServerFn({ method: "POST" })
@@ -159,6 +164,7 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
       active?: boolean;
       full_name?: string;
       username?: string | null;
+      vehicle_site_id?: string | null;
     } = {};
     if (data.role) patch.role = data.role;
     if (typeof data.active === "boolean") patch.active = data.active;
@@ -172,6 +178,23 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
         await assertUsernameFree(supabaseAdmin, next, data.userId);
         patch.username = next;
       }
+    }
+
+    // Fahrzeugzuordnung ist reine Stammdatenpflege — sie verändert keine
+    // Geräteobhut und verschiebt keine Geräte zwischen Standorten.
+    if (data.vehicleSiteId !== undefined) {
+      const next = data.vehicleSiteId ? data.vehicleSiteId : null;
+      if (next) {
+        const { data: site } = await supabaseAdmin
+          .from("sites")
+          .select("id, location_type, active")
+          .eq("id", next)
+          .maybeSingle();
+        if (!site || site.location_type !== "fahrzeug" || site.active !== true) {
+          throw new Error("Bitte ein aktives Fahrzeug auswählen.");
+        }
+      }
+      patch.vehicle_site_id = next;
     }
 
     // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
@@ -414,13 +437,14 @@ export const listProfiles = createServerFn({ method: "GET" })
         has_password: null as boolean | null,
         role: null as string | null,
         active: true as boolean | null,
+        vehicle_site_id: null as string | null,
       }));
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, username, role, active, created_at")
+      .select("id, full_name, username, role, active, created_at, vehicle_site_id")
       .order("full_name");
     if (error) throw new Error("Benutzer konnten nicht geladen werden.");
 
@@ -441,5 +465,6 @@ export const listProfiles = createServerFn({ method: "GET" })
       has_password: passwordById.get(p.id) ?? null,
       role: p.role as string | null,
       active: p.active as boolean | null,
+      vehicle_site_id: (p.vehicle_site_id ?? null) as string | null,
     }));
   });

@@ -36,6 +36,7 @@ type SiteRow = {
   name: string;
   site_number: string | null;
   location_type: string;
+  active?: boolean | null;
 };
 
 /**
@@ -48,6 +49,7 @@ export function SiteCombobox({
   emptyLabel = "Kein Standort",
   typeFilter = "",
   allowCreate = true,
+  activeOnly = false,
   id,
   className,
 }: {
@@ -56,6 +58,8 @@ export function SiteCombobox({
   emptyLabel?: string;
   typeFilter?: string;
   allowCreate?: boolean;
+  /** Nur aktive Standorte auswählbar (bereits zugeordnete bleiben sichtbar). */
+  activeOnly?: boolean;
   id?: string;
   className?: string;
 }) {
@@ -65,10 +69,10 @@ export function SiteCombobox({
   const [createOpen, setCreateOpen] = useState(false);
 
   const rows = (sites.data ?? []) as SiteRow[];
-  const visible = useMemo(
-    () => (typeFilter ? rows.filter((s) => s.location_type === typeFilter) : rows),
-    [rows, typeFilter],
-  );
+  const visible = useMemo(() => {
+    const byType = typeFilter ? rows.filter((s) => s.location_type === typeFilter) : rows;
+    return activeOnly ? byType.filter((s) => s.active !== false || s.id === value) : byType;
+  }, [rows, typeFilter, activeOnly, value]);
   const selected = rows.find((s) => s.id === value) ?? null;
   const canCreate = allowCreate && identity.canManage;
 
@@ -102,7 +106,7 @@ export function SiteCombobox({
               {selected ? <SiteTypeIcon type={selected.location_type} withTitle={false} /> : null}
               <span className="truncate">
                 {selected
-                  ? `${selected.name} · ${SITE_TYPE_LABELS[selected.location_type as SiteType] ?? "Standort"}`
+                  ? `${selected.name} · ${SITE_TYPE_LABELS[selected.location_type as SiteType] ?? "Standort"}${selected.active === false ? " (inaktiv)" : ""}`
                   : emptyLabel}
               </span>
             </span>

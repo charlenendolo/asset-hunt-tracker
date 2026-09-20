@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SiteCombobox } from "@/components/site-combobox";
 import {
   deleteEmployeeAccount,
   getDeletionCheck,
@@ -34,6 +35,7 @@ type Role = (typeof ROLE_OPTIONS)[number]["value"];
 async function refreshUsers(qc: ReturnType<typeof useQueryClient>) {
   await qc.invalidateQueries({ queryKey: ["profiles"] });
   await qc.invalidateQueries({ queryKey: ["account-emails"] });
+  await qc.invalidateQueries({ queryKey: ["profile"] });
 }
 
 /** Bestehenden Benutzer bearbeiten — es entsteht nie ein zweiter Datensatz. */
@@ -49,6 +51,7 @@ export function EditUserDialog({
     username?: string | null;
     role: string;
     active: boolean;
+    vehicle_site_id?: string | null;
   };
   email: string | null;
   open: boolean;
@@ -60,6 +63,7 @@ export function EditUserDialog({
   const [mail, setMail] = useState(email ?? "");
   const [username, setUsername] = useState(user.username ?? "");
   const [role, setRole] = useState<Role>((user.role as Role) ?? "user");
+  const [vehicleSiteId, setVehicleSiteId] = useState(user.vehicle_site_id ?? "");
 
   const save = useMutation({
     mutationFn: async () =>
@@ -69,6 +73,7 @@ export function EditUserDialog({
           fullName: fullName.trim(),
           role,
           username: normalizeUsername(username),
+          vehicleSiteId,
           ...(mail.trim() || email ? { email: mail.trim() } : {}),
         },
       }),
@@ -140,6 +145,22 @@ export function EditUserDialog({
               value={mail}
               onChange={(e) => setMail(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`e-vehicle-${user.id}`}>Zugeordnetes Fahrzeug</Label>
+            <SiteCombobox
+              id={`e-vehicle-${user.id}`}
+              value={vehicleSiteId}
+              onChange={setVehicleSiteId}
+              typeFilter="fahrzeug"
+              allowCreate={false}
+              activeOnly
+              emptyLabel="Kein Fahrzeug"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional. Ändert weder Rolle noch Geräteobhut — Geräte im Fahrzeug bleiben
+              „Zugewiesen“.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`e-role-${user.id}`}>Rolle</Label>

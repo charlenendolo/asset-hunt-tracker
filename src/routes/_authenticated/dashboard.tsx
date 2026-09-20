@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   CircleCheck,
-
   Container,
   CalendarClock,
   TriangleAlert,
@@ -16,6 +15,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { MyMachines } from "@/components/my-machines";
+import { MyVehicle } from "@/components/my-vehicle";
 import { AdminHandovers, PendingHandovers } from "@/components/handover";
 import { Pill } from "@/components/status-badge";
 import { useCurrentProfile } from "@/hooks/use-profile";
@@ -45,7 +45,6 @@ import {
   isInspectionDateMissing,
 } from "@/lib/due-dates";
 
-
 import {
   MACHINE_STATUS_LABELS,
   MACHINE_STATUS_ORDER,
@@ -54,7 +53,6 @@ import {
   labelFor,
   DEFECT_SEVERITY_LABELS,
   MOVEMENT_TYPE_LABELS,
-  
 } from "@/lib/status";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -259,6 +257,10 @@ function UserDashboard() {
 
       <MyMachines />
 
+      <div className="mt-8">
+        <MyVehicle />
+      </div>
+
       <section className="mt-8">
         <h2 className="mb-3 text-base font-medium text-foreground">Meine Reservierungen</h2>
         {reservations.isLoading ? (
@@ -328,9 +330,7 @@ function ManagerDashboard() {
   const maintenance = useQuery(maintenanceQuery);
   const movements = useQuery({ ...recentMovementsQuery, enabled: isAdmin });
   const managerIdentity = useIdentity();
-  const overdue = useQuery(
-    overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage),
-  );
+  const overdue = useQuery(overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage));
   const overdueMachines = overdue.data?.machines ?? [];
 
   const byStatus = (key: string) => {
@@ -371,7 +371,6 @@ function ManagerDashboard() {
     ).length,
   };
   const missingInspectionDates = inspectionMachines.filter(isInspectionDateMissing);
-
 
   const greeting = profile?.full_name ? `Guten Tag ${profile.full_name}` : "Guten Tag";
 
@@ -423,6 +422,10 @@ function ManagerDashboard() {
           <MyMachines />
         </div>
       ) : null}
+
+      <div className="mb-6">
+        <MyVehicle />
+      </div>
 
       <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
         Gerätebestand
@@ -513,13 +516,11 @@ function ManagerDashboard() {
         ) : null}
       </div>
 
-
       <OverdueSection
         machines={overdueMachines}
         nextReservation={overdue.data?.nextReservation ?? {}}
         loading={overdue.isLoading}
       />
-
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <Card

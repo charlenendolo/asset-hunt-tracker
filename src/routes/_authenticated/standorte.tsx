@@ -155,49 +155,50 @@ function SitesPage() {
           {visible.map((s) => {
             const body = (
               <>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-2.5">
-                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-muted/50">
-                    <SiteTypeIcon type={s.location_type} className="h-4.5 w-4.5 text-foreground/70" />
-                  </span>
-                  <div className="min-w-0">
-                  <p className="truncate text-base font-medium text-foreground">{s.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {textOrDash(s.site_number)}
-                  </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-muted/50">
+                      <SiteTypeIcon
+                        type={s.location_type}
+                        className="h-4.5 w-4.5 text-foreground/70"
+                      />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-medium text-foreground">{s.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {textOrDash(s.site_number)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <Pill tone="neutral">{siteTypeLabel(s.location_type)}</Pill>
+                    <Pill tone={s.active ? "success" : "neutral"}>
+                      {s.active ? "Aktiv" : "Inaktiv"}
+                    </Pill>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <Pill tone="neutral">{siteTypeLabel(s.location_type)}</Pill>
-                  <Pill tone={s.active ? "success" : "neutral"}>
-                    {s.active ? "Aktiv" : "Inaktiv"}
-                  </Pill>
-                </div>
-              </div>
 
-              <p className="mt-3 truncate text-sm text-muted-foreground">
-                {textOrDash(s.address)}
-              </p>
-              <p className="mt-4 text-sm font-medium text-foreground">
-                {formatNumber(counts.data?.[s.id] ?? 0)}{" "}
-                <span className="font-normal text-muted-foreground">Geräte vor Ort</span>
-              </p>
+                <p className="mt-3 truncate text-sm text-muted-foreground">
+                  {textOrDash(s.address)}
+                </p>
+                <p className="mt-4 pr-28 text-sm font-medium text-foreground">
+                  {formatNumber(counts.data?.[s.id] ?? 0)}{" "}
+                  <span className="font-normal text-muted-foreground">Geräte vor Ort</span>
+                </p>
               </>
             );
             const cardClass =
-              "block rounded-xl border border-border bg-card p-5" +
-              (identity.canManage
-                ? " cursor-pointer transition-colors hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]"
-                : "");
+              "block rounded-xl border border-border bg-card p-5 cursor-pointer transition-colors hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.99]";
             return (
               <li key={s.id} className="relative">
-                {identity.canManage ? (
-                  <Link to="/maschinen" search={{ siteId: s.id }} className={cardClass}>
-                    {body}
-                  </Link>
-                ) : (
-                  <div className={cardClass}>{body}</div>
-                )}
+                <Link
+                  to="/maschinen"
+                  search={{ siteId: s.id }}
+                  aria-label={`Geräte an Standort ${s.name} anzeigen`}
+                  className={cardClass}
+                >
+                  {body}
+                </Link>
                 {identity.canManage ? (
                   <button
                     type="button"
