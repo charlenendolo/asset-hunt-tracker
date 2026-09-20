@@ -153,6 +153,10 @@ function SitesPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((s) => {
+            const isVehicle = s.location_type === "fahrzeug";
+            const holder = isVehicle
+              ? ((assignments.data ?? []).find((p) => p.vehicle_site_id === s.id) ?? null)
+              : null;
             const body = (
               <>
                 <div className="flex items-start justify-between gap-3">
@@ -178,10 +182,25 @@ function SitesPage() {
                   </div>
                 </div>
 
+                {isVehicle ? (
+                  <p className="mt-3 flex items-center gap-1.5 truncate text-sm">
+                    <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    {holder ? (
+                      <span className="truncate text-foreground">
+                        Zugeordnet: {holder.full_name ?? "Unbenannt"}
+                      </span>
+                    ) : (
+                      <span className="truncate text-muted-foreground">
+                        Kein Benutzer zugeordnet
+                      </span>
+                    )}
+                  </p>
+                ) : null}
+
                 <p className="mt-3 truncate text-sm text-muted-foreground">
                   {textOrDash(s.address)}
                 </p>
-                <p className="mt-4 pr-28 text-sm font-medium text-foreground">
+                <p className="mt-4 pr-40 text-sm font-medium text-foreground">
                   {formatNumber(counts.data?.[s.id] ?? 0)}{" "}
                   <span className="font-normal text-muted-foreground">Geräte vor Ort</span>
                 </p>
@@ -199,16 +218,24 @@ function SitesPage() {
                 >
                   {body}
                 </Link>
-                {identity.canManage ? (
-                  <button
-                    type="button"
-                    aria-label={`Standort ${s.name} bearbeiten`}
-                    onClick={() => setEditSite(s as SiteRow)}
-                    className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-                  >
-                    <Pencil className="h-3.5 w-3.5" /> Bearbeiten
-                  </button>
-                ) : null}
+                <div className="absolute bottom-4 right-4 flex flex-wrap items-center justify-end gap-2">
+                  {identity.isAdmin && isVehicle && s.active ? (
+                    <VehicleAssignButton
+                      assigned={!!holder}
+                      onClick={() => setAssignSite(s as SiteRow)}
+                    />
+                  ) : null}
+                  {identity.canManage ? (
+                    <button
+                      type="button"
+                      aria-label={`Standort ${s.name} bearbeiten`}
+                      onClick={() => setEditSite(s as SiteRow)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Bearbeiten
+                    </button>
+                  ) : null}
+                </div>
               </li>
             );
           })}
