@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapPin, Pencil, Plus, Search, X } from "lucide-react";
+import { MapPin, Pencil, Plus, Search, User, X } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { CreateSiteDialog, EditSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
+import {
+  VehicleAssignButton,
+  VehicleAssignDialog,
+  vehicleAssignmentsQuery,
+} from "@/components/vehicle-assign";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
