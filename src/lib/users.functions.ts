@@ -434,6 +434,7 @@ export const listProfiles = createServerFn({ method: "GET" })
         has_password: null as boolean | null,
         role: null as string | null,
         active: true as boolean | null,
+        vehicle_site_id: null as string | null,
       }));
     }
 
