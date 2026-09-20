@@ -461,7 +461,6 @@ function MachineDetailPage() {
           <Section title="Fotos">
             <MachinePhotos machineId={m.id} />
           </Section>
-
         </div>
       </div>
     </AppShell>
