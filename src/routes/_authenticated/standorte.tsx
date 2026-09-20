@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapPin, Pencil, Plus, Search, X } from "lucide-react";
+import { MapPin, Pencil, Plus, Search, User, X } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { EmptyState, ErrorState } from "@/components/empty-state";
 import { CreateSiteDialog, EditSiteDialog } from "@/components/site-combobox";
 import { Pill } from "@/components/status-badge";
+import {
+  VehicleAssignButton,
+  VehicleAssignDialog,
+  vehicleAssignmentsQuery,
+} from "@/components/vehicle-assign";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,9 +51,11 @@ export const Route = createFileRoute("/_authenticated/standorte")({
 function SitesPage() {
   const sites = useQuery(sitesQuery);
   const counts = useQuery(machinesBySiteCountQuery);
+  const assignments = useQuery(vehicleAssignmentsQuery);
   const identity = useIdentity();
   const [createOpen, setCreateOpen] = useState(false);
   const [editSite, setEditSite] = useState<SiteRow | null>(null);
+  const [assignSite, setAssignSite] = useState<SiteRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
 
@@ -153,6 +160,10 @@ function SitesPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((s) => {
+            const isVehicle = s.location_type === "fahrzeug";
+            const holder = isVehicle
+              ? ((assignments.data ?? []).find((p) => p.vehicle_site_id === s.id) ?? null)
+              : null;
             const body = (
               <>
                 <div className="flex items-start justify-between gap-3">
@@ -178,10 +189,25 @@ function SitesPage() {
                   </div>
                 </div>
 
+                {isVehicle ? (
+                  <p className="mt-3 flex items-center gap-1.5 truncate text-sm">
+                    <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    {holder ? (
+                      <span className="truncate text-foreground">
+                        Zugeordnet: {holder.full_name ?? "Unbenannt"}
+                      </span>
+                    ) : (
+                      <span className="truncate text-muted-foreground">
+                        Kein Benutzer zugeordnet
+                      </span>
+                    )}
+                  </p>
+                ) : null}
+
                 <p className="mt-3 truncate text-sm text-muted-foreground">
                   {textOrDash(s.address)}
                 </p>
-                <p className="mt-4 pr-28 text-sm font-medium text-foreground">
+                <p className="mt-4 pr-40 text-sm font-medium text-foreground">
                   {formatNumber(counts.data?.[s.id] ?? 0)}{" "}
                   <span className="font-normal text-muted-foreground">Geräte vor Ort</span>
                 </p>
@@ -199,16 +225,24 @@ function SitesPage() {
                 >
                   {body}
                 </Link>
-                {identity.canManage ? (
-                  <button
-                    type="button"
-                    aria-label={`Standort ${s.name} bearbeiten`}
-                    onClick={() => setEditSite(s as SiteRow)}
-                    className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-                  >
-                    <Pencil className="h-3.5 w-3.5" /> Bearbeiten
-                  </button>
-                ) : null}
+                <div className="absolute bottom-4 right-4 flex flex-wrap items-center justify-end gap-2">
+                  {identity.isAdmin && isVehicle && s.active ? (
+                    <VehicleAssignButton
+                      assigned={!!holder}
+                      onClick={() => setAssignSite(s as SiteRow)}
+                    />
+                  ) : null}
+                  {identity.canManage ? (
+                    <button
+                      type="button"
+                      aria-label={`Standort ${s.name} bearbeiten`}
+                      onClick={() => setEditSite(s as SiteRow)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Bearbeiten
+                    </button>
+                  ) : null}
+                </div>
               </li>
             );
           })}
@@ -224,6 +258,14 @@ function SitesPage() {
           site={editSite}
           open={!!editSite}
           onOpenChange={(o) => (!o ? setEditSite(null) : undefined)}
+        />
+      ) : null}
+
+      {identity.isAdmin && assignSite ? (
+        <VehicleAssignDialog
+          site={assignSite}
+          open={!!assignSite}
+          onOpenChange={(o) => (!o ? setAssignSite(null) : undefined)}
         />
       ) : null}
     </AppShell>

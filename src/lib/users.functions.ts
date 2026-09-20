@@ -468,3 +468,82 @@ export const listProfiles = createServerFn({ method: "GET" })
       vehicle_site_id: (p.vehicle_site_id ?? null) as string | null,
     }));
   });
+
+/**
+ * Fahrzeugzuordnungen (Standort ↔ Benutzer) für die Standorte-Ansicht.
+ * Dieselbe Beziehung wie `profiles.vehicle_site_id` — keine zweite Quelle.
+ * Nur aktive Zugänge; `role` dient der Unterscheidung gleicher Namen.
+ */
+export const listVehicleAssignments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, role, vehicle_site_id")
+      .eq("active", true)
+      .order("full_name");
+    if (error) throw new Error("Zuordnungen konnten nicht geladen werden.");
+    return (data ?? []).map((p) => ({
+      id: p.id,
+      full_name: (p.full_name ?? null) as string | null,
+      role: (p.role ?? null) as string | null,
+      vehicle_site_id: (p.vehicle_site_id ?? null) as string | null,
+    }));
+  });
+
+const vehicleAssignSchema = z.object({
+  siteId: z.string().uuid(),
+  userId: z.string().uuid().nullable(),
+});
+
+/**
+ * Setzt oder entfernt die Fahrzeugzuordnung von der Fahrzeugseite aus.
+ * Verändert ausschließlich `profiles.vehicle_site_id` — keine Stammdaten des
+ * Standorts, keine Geräteobhut, keine Gerätestandorte.
+ */
+export const setVehicleAssignment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => vehicleAssignSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: site } = await supabaseAdmin
+      .from("sites")
+      .select("id, location_type, active")
+      .eq("id", data.siteId)
+      .maybeSingle();
+    if (!site || site.location_type !== "fahrzeug" || site.active !== true) {
+      throw new Error("Bitte ein aktives Fahrzeug auswählen.");
+    }
+
+    if (data.userId) {
+      const { data: target } = await supabaseAdmin
+        .from("profiles")
+        .select("id, active")
+        .eq("id", data.userId)
+        .maybeSingle();
+      if (!target || target.active !== true) {
+        throw new Error("Dieser Benutzer ist nicht verfügbar.");
+      }
+    }
+
+    // Ein Fahrzeug hat höchstens einen Benutzer: bestehende Zuordnung lösen.
+    const { error: clearError } = await supabaseAdmin
+      .from("profiles")
+      .update({ vehicle_site_id: null })
+      .eq("vehicle_site_id", data.siteId);
+    if (clearError) throw new Error("Zuordnung konnte nicht geändert werden.");
+
+    if (data.userId) {
+      // Ein Benutzer hat höchstens ein Fahrzeug: alte Zuordnung wird ersetzt.
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({ vehicle_site_id: data.siteId })
+        .eq("id", data.userId);
+      if (error) throw new Error("Zuordnung konnte nicht geändert werden.");
+    }
+
+    return { ok: true };
+  });

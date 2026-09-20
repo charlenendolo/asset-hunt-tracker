@@ -36,6 +36,7 @@ async function refreshUsers(qc: ReturnType<typeof useQueryClient>) {
   await qc.invalidateQueries({ queryKey: ["profiles"] });
   await qc.invalidateQueries({ queryKey: ["account-emails"] });
   await qc.invalidateQueries({ queryKey: ["profile"] });
+  await qc.invalidateQueries({ queryKey: ["vehicle-assignments"] });
 }
 
 /** Bestehenden Benutzer bearbeiten — es entsteht nie ein zweiter Datensatz. */
