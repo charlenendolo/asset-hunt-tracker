@@ -51,9 +51,11 @@ export const Route = createFileRoute("/_authenticated/standorte")({
 function SitesPage() {
   const sites = useQuery(sitesQuery);
   const counts = useQuery(machinesBySiteCountQuery);
+  const assignments = useQuery(vehicleAssignmentsQuery);
   const identity = useIdentity();
   const [createOpen, setCreateOpen] = useState(false);
   const [editSite, setEditSite] = useState<SiteRow | null>(null);
+  const [assignSite, setAssignSite] = useState<SiteRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
 
@@ -256,6 +258,14 @@ function SitesPage() {
           site={editSite}
           open={!!editSite}
           onOpenChange={(o) => (!o ? setEditSite(null) : undefined)}
+        />
+      ) : null}
+
+      {identity.isAdmin && assignSite ? (
+        <VehicleAssignDialog
+          site={assignSite}
+          open={!!assignSite}
+          onOpenChange={(o) => (!o ? setAssignSite(null) : undefined)}
         />
       ) : null}
     </AppShell>
