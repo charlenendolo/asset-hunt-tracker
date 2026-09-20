@@ -35,6 +35,7 @@ type Role = (typeof ROLE_OPTIONS)[number]["value"];
 async function refreshUsers(qc: ReturnType<typeof useQueryClient>) {
   await qc.invalidateQueries({ queryKey: ["profiles"] });
   await qc.invalidateQueries({ queryKey: ["account-emails"] });
+  await qc.invalidateQueries({ queryKey: ["profile"] });
 }
 
 /** Bestehenden Benutzer bearbeiten — es entsteht nie ein zweiter Datensatz. */
@@ -153,6 +154,7 @@ export function EditUserDialog({
               onChange={setVehicleSiteId}
               typeFilter="fahrzeug"
               allowCreate={false}
+              activeOnly
               emptyLabel="Kein Fahrzeug"
             />
             <p className="text-xs text-muted-foreground">
