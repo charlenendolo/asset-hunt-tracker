@@ -22,6 +22,7 @@ export type ManagedUser = {
   username: string | null;
   role: string;
   active: boolean;
+  vehicle_site_id?: string | null;
 };
 
 /** Alle Zeilenaktionen eines Benutzers in einem Menü — Logik bleibt unverändert. */
