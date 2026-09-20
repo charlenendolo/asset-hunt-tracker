@@ -184,21 +184,61 @@ export function machinesQuery(filters: MachineFilters) {
         q = q.eq("responsible_user_id", filters.responsibleUserId);
       }
       if (filters.search.trim()) {
-        const term = `%${filters.search.trim()}%`;
-        const { data: propertyMatches, error: propertyError } = await supabase
-          .from("machine_property_assignments")
-          .select("machine_id, property:machine_properties!inner(name)")
-          .ilike("property.name", term)
-          .limit(5000);
-        if (propertyError) throw propertyError;
+        const raw = filters.search.trim();
+        const term = `%${raw}%`;
+        // Alle Zusatztreffer werden serverseitig gefiltert (ilike) — es werden
+        // nie alle Personen, Standorte oder Geräte in den Browser geladen.
+        const [propertyRes, personRes, siteRes] = await Promise.all([
+          supabase
+            .from("machine_property_assignments")
+            .select("machine_id, property:machine_properties!inner(name)")
+            .ilike("property.name", term)
+            .limit(5000),
+          // Nur aktive Personen: gelöschte/archivierte Zugänge erzeugen keine
+          // aktuellen Treffer (weder über Obhut noch über ihr Fahrzeug).
+          supabase
+            .from("profiles")
+            .select("id, vehicle_site_id")
+            .eq("active", true)
+            .or(`full_name.ilike.${term},username.ilike.${term}`)
+            .limit(500),
+          supabase
+            .from("sites")
+            .select("id")
+            .or(`name.ilike.${term},site_number.ilike.${term}`)
+            .limit(500),
+        ]);
+        if (propertyRes.error) throw propertyRes.error;
+        if (personRes.error) throw personRes.error;
+        if (siteRes.error) throw siteRes.error;
+
         const propertyMachineIds = [
-          ...new Set((propertyMatches ?? []).map((row) => row.machine_id)),
+          ...new Set((propertyRes.data ?? []).map((row) => row.machine_id)),
         ];
-        const propertyClause =
-          propertyMachineIds.length > 0 ? `,id.in.(${propertyMachineIds.join(",")})` : "";
-        q = q.or(
-          `name.ilike.${term},asset_code.ilike.${term},serial_number.ilike.${term},manufacturer.ilike.${term},model.ilike.${term}${propertyClause}`,
-        );
+        const personIds = [...new Set((personRes.data ?? []).map((p) => p.id))];
+        // Standort-Treffer: direkt gefundene Standorte plus die Fahrzeuge, die
+        // den gefundenen Personen aktuell zugeordnet sind (Arbeitskontext).
+        const siteIds = [
+          ...new Set([
+            ...(siteRes.data ?? []).map((s) => s.id),
+            ...(personRes.data ?? [])
+              .map((p) => p.vehicle_site_id)
+              .filter((v): v is string => !!v),
+          ]),
+        ];
+
+        const clauses = [
+          `name.ilike.${term}`,
+          `asset_code.ilike.${term}`,
+          `serial_number.ilike.${term}`,
+          `manufacturer.ilike.${term}`,
+          `model.ilike.${term}`,
+        ];
+        if (propertyMachineIds.length > 0) clauses.push(`id.in.(${propertyMachineIds.join(",")})`);
+        if (personIds.length > 0) clauses.push(`responsible_user_id.in.(${personIds.join(",")})`);
+        if (siteIds.length > 0) clauses.push(`current_site_id.in.(${siteIds.join(",")})`);
+        // Ein .or() über alle Pfade — jedes Gerät erscheint genau einmal.
+        q = q.or(clauses.join(","));
       }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
       if (filters.siteId) q = q.eq("current_site_id", filters.siteId);
