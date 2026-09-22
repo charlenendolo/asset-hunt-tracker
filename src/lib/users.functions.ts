@@ -3,20 +3,78 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
+import {
+  APP_ROLES,
+  assignableRoles,
+  canManageUsers,
+  isPrivilegedTarget,
+  isSuperadmin,
+  LAST_SUPERADMIN,
+  PRIVILEGED_DENIED,
+} from "@/lib/roles";
 
 /**
- * Admin-only account provisioning. No schema change: the existing
- * on_auth_user_created trigger creates the profile row; we only set the role
- * afterwards. The caller's admin status is verified through their OWN client
- * (RLS-scoped is_admin()) before the service-role client is loaded.
+ * Kontoverwaltung. Die Rolle des Aufrufers wird IMMER serverseitig über den
+ * eigenen (RLS-gebundenen) Client aus der Datenbank gelesen — niemals aus der
+ * Anfrage. Erst danach wird der Service-Role-Client geladen.
+ *
+ * Hierarchie: Superadmin verwaltet privilegierte Zugänge (Administrator /
+ * Superadmin), Administrator verwaltet nur niedrigere Rollen.
  */
 
 // Erlaubte Rollenwerte laut DB-Constraint profiles_role_check.
-const ROLES = ["admin", "site_manager", "warehouse_manager", "user"] as const;
+const ROLES = APP_ROLES;
 
-async function assertAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
-  const { data } = await supabase.rpc("is_admin");
-  if (data !== true) throw new Error("Nur Administratoren dürfen Zugänge verwalten.");
+type RoleClient = {
+  rpc: (fn: "current_profile") => Promise<{
+    data: Array<{ role: string | null; active: boolean | null }> | null;
+  }>;
+};
+
+/** Vertrauenswürdige Rolle des Aufrufers (aus der Datenbank). */
+async function callerRole(supabase: unknown): Promise<string> {
+  const { data } = await (supabase as RoleClient).rpc("current_profile");
+  const profile = data?.[0];
+  if (!profile || profile.active === false) throw new Error("Zugang ist nicht aktiv.");
+  return (profile.role ?? "user").toLowerCase();
+}
+
+/** Aufrufer muss Zugänge verwalten dürfen. Liefert die geprüfte Rolle zurück. */
+async function assertAdmin(supabase: unknown): Promise<string> {
+  const role = await callerRole(supabase);
+  if (!canManageUsers(role)) throw new Error("Nur Administratoren dürfen Zugänge verwalten.");
+  return role;
+}
+
+/** Ziel-Rolle eines Zugangs aus der Datenbank (nie aus der Anfrage). */
+async function targetProfile(
+  admin: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  userId: string,
+) {
+  const { data } = await admin
+    .from("profiles")
+    .select("id, full_name, role, active")
+    .eq("id", userId)
+    .maybeSingle();
+  return data;
+}
+
+/** Blockiert Aktionen, die den letzten aktiven Superadmin entfernen würden. */
+async function assertSuperadminRemains(
+  admin: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  target: { role: string | null; active: boolean | null } | null,
+) {
+  if (!target || target.role !== "superadmin" || target.active !== true) return;
+  const { count } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "superadmin")
+    .eq("active", true);
+  if ((count ?? 0) <= 1) throw new Error(LAST_SUPERADMIN);
 }
 
 /** Technical, never-delivered domain for PIN-only staff without a real address. */
