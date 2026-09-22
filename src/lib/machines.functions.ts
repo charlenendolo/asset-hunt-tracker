@@ -56,6 +56,7 @@ const createSchema = z.object({
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
   properties: z.array(z.string().trim().min(1).max(80)).max(30).optional().default([]),
+  searchTerms: z.array(z.string().trim().min(1).max(80)).max(30).optional().default([]),
   accessories: z
     .array(
       z.object({
@@ -139,6 +140,17 @@ export const createMachine = createServerFn({ method: "POST" })
           "Maschine wurde nicht angelegt, weil die Eigenschaften nicht gespeichert werden konnten: " +
             (propertyError as Error).message,
         );
+      }
+    }
+
+    // Alternative Suchbegriffe verbessern nur die Suche — schlägt das fehl,
+    // bleibt das Gerät erhalten und wird nicht zurückgerollt.
+    if (data.searchTerms.length > 0) {
+      const { replaceMachineSearchTerms } = await import("./machine-search-terms.server");
+      try {
+        await replaceMachineSearchTerms(supabaseAdmin, inserted.id, data.searchTerms);
+      } catch (termError) {
+        console.error("[search-terms]", termError);
       }
     }
 
@@ -352,6 +364,7 @@ const updateSchema = z.object({
   purchaseDate: optionalDate,
   purchasePrice: z.number().nonnegative().nullable().optional(),
   properties: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+  searchTerms: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
 });
 
 /**
@@ -424,6 +437,15 @@ export const updateMachine = createServerFn({ method: "POST" })
         await replaceMachineProperties(supabaseAdmin, machine.id, data.properties);
       } catch (propertyError) {
         failSafely("Eigenschaften konnten nicht gespeichert werden.", propertyError, "properties");
+      }
+    }
+
+    if (data.searchTerms) {
+      const { replaceMachineSearchTerms } = await import("./machine-search-terms.server");
+      try {
+        await replaceMachineSearchTerms(supabaseAdmin, machine.id, data.searchTerms);
+      } catch (termError) {
+        failSafely("Suchbegriffe konnten nicht gespeichert werden.", termError, "search-terms");
       }
     }
 

@@ -369,6 +369,57 @@ export type Database = {
           },
         ]
       }
+      machine_search_term_assignments: {
+        Row: {
+          created_at: string
+          machine_id: string
+          term_id: string
+        }
+        Insert: {
+          created_at?: string
+          machine_id: string
+          term_id: string
+        }
+        Update: {
+          created_at?: string
+          machine_id?: string
+          term_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_search_term_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_search_term_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "machine_search_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machine_search_terms: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       machines: {
         Row: {
           active: boolean

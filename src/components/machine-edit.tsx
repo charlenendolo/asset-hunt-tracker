@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
-import { PropertyPicker } from "@/components/property-picker";
+import { PropertyPicker, SearchTermPicker } from "@/components/property-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { updateMachine } from "@/lib/machines.functions";
@@ -40,6 +40,7 @@ export type EditableMachine = {
   purchase_date: string | null;
   purchase_price: number | null;
   properties?: Array<{ property: { id: string; name: string } | null }>;
+  search_terms?: Array<{ search_term: { id: string; name: string } | null }>;
 };
 
 /** Stammdatenbearbeitung — ausschließlich für Administratoren. */
@@ -109,6 +110,11 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
   const [properties, setProperties] = useState(
     (machine.properties ?? []).flatMap((item) => (item.property ? [item.property.name] : [])),
   );
+  const [searchTerms, setSearchTerms] = useState(
+    (machine.search_terms ?? []).flatMap((item) =>
+      item.search_term ? [item.search_term.name] : [],
+    ),
+  );
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -134,6 +140,7 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
           purchaseDate: form.purchaseDate || null,
           purchasePrice: machine.purchase_price,
           properties,
+          searchTerms,
         },
       }),
     onSuccess: async () => {
@@ -142,6 +149,7 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
         qc.invalidateQueries({ queryKey: ["machine", machine.id] }),
         qc.invalidateQueries({ queryKey: ["machine-history", machine.id] }),
         qc.invalidateQueries({ queryKey: ["machine-properties"] }),
+        qc.invalidateQueries({ queryKey: ["machine-search-terms"] }),
       ]);
       toast.success("Gerät wurde aktualisiert.");
       onClose();
@@ -261,6 +269,15 @@ function EditDialog({ machine, onClose }: { machine: EditableMachine; onClose: (
           <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
             <Label>Eigenschaften</Label>
             <PropertyPicker values={properties} onChange={setProperties} />
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+            <Label>Alternative Suchbegriffe</Label>
+            <p className="text-xs text-muted-foreground">
+              Andere gängige Bezeichnungen, unter denen dieses Gerät gefunden werden soll. Der
+              offizielle Gerätename bleibt unverändert.
+            </p>
+            <SearchTermPicker values={searchTerms} onChange={setSearchTerms} />
           </div>
 
           <div className="space-y-1.5">

@@ -67,6 +67,21 @@ export const machinePropertyCatalogQuery = queryOptions({
   },
 });
 
+/** Wiederverwendbare alternative Suchbegriffe (Vorschläge in der Eingabe). */
+export const machineSearchTermCatalogQuery = queryOptions({
+  queryKey: ["machine-search-terms", "catalog"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machine_search_terms")
+      .select("id, name")
+      .order("name")
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
 export const sitesQuery = queryOptions({
   queryKey: ["sites"],
   staleTime: FIVE_MIN,
@@ -188,11 +203,18 @@ export function machinesQuery(filters: MachineFilters) {
         const term = `%${raw}%`;
         // Alle Zusatztreffer werden serverseitig gefiltert (ilike) — es werden
         // nie alle Personen, Standorte oder Geräte in den Browser geladen.
-        const [propertyRes, personRes, siteRes] = await Promise.all([
+        const [propertyRes, termRes, personRes, siteRes] = await Promise.all([
           supabase
             .from("machine_property_assignments")
             .select("machine_id, property:machine_properties!inner(name)")
             .ilike("property.name", term)
+            .limit(5000),
+          // Alternative Suchbegriffe (Synonyme) — reine Zusatzquelle für die
+          // Suche, der offizielle Gerätename bleibt unberührt.
+          supabase
+            .from("machine_search_term_assignments")
+            .select("machine_id, search_term:machine_search_terms!inner(name)")
+            .ilike("search_term.name", term)
             .limit(5000),
           // Nur aktive Personen: gelöschte/archivierte Zugänge erzeugen keine
           // aktuellen Treffer (weder über Obhut noch über ihr Fahrzeug).
@@ -209,11 +231,15 @@ export function machinesQuery(filters: MachineFilters) {
             .limit(500),
         ]);
         if (propertyRes.error) throw propertyRes.error;
+        if (termRes.error) throw termRes.error;
         if (personRes.error) throw personRes.error;
         if (siteRes.error) throw siteRes.error;
 
         const propertyMachineIds = [
-          ...new Set((propertyRes.data ?? []).map((row) => row.machine_id)),
+          ...new Set([
+            ...(propertyRes.data ?? []).map((row) => row.machine_id),
+            ...(termRes.data ?? []).map((row) => row.machine_id),
+          ]),
         ];
         const personIds = [...new Set((personRes.data ?? []).map((p) => p.id))];
         // Standort-Treffer: direkt gefundene Standorte plus die Fahrzeuge, die
@@ -330,7 +356,7 @@ export function machineDetailQuery(id: string) {
       const { data, error } = await supabase
         .from("machines")
         .select(
-          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name))",
+          "*, category:machine_categories(id, name), site:sites(id, name, site_number, address, location_type), responsible:profiles(id, full_name), properties:machine_property_assignments(property:machine_properties(id, name)), search_terms:machine_search_term_assignments(search_term:machine_search_terms(id, name))",
         )
         .eq("id", id)
         .maybeSingle();
