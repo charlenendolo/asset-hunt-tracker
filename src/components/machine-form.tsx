@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteCombobox } from "@/components/site-combobox";
 import { AccessoryDraftList, type AccessoryDraft } from "@/components/accessory-picker";
-import { PropertyPicker } from "@/components/property-picker";
+import { PropertyPicker, SearchTermPicker } from "@/components/property-picker";
 import { useIdentity } from "@/hooks/use-identity";
 import { categoriesQuery } from "@/lib/queries";
 import { createMachine } from "@/lib/machines.functions";
@@ -116,6 +116,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [accessories, setAccessories] = useState<AccessoryDraft[]>([]);
   const [properties, setProperties] = useState<string[]>([]);
+  const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const run = useServerFn(createMachine);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -142,6 +143,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
           purchaseDate: form.purchaseDate || null,
           purchasePrice: null,
           properties,
+          searchTerms,
           accessories,
         },
       }),
@@ -151,6 +153,7 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
         qc.invalidateQueries({ queryKey: ["planner"] }),
         qc.invalidateQueries({ queryKey: ["accessories", "names"] }),
         qc.invalidateQueries({ queryKey: ["machine-properties"] }),
+        qc.invalidateQueries({ queryKey: ["machine-search-terms"] }),
       ]);
       toast.success("Maschine wurde angelegt.");
       setCreated({ id: machine.id, name: machine.name });
@@ -370,6 +373,15 @@ function MachineDialog({ onClose }: { onClose: () => void }) {
               <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
                 <Label>Eigenschaften</Label>
                 <PropertyPicker values={properties} onChange={setProperties} />
+              </div>
+
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+                <Label>Alternative Suchbegriffe</Label>
+                <p className="text-xs text-muted-foreground">
+                  Andere gängige Bezeichnungen für dieses Gerät, z. B. „Stemmhammer“. Sie werden
+                  nur in der Gerätesuche verwendet und ändern den Gerätenamen nicht.
+                </p>
+                <SearchTermPicker values={searchTerms} onChange={setSearchTerms} />
               </div>
 
               <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
