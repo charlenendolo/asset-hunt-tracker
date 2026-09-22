@@ -281,15 +281,12 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
       patch.vehicle_site_id = next;
     }
 
-    // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
-    const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
-    if (losesAdmin) {
-      const { data: target } = await supabaseAdmin
-        .from("profiles")
-        .select("role, active")
-        .eq("id", data.userId)
-        .maybeSingle();
-      if (target?.role === "admin" && target.active) {
+    // Lockout-Schutz: mindestens ein aktiver Superadmin und ein aktiver
+    // Administrator müssen bestehen bleiben.
+    const losesRole = (data.role && data.role !== target.role) || data.active === false;
+    if (losesRole) {
+      await assertSuperadminRemains(supabaseAdmin, target);
+      if (target.role === "admin" && target.active) {
         const { count } = await supabaseAdmin
           .from("profiles")
           .select("id", { count: "exact", head: true })
