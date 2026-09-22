@@ -36,7 +36,7 @@ const ROLE_ORDER: Record<string, number> = {
   user: 3,
 };
 
-type SortKey = "name" | "username" | "role" | "status" | "created";
+type SortKey = "name" | "username" | "email" | "role" | "status" | "created";
 
 function UsersPage() {
   const identity = useIdentity();
@@ -81,6 +81,8 @@ function UsersPage() {
     const collator = new Intl.Collator("de", { sensitivity: "base" });
     return [...list].sort((a, b) => {
       if (sortKey === "username") return dir * collator.compare(a.username ?? "", b.username ?? "");
+      if (sortKey === "email")
+        return dir * collator.compare(emailById.get(a.id) ?? "", emailById.get(b.id) ?? "");
       if (sortKey === "role")
         return dir * ((ROLE_ORDER[a.role ?? "user"] ?? 9) - (ROLE_ORDER[b.role ?? "user"] ?? 9));
       if (sortKey === "status") return dir * (Number(b.active) - Number(a.active));
@@ -195,7 +197,7 @@ function UsersPage() {
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                   <SortHeader sortId="name">Name</SortHeader>
                   {isAdmin ? <SortHeader sortId="username">Benutzername</SortHeader> : null}
-                  {isAdmin ? <th className="px-4 py-3">E-Mail</th> : null}
+                  {isAdmin ? <SortHeader sortId="email">E-Mail</SortHeader> : null}
                   <SortHeader sortId="role">Rolle</SortHeader>
                   {isAdmin ? <th className="px-4 py-3">Zugang</th> : null}
                   <SortHeader sortId="status">Status</SortHeader>

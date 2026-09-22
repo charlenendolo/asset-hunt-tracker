@@ -160,6 +160,38 @@ function MachinesPage() {
   const sort = `${sortField}:${sortDir}`;
   const page = urlSearch.page ?? 1;
 
+  /** Spaltenüberschrift zum Sortieren — gleiche Quelle wie die Auswahl oben (URL). */
+  function SortHeader({
+    field,
+    children,
+  }: {
+    field: (typeof SORT_FIELDS)[number]["value"];
+    children: React.ReactNode;
+  }) {
+    const active = sortField === field;
+    return (
+      <th className="px-4 py-3">
+        <button
+          type="button"
+          onClick={() =>
+            patchSearch({ sort: field, dir: active && sortDir === "asc" ? "desc" : "asc" })
+          }
+          className="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={`Nach ${String(children)} sortieren`}
+        >
+          {children}
+          {active ? (
+            sortDir === "asc" ? (
+              <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5" strokeWidth={2} />
+            )
+          ) : null}
+        </button>
+      </th>
+    );
+  }
+
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
@@ -455,9 +487,9 @@ function MachinesPage() {
                       />
                     </th>
                   ) : null}
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Gerät</th>
-                  <th className="px-4 py-3">Gerätenummer</th>
+                  <SortHeader field="status">Status</SortHeader>
+                  <SortHeader field="name">Gerät</SortHeader>
+                  <SortHeader field="asset_code">Gerätenummer</SortHeader>
                   <th className="px-4 py-3">Kategorie</th>
                   <th className="px-4 py-3">Standort</th>
                   <th className="px-4 py-3">Verantwortlich</th>
