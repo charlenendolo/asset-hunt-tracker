@@ -1,5 +1,5 @@
 import { useCurrentProfile } from "@/hooks/use-profile";
-import { isAdminOrAbove, isSuperadmin as isSuperadminRole } from "@/lib/roles";
+import { canManageInventory, isAdminOrAbove, isSuperadmin as isSuperadminRole } from "@/lib/roles";
 
 export type Identity = {
   /** Stable id used for responsibility/ownership in the database. */
@@ -12,6 +12,8 @@ export type Identity = {
   isSuperadmin: boolean;
   isSiteManager: boolean;
   isWarehouseManager: boolean;
+  /** Operativer Gerätebetrieb: Admin, Superadmin und Lagerverwalter. */
+  canOperate: boolean;
   /** Managers may act on machines they are not personally responsible for. */
   canManage: boolean;
   canManageMachines: boolean;
@@ -38,7 +40,8 @@ export function useIdentity(): Identity {
     isSuperadmin: isSuperadminRole(normalized),
     isSiteManager,
     isWarehouseManager,
-    canManage: isAdmin || isSiteManager,
+    canOperate: canManageInventory(normalized),
+    canManage: isAdmin || isSiteManager || isWarehouseManager,
     canManageMachines: isAdmin || isSiteManager || isWarehouseManager,
     isLoading,
   };

@@ -27,7 +27,7 @@ export async function requireManager(
   const role = await currentRole(supabase);
   const allowed = options?.adminOnly
     ? ["superadmin", "admin"]
-    : ["superadmin", "admin", "site_manager"];
+    : ["superadmin", "admin", "site_manager", "warehouse_manager"];
   if (!allowed.includes(role)) {
     throw new Error(options?.message ?? "Dir fehlen die Rechte für diesen Vorgang.");
   }
@@ -56,4 +56,19 @@ export async function requireActiveUser(supabase: unknown): Promise<string> {
 export function failSafely(message: string, error: unknown, scope: string): never {
   console.error(`[${scope}]`, error);
   throw new Error(message);
+}
+
+/**
+ * Operativer Gerätebetrieb (Admin-gleichwertig für Lagerverwalter).
+ * Nicht für Benutzerverwaltung und nicht für Deaktivieren/Löschen von Geräten.
+ */
+export async function requireInventoryManager(
+  supabase: unknown,
+  message?: string,
+): Promise<string> {
+  const role = await currentRole(supabase);
+  if (!["superadmin", "admin", "warehouse_manager"].includes(role)) {
+    throw new Error(message ?? "Dir fehlen die Rechte für diesen Vorgang.");
+  }
+  return role;
 }

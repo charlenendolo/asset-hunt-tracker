@@ -379,7 +379,7 @@ function MachineDetailPage() {
             )}
           </Section>
 
-          {identity.isAdmin ? (
+          {identity.canOperate ? (
             <Section title="Verlauf">
               <MachineHistory machineId={m.id} />
             </Section>
@@ -404,7 +404,7 @@ function MachineDetailPage() {
             {identity.canManageMachines ? (
               <EditMachineButton className="mt-3 w-full" machine={m} />
             ) : null}
-            {identity.isAdmin ? (
+            {identity.canOperate ? (
               <ChangeSiteButton
                 className="mt-3 w-full"
                 machine={{
@@ -415,7 +415,7 @@ function MachineDetailPage() {
                 }}
               />
             ) : null}
-            {identity.isAdmin ? (
+            {identity.canOperate ? (
               <ReassignResponsibleButton
                 className="mt-3 w-full"
                 machine={{
@@ -446,7 +446,7 @@ function MachineDetailPage() {
             />
           </Section>
 
-          {identity.isAdmin ? (
+          {identity.canOperate ? (
             <MachineQrSection machine={{ id: m.id, name: m.name, asset_code: m.asset_code }} />
           ) : null}
 

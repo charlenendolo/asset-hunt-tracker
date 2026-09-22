@@ -325,6 +325,8 @@ function ManagerDashboard() {
   const maintenance = useQuery(maintenanceQuery);
   const movements = useQuery({ ...recentMovementsQuery, enabled: isAdmin });
   const managerIdentity = useIdentity();
+  // Lagerverwalter sehen den vollen Flottenüberblick wie Administratoren.
+  const fleetView = managerIdentity.canOperate || isAdmin;
   const overdue = useQuery(overdueMachinesQuery(managerIdentity.userId, managerIdentity.canManage));
   const overdueMachines = overdue.data?.machines ?? [];
 
@@ -375,7 +377,7 @@ function ManagerDashboard() {
         greeting="Repenning Geräteportal"
         headline={greeting}
         subline={
-          isAdmin
+          fleetView
             ? "Unternehmensweiter Überblick über Geräte, Reservierungen und Störungen."
             : "Überblick über deinen Standort und die zugewiesenen Geräte."
         }
@@ -412,7 +414,7 @@ function ManagerDashboard() {
         <AdminHandovers />
       </div>
 
-      {!isAdmin ? (
+      {!fleetView ? (
         <div className="mb-6">
           <MyMachines />
         </div>

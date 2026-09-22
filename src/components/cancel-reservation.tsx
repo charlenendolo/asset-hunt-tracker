@@ -42,7 +42,7 @@ export function CancelReservationButton({
   const [open, setOpen] = useState(false);
 
   const isOwner = !!identity.userId && reservation.reserved_by === identity.userId;
-  const allowed = identity.isAdmin || isOwner;
+  const allowed = identity.canOperate || isOwner;
   const cancellable = (reservation.status ?? "confirmed").toLowerCase() === "confirmed";
 
   const mutation = useMutation({

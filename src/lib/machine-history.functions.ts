@@ -50,11 +50,11 @@ export const getMachineHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Der Geräteverlauf ist Administratoren vorbehalten.",
-    });
+    const { requireInventoryManager } = await import("./roles.server");
+    await requireInventoryManager(
+      context.supabase,
+      "Der Geräteverlauf ist Administratoren und Lagerverwaltern vorbehalten.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const machineId = data.machineId;

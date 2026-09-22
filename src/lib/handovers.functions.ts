@@ -121,11 +121,11 @@ export const listMyHandovers = createServerFn({ method: "GET" })
 export const listAllHandovers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Die Übersicht der Übergaben ist Administratoren vorbehalten.",
-    });
+    const { requireInventoryManager } = await import("./roles.server");
+    await requireInventoryManager(
+      context.supabase,
+      "Die Übersicht der Übergaben ist Administratoren und Lagerverwaltern vorbehalten.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await expireStale(supabaseAdmin);
 

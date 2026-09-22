@@ -173,11 +173,11 @@ export const reassignMachineResponsibility = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => reassignSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Nur Administratoren dürfen die Verantwortlichkeit ändern.",
-    });
+    const { requireInventoryManager } = await import("./roles.server");
+    await requireInventoryManager(
+      context.supabase,
+      "Dir fehlen die Rechte, die Verantwortlichkeit zu ändern.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: machine, error: readError } = await supabaseAdmin
@@ -282,11 +282,8 @@ export const changeMachineSite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => changeSiteSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { requireManager } = await import("./roles.server");
-    await requireManager(context.supabase, {
-      adminOnly: true,
-      message: "Nur Administratoren dürfen den Standort ändern.",
-    });
+    const { requireInventoryManager } = await import("./roles.server");
+    await requireInventoryManager(context.supabase, "Dir fehlen die Rechte, den Standort zu ändern.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: machine, error: readError } = await supabaseAdmin
