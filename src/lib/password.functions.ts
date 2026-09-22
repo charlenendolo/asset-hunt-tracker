@@ -128,6 +128,7 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertActiveAdmin(context.supabase as never);
+    await assertMayResetPassword(context.supabase as never, data.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: target } = await supabaseAdmin.auth.admin.getUserById(data.userId);
@@ -153,6 +154,7 @@ export const setTemporaryPassword = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertActiveAdmin(context.supabase as never);
+    await assertMayResetPassword(context.supabase as never, data.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Auch Zugänge ohne echte E-Mail bekommen ein Passwort: sie melden sich
