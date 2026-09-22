@@ -203,11 +203,18 @@ export function machinesQuery(filters: MachineFilters) {
         const term = `%${raw}%`;
         // Alle Zusatztreffer werden serverseitig gefiltert (ilike) — es werden
         // nie alle Personen, Standorte oder Geräte in den Browser geladen.
-        const [propertyRes, personRes, siteRes] = await Promise.all([
+        const [propertyRes, termRes, personRes, siteRes] = await Promise.all([
           supabase
             .from("machine_property_assignments")
             .select("machine_id, property:machine_properties!inner(name)")
             .ilike("property.name", term)
+            .limit(5000),
+          // Alternative Suchbegriffe (Synonyme) — reine Zusatzquelle für die
+          // Suche, der offizielle Gerätename bleibt unberührt.
+          supabase
+            .from("machine_search_term_assignments")
+            .select("machine_id, search_term:machine_search_terms!inner(name)")
+            .ilike("search_term.name", term)
             .limit(5000),
           // Nur aktive Personen: gelöschte/archivierte Zugänge erzeugen keine
           // aktuellen Treffer (weder über Obhut noch über ihr Fahrzeug).
@@ -224,11 +231,15 @@ export function machinesQuery(filters: MachineFilters) {
             .limit(500),
         ]);
         if (propertyRes.error) throw propertyRes.error;
+        if (termRes.error) throw termRes.error;
         if (personRes.error) throw personRes.error;
         if (siteRes.error) throw siteRes.error;
 
         const propertyMachineIds = [
-          ...new Set((propertyRes.data ?? []).map((row) => row.machine_id)),
+          ...new Set([
+            ...(propertyRes.data ?? []).map((row) => row.machine_id),
+            ...(termRes.data ?? []).map((row) => row.machine_id),
+          ]),
         ];
         const personIds = [...new Set((personRes.data ?? []).map((p) => p.id))];
         // Standort-Treffer: direkt gefundene Standorte plus die Fahrzeuge, die
