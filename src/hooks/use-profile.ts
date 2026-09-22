@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { isAdminOrAbove, isSuperadmin } from "@/lib/roles";
 
 export type Profile = Tables<"profiles">;
 
-export type AppRole = "admin" | "site_manager" | "warehouse_manager" | "user";
+export type { AppRole } from "@/lib/roles";
 
 /** Current auth user id (client session). */
 export function useCurrentUser() {
@@ -48,14 +49,16 @@ export function useCurrentProfile() {
     user: user ?? null,
     profile: query.data ?? null,
     role,
-    isAdmin: role === "admin",
+    // Superadmin erbt sämtliche Administrator-Rechte.
+    isAdmin: isAdminOrAbove(role),
+    isSuperadmin: isSuperadmin(role),
     // Bauleiter = site_manager (Legacy-Aliasse bleiben tolerant).
     isManager:
       role === "site_manager" ||
       role === "manager" ||
       role === "bauleiter" ||
       role === "warehouse_manager" ||
-      role === "admin",
+      isAdminOrAbove(role),
     isLoading: userLoading || query.isLoading,
   };
 }
