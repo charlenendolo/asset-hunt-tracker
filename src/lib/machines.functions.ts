@@ -283,7 +283,10 @@ export const changeMachineSite = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => changeSiteSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { requireInventoryManager } = await import("./roles.server");
-    await requireInventoryManager(context.supabase, "Dir fehlen die Rechte, den Standort zu ändern.");
+    await requireInventoryManager(
+      context.supabase,
+      "Dir fehlen die Rechte, den Standort zu ändern.",
+    );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: machine, error: readError } = await supabaseAdmin

@@ -73,8 +73,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-0.5">
       {NAV.filter(
-        (item) =>
-          (!item.adminOnly || isAdmin) && (!item.inventoryOnly || canManageInventory(role)),
+        (item) => (!item.adminOnly || isAdmin) && (!item.inventoryOnly || canManageInventory(role)),
       ).map((item) => (
         <Link
           key={item.to}
