@@ -216,7 +216,8 @@ function MachinesPage() {
   }
 
   function setPage(next: number) {
-    patchSearch(next > 1 ? { page: next } : {}, true);
+    // Seitenwechsel darf die Seite nicht zurücksetzen — sonst bleibt „Weiter“ wirkungslos.
+    patchSearch({ page: next > 1 ? next : undefined }, false);
   }
 
   // „Meine Geräte“: Obhut immer aus der Session ableiten, nie aus der URL.
