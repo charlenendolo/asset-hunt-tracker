@@ -280,7 +280,9 @@ export const respondHandover = createServerFn({ method: "POST" })
     }
 
     // PIN-Bestätigung für Mitarbeiter (bestehende Prüfung, kein zweites System).
-    const isManager = ["admin", "site_manager", "manager", "bauleiter"].includes(role);
+    const isManager = ["superadmin", "admin", "site_manager", "manager", "bauleiter"].includes(
+      role,
+    );
     if (!isManager) {
       if (!data.pin) throw new Error("Bitte bestätige die Übernahme mit deinem PIN.");
       const { verifyEmployeePin } = await import("./pin-verify.server");

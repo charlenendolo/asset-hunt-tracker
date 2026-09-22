@@ -21,6 +21,8 @@ import {
   getDeletionCheck,
   updateEmployeeAccount,
 } from "@/lib/users.functions";
+import { useIdentity } from "@/hooks/use-identity";
+import { assignableRoles } from "@/lib/roles";
 import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 
 const ROLE_OPTIONS = [
@@ -28,6 +30,7 @@ const ROLE_OPTIONS = [
   { value: "site_manager", label: "Bauleiter" },
   { value: "warehouse_manager", label: "Lagerverwalter" },
   { value: "admin", label: "Administrator" },
+  { value: "superadmin", label: "Superadmin" },
 ] as const;
 
 type Role = (typeof ROLE_OPTIONS)[number]["value"];
@@ -59,6 +62,8 @@ export function EditUserDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const identity = useIdentity();
+  const allowedRoles = ROLE_OPTIONS.filter((r) => assignableRoles(identity.role).includes(r.value));
   const submit = useServerFn(updateEmployeeAccount);
   const [fullName, setFullName] = useState(user.full_name ?? "");
   const [mail, setMail] = useState(email ?? "");
@@ -92,7 +97,7 @@ export function EditUserDialog({
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
   const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
-  const needsEmail = role === "site_manager" || role === "admin";
+  const needsEmail = role === "site_manager" || role === "admin" || role === "superadmin";
   const invalid =
     fullName.trim().length < 2 ||
     mailInvalid ||
@@ -171,7 +176,7 @@ export function EditUserDialog({
               value={role}
               onChange={(e) => setRole(e.target.value as Role)}
             >
-              {ROLE_OPTIONS.map((r) => (
+              {allowedRoles.map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>

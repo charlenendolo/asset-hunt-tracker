@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Superadmin",
   admin: "Administrator",
   site_manager: "Bauleiter",
   warehouse_manager: "Lagerverwalter",
@@ -8,6 +9,8 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_CLASSES: Record<string, string> = {
+  superadmin:
+    "text-role-superadmin border-role-superadmin/25 bg-role-superadmin/8",
   admin:
     "text-role-admin border-role-admin/25 bg-role-admin/8",
   site_manager:

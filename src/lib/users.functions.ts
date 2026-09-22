@@ -3,20 +3,78 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
+import {
+  APP_ROLES,
+  assignableRoles,
+  canManageUsers,
+  isPrivilegedTarget,
+  isSuperadmin,
+  LAST_SUPERADMIN,
+  PRIVILEGED_DENIED,
+} from "@/lib/roles";
 
 /**
- * Admin-only account provisioning. No schema change: the existing
- * on_auth_user_created trigger creates the profile row; we only set the role
- * afterwards. The caller's admin status is verified through their OWN client
- * (RLS-scoped is_admin()) before the service-role client is loaded.
+ * Kontoverwaltung. Die Rolle des Aufrufers wird IMMER serverseitig über den
+ * eigenen (RLS-gebundenen) Client aus der Datenbank gelesen — niemals aus der
+ * Anfrage. Erst danach wird der Service-Role-Client geladen.
+ *
+ * Hierarchie: Superadmin verwaltet privilegierte Zugänge (Administrator /
+ * Superadmin), Administrator verwaltet nur niedrigere Rollen.
  */
 
 // Erlaubte Rollenwerte laut DB-Constraint profiles_role_check.
-const ROLES = ["admin", "site_manager", "warehouse_manager", "user"] as const;
+const ROLES = APP_ROLES;
 
-async function assertAdmin(supabase: { rpc: (fn: "is_admin") => Promise<{ data: unknown }> }) {
-  const { data } = await supabase.rpc("is_admin");
-  if (data !== true) throw new Error("Nur Administratoren dürfen Zugänge verwalten.");
+type RoleClient = {
+  rpc: (fn: "current_profile") => Promise<{
+    data: Array<{ role: string | null; active: boolean | null }> | null;
+  }>;
+};
+
+/** Vertrauenswürdige Rolle des Aufrufers (aus der Datenbank). */
+async function callerRole(supabase: unknown): Promise<string> {
+  const { data } = await (supabase as RoleClient).rpc("current_profile");
+  const profile = data?.[0];
+  if (!profile || profile.active === false) throw new Error("Zugang ist nicht aktiv.");
+  return (profile.role ?? "user").toLowerCase();
+}
+
+/** Aufrufer muss Zugänge verwalten dürfen. Liefert die geprüfte Rolle zurück. */
+async function assertAdmin(supabase: unknown): Promise<string> {
+  const role = await callerRole(supabase);
+  if (!canManageUsers(role)) throw new Error("Nur Administratoren dürfen Zugänge verwalten.");
+  return role;
+}
+
+/** Ziel-Rolle eines Zugangs aus der Datenbank (nie aus der Anfrage). */
+async function targetProfile(
+  admin: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  userId: string,
+) {
+  const { data } = await admin
+    .from("profiles")
+    .select("id, full_name, role, active")
+    .eq("id", userId)
+    .maybeSingle();
+  return data;
+}
+
+/** Blockiert Aktionen, die den letzten aktiven Superadmin entfernen würden. */
+async function assertSuperadminRemains(
+  admin: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  target: { role: string | null; active: boolean | null } | null,
+) {
+  if (!target || target.role !== "superadmin" || target.active !== true) return;
+  const { count } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "superadmin")
+    .eq("active", true);
+  if ((count ?? 0) <= 1) throw new Error(LAST_SUPERADMIN);
 }
 
 /** Technical, never-delivered domain for PIN-only staff without a real address. */
@@ -56,7 +114,9 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
+    // Privilegierte Rollen darf nur der Superadmin vergeben.
+    if (!assignableRoles(role).includes(data.role)) throw new Error(PRIVILEGED_DENIED);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const username = data.username?.trim() ? normalizeUsername(data.username) : null;
@@ -153,11 +213,35 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
     if (data.userId === context.userId && data.active === false) {
       throw new Error("Du kannst deinen eigenen Zugang nicht deaktivieren.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const target = await targetProfile(supabaseAdmin, data.userId);
+    if (!target) throw new Error("Benutzer wurde nicht gefunden.");
+
+    // Privilegierte Zugänge (Administrator/Superadmin) darf nur der Superadmin
+    // bearbeiten; die Zielrolle stammt dabei immer aus der Datenbank.
+    if (isPrivilegedTarget(target.role) && !isSuperadmin(role) && target.id !== context.userId) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    if (data.role !== undefined && !assignableRoles(role).includes(data.role)) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    // Selbstbeförderung ist ausgeschlossen — auch für den Superadmin.
+    if (data.role !== undefined && data.userId === context.userId && data.role !== target.role) {
+      throw new Error("Du kannst deine eigene Rolle nicht ändern.");
+    }
+    if (
+      target.id === context.userId &&
+      !isSuperadmin(role) &&
+      isPrivilegedTarget(target.role) &&
+      (data.role !== undefined || data.active !== undefined)
+    ) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
 
     const patch: {
       role?: string;
@@ -197,15 +281,12 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
       patch.vehicle_site_id = next;
     }
 
-    // Lockout-Schutz: es muss immer mindestens ein aktiver Administrator bleiben.
-    const losesAdmin = (data.role && data.role !== "admin") || data.active === false;
-    if (losesAdmin) {
-      const { data: target } = await supabaseAdmin
-        .from("profiles")
-        .select("role, active")
-        .eq("id", data.userId)
-        .maybeSingle();
-      if (target?.role === "admin" && target.active) {
+    // Lockout-Schutz: mindestens ein aktiver Superadmin und ein aktiver
+    // Administrator müssen bestehen bleiben.
+    const losesRole = (data.role && data.role !== target.role) || data.active === false;
+    if (losesRole) {
+      await assertSuperadminRemains(supabaseAdmin, target);
+      if (target.role === "admin" && target.active) {
         const { count } = await supabaseAdmin
           .from("profiles")
           .select("id", { count: "exact", head: true })
@@ -319,18 +400,19 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), cancelReservations: z.boolean().optional() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
     if (data.userId === context.userId) {
       throw new Error("Du kannst deinen eigenen Zugang nicht löschen.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: target } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name, role, active")
-      .eq("id", data.userId)
-      .maybeSingle();
+    const target = await targetProfile(supabaseAdmin, data.userId);
     if (!target) throw new Error("Benutzer wurde nicht gefunden.");
+
+    if (isPrivilegedTarget(target.role) && !isSuperadmin(role)) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    await assertSuperadminRemains(supabaseAdmin, target);
 
     if (target.role === "admin" && target.active) {
       const { count } = await supabaseAdmin

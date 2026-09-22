@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEmployeeAccount } from "@/lib/users.functions";
+import { useIdentity } from "@/hooks/use-identity";
+import { assignableRoles } from "@/lib/roles";
 import { isValidUsername, normalizeUsername, USERNAME_HINT } from "@/lib/username";
 
 const ROLE_OPTIONS = [
@@ -23,6 +25,7 @@ const ROLE_OPTIONS = [
   { value: "site_manager", label: "Bauleiter" },
   { value: "warehouse_manager", label: "Lagerverwalter" },
   { value: "admin", label: "Administrator" },
+  { value: "superadmin", label: "Superadmin" },
 ] as const;
 
 type Role = (typeof ROLE_OPTIONS)[number]["value"];
@@ -53,6 +56,8 @@ function randomPassword() {
 
 export function CreateUserDialog() {
   const qc = useQueryClient();
+  const identity = useIdentity();
+  const allowedRoles = ROLE_OPTIONS.filter((r) => assignableRoles(identity.role).includes(r.value));
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -157,7 +162,7 @@ export function CreateUserDialog() {
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
               >
-                {ROLE_OPTIONS.map((r) => (
+                {allowedRoles.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
