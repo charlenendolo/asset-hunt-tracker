@@ -56,6 +56,8 @@ function randomPassword() {
 
 export function CreateUserDialog() {
   const qc = useQueryClient();
+  const identity = useIdentity();
+  const allowedRoles = ROLE_OPTIONS.filter((r) => assignableRoles(identity.role).includes(r.value));
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

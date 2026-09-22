@@ -62,6 +62,8 @@ export function EditUserDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const identity = useIdentity();
+  const allowedRoles = ROLE_OPTIONS.filter((r) => assignableRoles(identity.role).includes(r.value));
   const submit = useServerFn(updateEmployeeAccount);
   const [fullName, setFullName] = useState(user.full_name ?? "");
   const [mail, setMail] = useState(email ?? "");
