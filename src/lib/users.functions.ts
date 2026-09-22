@@ -114,7 +114,9 @@ export const createEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
+    // Privilegierte Rollen darf nur der Superadmin vergeben.
+    if (!assignableRoles(role).includes(data.role)) throw new Error(PRIVILEGED_DENIED);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const username = data.username?.trim() ? normalizeUsername(data.username) : null;
