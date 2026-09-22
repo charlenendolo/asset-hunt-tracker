@@ -14,6 +14,7 @@ import { profilesQuery } from "@/lib/queries";
 import { formatDate, textOrDash } from "@/lib/format";
 import { CreateUserDialog } from "@/components/user-admin";
 import { UserRowMenu } from "@/components/user-row-menu";
+import { useDismissKeyboard } from "@/hooks/use-dismiss-keyboard";
 import { useIdentity } from "@/hooks/use-identity";
 import { listAccountEmails } from "@/lib/users.functions";
 
@@ -39,6 +40,7 @@ const ROLE_ORDER: Record<string, number> = {
 type SortKey = "name" | "username" | "email" | "role" | "status" | "created";
 
 function UsersPage() {
+  const searchRef = useDismissKeyboard<HTMLInputElement>();
   const identity = useIdentity();
   const isAdmin = identity.isAdmin;
   const profiles = useQuery(profilesQuery);
@@ -147,6 +149,7 @@ function UsersPage() {
       {isAdmin ? (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Input
+            ref={searchRef}
             className="h-10 w-full sm:max-w-xs"
             placeholder="Benutzer suchen …"
             value={search}
@@ -176,6 +179,35 @@ function UsersPage() {
             <option value="inactive">Archivierte/gelöschte Benutzer</option>
             <option value="all">Alle Benutzer</option>
           </select>
+          {/* Sortierung auf dem Handy — am Desktop übernehmen das die Spaltenköpfe. */}
+          <div className="flex w-full gap-2 md:hidden">
+            <select
+              aria-label="Sortieren nach"
+              className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm"
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as SortKey)}
+            >
+              <option value="name">Name</option>
+              <option value="username">Benutzername</option>
+              <option value="email">E-Mail</option>
+              <option value="role">Rolle</option>
+              <option value="status">Status</option>
+              <option value="created">Angelegt</option>
+            </select>
+            <button
+              type="button"
+              aria-label={sortAsc ? "Absteigend sortieren" : "Aufsteigend sortieren"}
+              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-md border border-input bg-background px-3 text-sm"
+              onClick={() => setSortAsc((v) => !v)}
+            >
+              {sortAsc ? (
+                <ArrowUp className="h-4 w-4" strokeWidth={2} />
+              ) : (
+                <ArrowDown className="h-4 w-4" strokeWidth={2} />
+              )}
+              {sortAsc ? "A–Z" : "Z–A"}
+            </button>
+          </div>
         </div>
       ) : null}
 

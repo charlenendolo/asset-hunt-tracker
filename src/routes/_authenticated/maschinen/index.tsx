@@ -50,6 +50,7 @@ import {
 import { formatNumber, textOrDash } from "@/lib/format";
 import { SiteTypeIcon } from "@/components/site-type-icon";
 import { PropertyTags } from "@/components/machine-properties";
+import { useDismissKeyboard } from "@/hooks/use-dismiss-keyboard";
 
 const SORT_FIELDS = [
   { value: "name", label: "Name" },
@@ -192,6 +193,7 @@ function MachinesPage() {
     );
   }
 
+  const searchRef = useDismissKeyboard<HTMLInputElement>();
   const [selected, setSelected] = useState<Record<string, true>>({});
   const [labelDialog, setLabelDialog] = useState(false);
   const identity = useIdentity();
@@ -354,6 +356,7 @@ function MachinesPage() {
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchRef}
             value={search}
             onChange={(e) => patchSearch({ q: e.target.value })}
             placeholder="Suche nach Name, Code, Seriennummer …"
