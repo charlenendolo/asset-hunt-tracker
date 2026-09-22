@@ -400,18 +400,19 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), cancelReservations: z.boolean().optional() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
     if (data.userId === context.userId) {
       throw new Error("Du kannst deinen eigenen Zugang nicht löschen.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: target } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name, role, active")
-      .eq("id", data.userId)
-      .maybeSingle();
+    const target = await targetProfile(supabaseAdmin, data.userId);
     if (!target) throw new Error("Benutzer wurde nicht gefunden.");
+
+    if (isPrivilegedTarget(target.role) && !isSuperadmin(role)) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    await assertSuperadminRemains(supabaseAdmin, target);
 
     if (target.role === "admin" && target.active) {
       const { count } = await supabaseAdmin
