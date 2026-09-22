@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PasswordChangeDialog, useSendResetLink } from "@/components/password-admin";
 import { DeleteUserDialog, EditUserDialog } from "@/components/user-manage";
+import { useIdentity } from "@/hooks/use-identity";
+import { isPrivilegedTarget } from "@/lib/roles";
 import { updateEmployeeAccount } from "@/lib/users.functions";
 
 export type ManagedUser = {
@@ -28,6 +30,7 @@ export type ManagedUser = {
 /** Alle Zeilenaktionen eines Benutzers in einem Menü — Logik bleibt unverändert. */
 export function UserRowMenu({ user, email }: { user: ManagedUser; email: string | null }) {
   const qc = useQueryClient();
+  const identity = useIdentity();
   const submit = useServerFn(updateEmployeeAccount);
   const [edit, setEdit] = useState(false);
   const [password, setPassword] = useState(false);
@@ -42,6 +45,11 @@ export function UserRowMenu({ user, email }: { user: ManagedUser; email: string 
     },
     onError: (e: Error) => toast.error(e.message || "Änderung fehlgeschlagen."),
   });
+
+  // Administrator- und Superadmin-Zugänge verwaltet ausschließlich der Superadmin.
+  const locked = isPrivilegedTarget(user.role) && !identity.isSuperadmin;
+  if (locked || identity.userId === user.id) return null;
+
 
   return (
     <>
