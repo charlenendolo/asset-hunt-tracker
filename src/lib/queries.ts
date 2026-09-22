@@ -67,6 +67,21 @@ export const machinePropertyCatalogQuery = queryOptions({
   },
 });
 
+/** Wiederverwendbare alternative Suchbegriffe (Vorschläge in der Eingabe). */
+export const machineSearchTermCatalogQuery = queryOptions({
+  queryKey: ["machine-search-terms", "catalog"],
+  staleTime: FIVE_MIN,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("machine_search_terms")
+      .select("id, name")
+      .order("name")
+      .limit(2000);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
 export const sitesQuery = queryOptions({
   queryKey: ["sites"],
   staleTime: FIVE_MIN,
