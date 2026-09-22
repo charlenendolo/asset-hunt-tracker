@@ -11,7 +11,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Die bestehenden RLS-Policies auf public.machine_photos bleiben unverändert.
  */
 const BUCKET = "machine-photos";
-const MANAGE_ROLES = ["superadmin", "admin", "site_manager", "warehouse_manager", "manager", "bauleiter"];
+const MANAGE_ROLES = [
+  "superadmin",
+  "admin",
+  "site_manager",
+  "warehouse_manager",
+  "manager",
+  "bauleiter",
+];
 const MAX_PHOTOS = 8;
 const SIGNED_URL_TTL = 60 * 60;
 

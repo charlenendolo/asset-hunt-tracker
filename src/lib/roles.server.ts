@@ -25,7 +25,9 @@ export async function requireManager(
   options?: { adminOnly?: boolean; message?: string },
 ): Promise<string> {
   const role = await currentRole(supabase);
-  const allowed = options?.adminOnly ? ["superadmin", "admin"] : ["superadmin", "admin", "site_manager"];
+  const allowed = options?.adminOnly
+    ? ["superadmin", "admin"]
+    : ["superadmin", "admin", "site_manager"];
   if (!allowed.includes(role)) {
     throw new Error(options?.message ?? "Dir fehlen die Rechte für diesen Vorgang.");
   }

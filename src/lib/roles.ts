@@ -9,7 +9,13 @@
  * immer serverseitig gegen die Rolle aus der Datenbank.
  */
 
-export const APP_ROLES = ["superadmin", "admin", "site_manager", "warehouse_manager", "user"] as const;
+export const APP_ROLES = [
+  "superadmin",
+  "admin",
+  "site_manager",
+  "warehouse_manager",
+  "user",
+] as const;
 
 export type AppRole = (typeof APP_ROLES)[number];
 
@@ -68,5 +74,4 @@ export function canManageTarget(
 
 export const PRIVILEGED_DENIED =
   "Nur ein Superadmin darf privilegierte Zugänge (Administrator/Superadmin) verwalten.";
-export const LAST_SUPERADMIN =
-  "Mindestens ein aktiver Superadmin muss bestehen bleiben.";
+export const LAST_SUPERADMIN = "Mindestens ein aktiver Superadmin muss bestehen bleiben.";

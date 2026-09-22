@@ -50,7 +50,6 @@ export function UserRowMenu({ user, email }: { user: ManagedUser; email: string 
   const locked = isPrivilegedTarget(user.role) && !identity.isSuperadmin;
   if (locked || identity.userId === user.id) return null;
 
-
   return (
     <>
       <DropdownMenu>

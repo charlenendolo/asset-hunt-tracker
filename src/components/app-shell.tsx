@@ -59,7 +59,13 @@ function useIsActive() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
   const { isAdmin, role } = useCurrentProfile();
-  const personal = !["admin", "site_manager", "warehouse_manager", "bauleiter"].includes(role);
+  const personal = ![
+    "superadmin",
+    "admin",
+    "site_manager",
+    "warehouse_manager",
+    "bauleiter",
+  ].includes(role);
 
   return (
     <nav className="flex flex-col gap-0.5">

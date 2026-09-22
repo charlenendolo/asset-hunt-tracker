@@ -97,7 +97,7 @@ export function EditUserDialog({
 
   const mailInvalid = mail.trim().length > 0 && !/^\S+@\S+\.\S+$/.test(mail.trim());
   const usernameInvalid = username.trim().length > 0 && !isValidUsername(username);
-  const needsEmail = role === "site_manager" || role === "admin";
+  const needsEmail = role === "site_manager" || role === "admin" || role === "superadmin";
   const invalid =
     fullName.trim().length < 2 ||
     mailInvalid ||
