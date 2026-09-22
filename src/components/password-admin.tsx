@@ -45,13 +45,37 @@ export function PasswordChangeDialog({
 }) {
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [copied, setCopied] = useState(false);
   const setTemp = useServerFn(setTemporaryPassword);
+
+  /** Vorschlag erzeugen: beide Felder füllen und sichtbar machen, damit er weitergegeben werden kann. */
+  function generate() {
+    const value = suggestPassword();
+    setPw(value);
+    setConfirm(value);
+    setVisible(true);
+    setCopied(false);
+  }
+
+  async function copyToClipboard() {
+    try {
+      await navigator.clipboard.writeText(pw);
+      setCopied(true);
+      toast.success("Passwort in die Zwischenablage kopiert.");
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Kopieren nicht möglich. Bitte das Passwort manuell übernehmen.");
+    }
+  }
 
   const temp = useMutation({
     mutationFn: async () => setTemp({ data: { userId, password: pw } }),
     onSuccess: () => {
       setPw("");
       setConfirm("");
+      setVisible(false);
+      setCopied(false);
       onOpenChange(false);
       toast.success("Passwort geändert. Alle aktiven Sitzungen wurden beendet.");
     },
