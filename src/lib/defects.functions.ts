@@ -45,7 +45,7 @@ export const reportDefect = createServerFn({ method: "POST" })
         .eq("id", userId)
         .maybeSingle();
       const role = String(profile?.role ?? "user").toLowerCase();
-      const isManager = profile?.active && ["admin", "site_manager", "manager", "bauleiter"].includes(role);
+      const isManager = profile?.active && ["superadmin", "admin", "site_manager", "manager", "bauleiter"].includes(role);
       if (!isManager) {
         throw new Error("Dieses Gerät ist einer anderen Person zugewiesen.");
       }
