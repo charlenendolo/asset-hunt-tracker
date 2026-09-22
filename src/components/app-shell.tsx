@@ -20,6 +20,7 @@ import { useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/hooks/use-profile";
+import { canManageInventory } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggleButton } from "@/components/theme-switch";
@@ -30,6 +31,8 @@ type NavItem = {
   label: string;
   icon: typeof LayoutDashboard;
   adminOnly?: boolean;
+  /** Operativ: Administratoren und Lagerverwalter. */
+  inventoryOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
@@ -43,7 +46,7 @@ const NAV: NavItem[] = [
   { to: "/defekte", label: "Defekte", icon: TriangleAlert },
   { to: "/wartung", label: "Wartung", icon: Wrench },
   { to: "/benutzer", label: "Benutzer", icon: Users, adminOnly: true },
-  { to: "/etiketten", label: "Etiketten & QR-Codes", icon: QrCode, adminOnly: true },
+  { to: "/etiketten", label: "Etiketten & QR-Codes", icon: QrCode, inventoryOnly: true },
   { to: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];
 
@@ -69,7 +72,10 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter((item) => !item.adminOnly || isAdmin).map((item) => (
+      {NAV.filter(
+        (item) =>
+          (!item.adminOnly || isAdmin) && (!item.inventoryOnly || canManageInventory(role)),
+      ).map((item) => (
         <Link
           key={item.to}
           to={item.to}
