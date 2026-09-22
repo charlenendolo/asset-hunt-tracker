@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, Loader2, Mail } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, KeyRound, Loader2, Mail, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appBaseUrl } from "@/lib/app-url";
 import { sendPasswordReset, setTemporaryPassword } from "@/lib/password.functions";
-import { checkPassword, passwordChecks } from "@/lib/password-policy";
+import { checkPassword, passwordChecks, suggestPassword } from "@/lib/password-policy";
 
 /** Reset-Link an die hinterlegte E-Mail senden (Admin-Aktion, serverseitig geprüft). */
 export function useSendResetLink(userId: string) {
