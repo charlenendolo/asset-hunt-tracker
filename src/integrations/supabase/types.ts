@@ -774,6 +774,7 @@ export type Database = {
     }
     Functions: {
       account_has_password: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_inventory: { Args: never; Returns: boolean }
       current_profile: {
         Args: never
         Returns: {
