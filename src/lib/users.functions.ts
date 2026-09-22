@@ -213,11 +213,35 @@ export const updateEmployeeAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateSchema.parse(data))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase as never);
+    const role = await assertAdmin(context.supabase);
     if (data.userId === context.userId && data.active === false) {
       throw new Error("Du kannst deinen eigenen Zugang nicht deaktivieren.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const target = await targetProfile(supabaseAdmin, data.userId);
+    if (!target) throw new Error("Benutzer wurde nicht gefunden.");
+
+    // Privilegierte Zugänge (Administrator/Superadmin) darf nur der Superadmin
+    // bearbeiten; die Zielrolle stammt dabei immer aus der Datenbank.
+    if (isPrivilegedTarget(target.role) && !isSuperadmin(role) && target.id !== context.userId) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    if (data.role !== undefined && !assignableRoles(role).includes(data.role)) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
+    // Selbstbeförderung ist ausgeschlossen — auch für den Superadmin.
+    if (data.role !== undefined && data.userId === context.userId && data.role !== target.role) {
+      throw new Error("Du kannst deine eigene Rolle nicht ändern.");
+    }
+    if (
+      target.id === context.userId &&
+      !isSuperadmin(role) &&
+      isPrivilegedTarget(target.role) &&
+      (data.role !== undefined || data.active !== undefined)
+    ) {
+      throw new Error(PRIVILEGED_DENIED);
+    }
 
     const patch: {
       role?: string;
