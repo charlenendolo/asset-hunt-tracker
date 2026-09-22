@@ -40,7 +40,7 @@ type SortKey = "name" | "username" | "role" | "status" | "created";
 
 function UsersPage() {
   const identity = useIdentity();
-  const isAdmin = identity.role === "admin";
+  const isAdmin = identity.isAdmin;
   const profiles = useQuery(profilesQuery);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -158,6 +158,7 @@ function UsersPage() {
             onChange={(e) => setRoleFilter(e.target.value)}
           >
             <option value="all">Alle Rollen</option>
+            <option value="superadmin">{ROLE_LABELS["superadmin"]}</option>
             <option value="admin">{ROLE_LABELS["admin"]}</option>
             <option value="site_manager">{ROLE_LABELS["site_manager"]}</option>
             <option value="warehouse_manager">{ROLE_LABELS["warehouse_manager"]}</option>
