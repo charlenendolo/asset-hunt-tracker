@@ -21,6 +21,31 @@ async function assertActiveAdmin(supabase: {
   if (data !== true) throw new Error("Nur aktive Administratoren dürfen Passwörter zurücksetzen.");
 }
 
+/**
+ * Passwörter privilegierter Zugänge (Administrator/Superadmin) darf nur ein
+ * Superadmin zurücksetzen. Beide Rollen stammen aus der Datenbank.
+ */
+async function assertMayResetPassword(
+  supabase: { rpc: (fn: "current_profile") => Promise<{ data: unknown }> },
+  targetUserId: string,
+) {
+  const { isPrivilegedTarget, isSuperadmin, PRIVILEGED_DENIED } = await import("./roles");
+  const { data } = await supabase.rpc("current_profile");
+  const caller = (data as Array<{ role: string | null; active: boolean | null }> | null)?.[0];
+  if (!caller || caller.active === false) throw new Error("Zugang ist nicht aktiv.");
+  const callerRole = (caller.role ?? "user").toLowerCase();
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: target } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("id", targetUserId)
+    .maybeSingle();
+  if (isPrivilegedTarget(target?.role ?? null) && !isSuperadmin(callerRole)) {
+    throw new Error(PRIVILEGED_DENIED);
+  }
+}
+
 /** Kurzlebiger Publishable-Client (keine Session) für Re-Authentifizierung. */
 async function publishableClient() {
   const { createClient } = await import("@supabase/supabase-js");
