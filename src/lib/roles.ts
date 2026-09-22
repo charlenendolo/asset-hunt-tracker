@@ -75,3 +75,13 @@ export function canManageTarget(
 export const PRIVILEGED_DENIED =
   "Nur ein Superadmin darf privilegierte Zugänge (Administrator/Superadmin) verwalten.";
 export const LAST_SUPERADMIN = "Mindestens ein aktiver Superadmin muss bestehen bleiben.";
+
+/**
+ * Operativer Gerätebetrieb: Lagerverwalter arbeiten hier wie Administratoren.
+ * Ausgenommen bleiben Benutzerverwaltung sowie Deaktivieren/Löschen von Geräten.
+ */
+export const INVENTORY_ROLES = ["superadmin", "admin", "warehouse_manager"] as const;
+
+export function canManageInventory(role: string | null | undefined): boolean {
+  return INVENTORY_ROLES.includes(normalizeRole(role) as (typeof INVENTORY_ROLES)[number]);
+}

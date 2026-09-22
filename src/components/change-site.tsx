@@ -40,7 +40,7 @@ export function ChangeSiteButton({
   const identity = useIdentity();
   const [open, setOpen] = useState(false);
 
-  if (identity.isLoading || !identity.isAdmin) return null;
+  if (identity.isLoading || !identity.canOperate) return null;
 
   return (
     <>

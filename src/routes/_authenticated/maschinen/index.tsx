@@ -242,7 +242,7 @@ function MachinesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageCount, machines.isFetching]);
 
-  const canSelect = identity.isAdmin;
+  const canSelect = identity.canOperate;
   const selectedIds = Object.keys(selected);
   const selectedMachines = useMemo(
     () =>
@@ -371,7 +371,7 @@ function MachinesPage() {
           <option value={OVERDUE_FILTER}>Überfällig</option>
           <option value={INSPECTION_DUE_FILTER}>Prüfpflichtig</option>
           <option value={INSPECTION_MISSING_FILTER}>Prüftermin fehlt</option>
-          {identity.isAdmin ? <option value={ARCHIVED_FILTER}>Archiviert</option> : null}
+          {identity.canOperate ? <option value={ARCHIVED_FILTER}>Archiviert</option> : null}
         </Select>
         <div className="flex min-w-0 gap-2">
           <Select

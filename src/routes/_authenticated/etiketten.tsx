@@ -144,7 +144,7 @@ function LabelsPage() {
   const machines = useQuery({
     ...machinesQuery(filters),
     placeholderData: keepPreviousData,
-    enabled: identity.isAdmin,
+    enabled: identity.canOperate,
   });
 
   const rows = machines.data?.rows ?? [];
@@ -163,19 +163,19 @@ function LabelsPage() {
 
   // QR nur für die aktuell sichtbare Seite erzeugen — skaliert auf tausende Geräte.
   const visibleIds = useMemo(() => rows.map((m) => m.id), [rows]);
-  const { pngs } = useMachineQrPngs(identity.isAdmin ? visibleIds : []);
+  const { pngs } = useMachineQrPngs(identity.canOperate ? visibleIds : []);
   const previewMachine = useMemo(() => {
     const m = rows.find((r) => r.id === previewId);
     return m ? { id: m.id, name: m.name, asset_code: m.asset_code } : null;
   }, [rows, previewId]);
 
-  if (!identity.isLoading && !identity.isAdmin) {
+  if (!identity.isLoading && !identity.canOperate) {
     return (
       <AppShell title="Etiketten & QR-Codes">
         <EmptyState
           icon={<QrCode className="h-7 w-7" strokeWidth={1.5} />}
           title="Kein Zugriff."
-          description="Die Etikettenverwaltung ist ausschließlich Administratoren vorbehalten."
+          description="Die Etikettenverwaltung ist Administratoren und Lagerverwaltern vorbehalten."
         />
       </AppShell>
     );

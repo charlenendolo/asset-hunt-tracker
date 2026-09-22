@@ -527,11 +527,11 @@ export function AdminHandovers() {
   const data = useQuery({
     queryKey: ["handovers", "all"],
     queryFn: () => listAllHandovers(),
-    enabled: identity.isAdmin,
+    enabled: identity.canOperate,
     staleTime: 30 * 1000,
   });
 
-  if (!identity.isAdmin) return null;
+  if (!identity.canOperate) return null;
   if (data.isLoading) return <Skeleton className="h-24 w-full rounded-xl" />;
 
   const rows = data.data ?? [];
