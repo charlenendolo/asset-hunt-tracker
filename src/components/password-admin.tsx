@@ -109,20 +109,60 @@ export function PasswordChangeDialog({
         <form className="space-y-3" onSubmit={submitTemp}>
           <div className="space-y-1.5">
             <Label htmlFor={`temp-pw-${userId}`}>Neues Passwort</Label>
-            <Input
-              id={`temp-pw-${userId}`}
-              type="password"
-              autoComplete="new-password"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id={`temp-pw-${userId}`}
+                type={visible ? "text" : "password"}
+                autoComplete="new-password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setVisible((v) => !v)}
+                aria-label={visible ? "Passwort verbergen" : "Passwort anzeigen"}
+                title={visible ? "Passwort verbergen" : "Passwort anzeigen"}
+              >
+                {visible ? (
+                  <EyeOff className="h-4 w-4" strokeWidth={1.75} />
+                ) : (
+                  <Eye className="h-4 w-4" strokeWidth={1.75} />
+                )}
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={generate}>
+                <Wand2 className="mr-2 h-4 w-4" strokeWidth={1.75} />
+                Passwort vorschlagen
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!pw}
+                onClick={() => void copyToClipboard()}
+              >
+                {copied ? (
+                  <Check className="mr-2 h-4 w-4" strokeWidth={1.75} />
+                ) : (
+                  <Copy className="mr-2 h-4 w-4" strokeWidth={1.75} />
+                )}
+                Kopieren
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Der Vorschlag erfüllt alle Regeln. Bitte vor dem Speichern kopieren – danach ist er
+              nicht mehr einsehbar.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`temp-pw2-${userId}`}>Passwort bestätigen</Label>
             <Input
               id={`temp-pw2-${userId}`}
-              type="password"
+              type={visible ? "text" : "password"}
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
