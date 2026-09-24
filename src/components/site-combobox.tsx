@@ -342,6 +342,8 @@ export function EditSiteDialog({
   const [siteNumber, setSiteNumber] = useState(site.site_number ?? "");
   const [address, setAddress] = useState(site.address ?? "");
   const [active, setActive] = useState(site.active);
+  // Aktivieren/Deaktivieren bleibt Admin/Superadmin vorbehalten.
+  const canToggleActive = useIdentity().isAdmin;
 
   useEffect(() => {
     if (!open) return;
@@ -363,7 +365,7 @@ export function EditSiteDialog({
           locationType: locationType as SiteType,
           siteNumber: siteNumber.trim() || null,
           address: address.trim() || null,
-          active,
+          ...(canToggleActive ? { active } : {}),
         },
       }),
     onSuccess: async () => {
@@ -434,15 +436,17 @@ export function EditSiteDialog({
               className="h-11"
             />
           </div>
-          <label className="flex items-center gap-3 rounded-md border border-border px-3 py-3">
-            <input
-              type="checkbox"
-              checked={active}
-              onChange={(e) => setActive(e.target.checked)}
-              className="h-4 w-4 accent-primary"
-            />
-            <span className="text-sm font-medium">Standort aktiv</span>
-          </label>
+          {canToggleActive ? (
+            <label className="flex items-center gap-3 rounded-md border border-border px-3 py-3">
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => setActive(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm font-medium">Standort aktiv</span>
+            </label>
+          ) : null}
         </div>
 
         <DialogFooter>

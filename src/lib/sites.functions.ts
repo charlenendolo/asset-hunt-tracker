@@ -11,7 +11,16 @@ import { SITE_TYPE_ORDER } from "@/lib/site-types";
  * serverseitig über das eigene Profil geprüft und erst danach der
  * Service-Role-Client geladen.
  */
-const MANAGE_ROLES = ["superadmin", "admin", "site_manager", "manager", "bauleiter"];
+const MANAGE_ROLES = [
+  "superadmin",
+  "admin",
+  "site_manager",
+  "manager",
+  "bauleiter",
+  "warehouse_manager",
+];
+/** Aktivieren/Deaktivieren eines Standorts: nur Admin/Superadmin. */
+const LIFECYCLE_ROLES = ["superadmin", "admin"];
 
 const createSiteSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -71,6 +80,9 @@ export const updateSite = createServerFn({ method: "POST" })
     const role = String(row?.role ?? "").toLowerCase();
     if (!row?.active || !MANAGE_ROLES.includes(role)) {
       throw new Error("Du darfst keine Standorte bearbeiten.");
+    }
+    if (typeof data.active === "boolean" && !LIFECYCLE_ROLES.includes(role)) {
+      throw new Error("Nur Administratoren dürfen Standorte aktivieren oder deaktivieren.");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
