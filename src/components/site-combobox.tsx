@@ -342,8 +342,8 @@ export function EditSiteDialog({
   const [siteNumber, setSiteNumber] = useState(site.site_number ?? "");
   const [address, setAddress] = useState(site.address ?? "");
   const [active, setActive] = useState(site.active);
-  // Aktivieren/Deaktivieren bleibt Admin/Superadmin vorbehalten.
-  const canToggleActive = useIdentity().isAdmin;
+  // Lagerverwalter dürfen Standorte nicht aktivieren/deaktivieren.
+  const canToggleActive = !useIdentity().isWarehouseManager;
 
   useEffect(() => {
     if (!open) return;

@@ -19,8 +19,8 @@ const MANAGE_ROLES = [
   "bauleiter",
   "warehouse_manager",
 ];
-/** Aktivieren/Deaktivieren eines Standorts: nur Admin/Superadmin. */
-const LIFECYCLE_ROLES = ["superadmin", "admin"];
+/** Aktivieren/Deaktivieren: nicht für Lagerverwalter (Bauleiter unverändert). */
+const LIFECYCLE_ROLES = ["superadmin", "admin", "site_manager", "manager", "bauleiter"];
 
 const createSiteSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -82,7 +82,7 @@ export const updateSite = createServerFn({ method: "POST" })
       throw new Error("Du darfst keine Standorte bearbeiten.");
     }
     if (typeof data.active === "boolean" && !LIFECYCLE_ROLES.includes(role)) {
-      throw new Error("Nur Administratoren dürfen Standorte aktivieren oder deaktivieren.");
+      throw new Error("Du darfst Standorte nicht aktivieren oder deaktivieren.");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
