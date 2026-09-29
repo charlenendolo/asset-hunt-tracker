@@ -571,6 +571,28 @@ export const recentMovementsQuery = queryOptions({
   },
 });
 
+/** Kleine Vorschau der Geräte an einem Standort (z. B. „Mein Fahrzeug"). */
+export function siteMachinesPreviewQuery(siteId: string | null, limit = 5) {
+  return queryOptions({
+    queryKey: ["machines", "site-preview", siteId, limit],
+    enabled: !!siteId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("machines")
+        .select(
+          "id, name, asset_code, status, responsible_user_id, site:sites(location_type), responsible:profiles(full_name)",
+        )
+        .eq("active", true)
+        .eq("current_site_id", siteId!)
+        .order("name", { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 /** Machine counts per site — one lightweight column read, aggregated client-side. */
 export const machinesBySiteCountQuery = queryOptions({
   queryKey: ["machines", "site-counts"],
